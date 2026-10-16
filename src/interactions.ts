@@ -127,6 +127,7 @@ export function createInteractions(c:Dependencies){
   swimsuitTop.setEnabled(isBath);swimsuitBottom.setEnabled(isBath);
   outfitMeshes.forEach(m=>m.setEnabled(!isBath));
   musicButton.textContent=musicPlaying?'⏹ Apagar música':'🎵 Encender música';
+  musicButton.classList.toggle('music-on',musicPlaying);
   stereoScreen.material=musicPlaying?bright:pink;
   washHint.textContent=bath.getTool()==='water'?'🚿 Agua elegida: frota para aclarar':bath.getTool()==='soap'?'🧽 Jabón elegido: frota sobre Daniela':'🫧 Elige jabón o agua';
   document.querySelectorAll<HTMLButtonElement>('#actions .action-card').forEach((el,i)=>{
