@@ -27,3 +27,39 @@
  .action-row.has-five-actions .action-emoji{font-size:19px}
 }
 @media(max-height:660px){#activity-tools{bottom:126px}}
+
+/* Direct-touch tools and richer game feedback */
+.action-card.bath-selected{
+ outline:3px solid #fff8a5;
+ outline-offset:-4px;
+ filter:saturate(1.16);
+ box-shadow:0 0 0 3px #d0ecff,0 7px 17px #8b63c25e,inset 0 0 15px #ffffff4d;
+}
+.action-card.bath-selected::after{
+ content:'✓';position:absolute;top:2px;right:6px;
+ font-size:15px;font-weight:900;color:white;
+ text-shadow:0 1px 4px #744a8c;
+}
+#activity-tools .music-switch.music-on{
+ background:linear-gradient(130deg,#ffafe0,#a6e7f7);
+ color:#71458a;
+ animation:dance-pulse 1.8s ease-in-out infinite;
+}
+@keyframes dance-pulse{
+ 0%,100%{box-shadow:0 3px 14px #db8cde50;transform:scale(1)}
+ 50%{box-shadow:0 4px 20px #d06ad987;transform:scale(1.045)}
+}
+#activity-tools .wash-hint{
+ max-width:min(75vw,350px);
+ overflow:hidden;text-overflow:ellipsis;
+ letter-spacing:.1px;
+}
+.action-card:active{touch-action:none}
+@media (max-width:680px){
+ #activity-tools .wash-hint{font-size:10px;max-width:85vw}
+ .action-row.has-five-actions{overscroll-behavior-x:contain}
+ .action-row.has-five-actions .action-card{flex:0 0 31%}
+}
+@media(prefers-reduced-motion:reduce){
+ #activity-tools .music-switch.music-on{animation:none}
+}
