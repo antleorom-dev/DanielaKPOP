@@ -47,7 +47,7 @@ export function createInteractions(c:Dependencies){
   const d=ball('falling water '+i,.06+(i%4)*.02,Math.sin(i*5)*.77,2.6,-.75+Math.cos(i*3)*.21,aquaMat,c.idol);
   d.setEnabled(false);return d;
  });
- let foamLevel=0,waterUntil=0,stagePlaying=false,interactionMode:Mode=null,lastScrub=0,volleyUntil=0,volleyStart=0;
+ let foamLevel=0,waterUntil=0,stagePlaying=false,interactionMode:Mode=null,lastScrub=0,volleyUntil=0,volleyStart=0,lastMusicDance=0,musicDanceIndex=0;
  const audio=new Audio(base+'assets/studio-song.mp3');audio.loop=true;audio.preload='none';audio.volume=.62;
  const stereo=new TransformNode('interactive stereo',c.scene);stereo.parent=c.groups.stage;
  function cube(name:string,w:number,h:number,d:number,x:number,y:number,z:number,m:StandardMaterial){
@@ -88,7 +88,7 @@ export function createInteractions(c:Dependencies){
   if(c.getRoom()!=='stage')return;
   if(stagePlaying){audio.pause();audio.currentTime=0;stagePlaying=false;c.toast('Minicadena apagada 🎵');sync();return;}
   try{
-   audio.currentTime=0;await audio.play();stagePlaying=true;c.toast('¡La música está sonando! 🎶');c.animate('dance',2.5);
+   audio.currentTime=0;await audio.play();stagePlaying=true;lastMusicDance=performance.now();musicDanceIndex=0;c.toast('¡La música está sonando! 🎶');c.animate('dance',3.2);
   }catch{
    stagePlaying=false;c.toast('La canción aún no está en GitHub: sube assets/studio-song.mp3');
   }
@@ -197,6 +197,8 @@ export function createInteractions(c:Dependencies){
   sync();
  }
  function tick(now:number){
+  if(stagePlaying&&c.getRoom()==='stage'&&now-lastMusicDance>3700){lastMusicDance=now;musicDanceIndex++;c.animate((['dance2','dance3','dance','sing'] as const)[musicDanceIndex%4],3.3);}
+  speakers.forEach((o,i)=>o.scaling.setAll(stagePlaying?1+Math.sin(now/210+i*2)*.12:1));
   const bath=c.getRoom()==='bathroom';
   foam.forEach((b,i)=>{if(!b.isEnabled())return;b.position.y=.72+(i%7)*.24+Math.sin(now/400+i)*.045;});
   waterDrops.forEach((d,i)=>{const on=bath&&now<waterUntil;d.setEnabled(on);if(on)d.position.y=2.8-((now/130+i*.31)%2.8);});
