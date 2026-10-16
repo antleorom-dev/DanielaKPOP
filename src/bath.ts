@@ -75,7 +75,7 @@ export function createBath(c:Context){
   const hit=c.scene.pick(x-r.left,y-r.top,m=>{
    if(!m.isEnabled()||!m.isVisible||!m.isPickable)return false;
    if(!m.isDescendantOf(c.body))return false;
-   return /^(face|shirt|dress|puff sleeve|arm|hand|leg|collar|cheek|nose|smile|big eye|hair cap|fringe|side hair|bang|twin tail|bow left|bow right|shoe|sock)/.test(m.name);
+   return /^(face|shirt|dress|puff sleeve|arm|hand|leg|collar|cheek|nose|smile|big eye|hair cap|fringe|side hair|bang|twin tail|bow left|bow right|shoe|sock|bikini top|bikini bottom)/.test(m.name);
   });
   if(!hit?.hit||!hit.pickedPoint||!hit.pickedMesh)return null;
   const parent=hit.pickedMesh.isDescendantOf(c.head)?c.head:c.body;
