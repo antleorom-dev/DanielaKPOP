@@ -4,10 +4,12 @@ Este directorio debe contener los recursos originales facilitados por el propiet
 
 ## Cómo incorporar los archivos aportados
 
-1. Descarga y descomprime `DanielaKPOP-recursos-v0.4.zip` generado en ChatGPT.
-2. Conserva la estructura `public/assets/...` del ZIP.
-3. Sube los archivos al mismo lugar de este repositorio mediante **Add file → Upload files**. En GitHub no basta con subir el ZIP: hay que subir los archivos descomprimidos.
-4. Cada push a `main` publica automáticamente los recursos en GitHub Pages.
+1. Descarga el archivo **`DanielaKPOP-recursos-v0.4.zip`** preparado en ChatGPT.
+2. **Sin descomprimirlo**, abre la raíz de este repositorio y elige **Add file → Upload files**.
+3. Arrastra el ZIP tal cual, con ese nombre exacto, y confirma el commit en `main`.
+4. GitHub Actions lo descomprime automáticamente durante la compilación y publica la canción y todos los modelos en GitHub Pages.
+
+También funciona subir los archivos ya descomprimidos directamente en `public/assets/`, pero el ZIP es mucho más sencillo.
 
 Archivos utilizados directamente:
 - `public/assets/studio-song.mp3` — canción completa, activable solo en el estudio.
