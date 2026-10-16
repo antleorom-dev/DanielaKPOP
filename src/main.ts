@@ -2,7 +2,7 @@ import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,P
 import './style.css';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
-type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'spin'|'bath'|'jump';
+type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised';
 type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
 const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,lastSaved:Date.now(),lastGift:''};
@@ -10,7 +10,7 @@ let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};const mins=Math.min(240,Math.max(0,(Date.now()-(old.lastSaved||Date.now()))/60000));state.hunger=Math.max(0,state.hunger-mins*.13);state.energy=Math.max(0,state.energy-mins*.08);state.hygiene=Math.max(0,state.hygiene-mins*.05);state.happiness=Math.max(0,state.happiness-mins*.06);}}catch{}
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
-let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let soundEnabled=true;
+let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let soundEnabled=true;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
@@ -107,7 +107,7 @@ ball('hair tie',.27,s*.87,.15,.02,pink,head);
 const eye=ball('big eye',.33,s*.33,-.08,-.755,dark,head);eye.scaling.set(.8,1.1,.25);eyeMeshes.push(eye);
 ball('eye light',.11,s*.33-.055,-.005,-.823,white,head).scaling.z=.35;ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head);
 ball('cheek',.3,s*.62,-.31,-.68,blush,head).scaling.set(.85,.35,.2);}
-ball('smile',.18,0,-.41,-.79,mat('smile pink','#b95e89'),head).scaling.set(1,.42,.27);ball('nose',.09,0,-.25,-.817,blush,head).scaling.set(.66,.6,.3);
+const mouth=ball('smile',.18,0,-.41,-.79,mat('smile pink','#b95e89'),head);mouth.scaling.set(1,.42,.27);const laughingMouth=ball('laughing mouth',.22,0,-.41,-.8,dark,head);laughingMouth.scaling.set(.88,.72,.32);laughingMouth.setEnabled(false);ball('nose',.09,0,-.25,-.817,blush,head).scaling.set(.66,.6,.3);
 const bow=new TransformNode('hair bow',scene);bow.parent=head;bow.position.set(.57,.91,-.22);
 ball('bow left',.43,-.21,0,0,pink,bow).scaling.set(1,.6,.45);ball('bow right',.43,.21,0,0,pink,bow).scaling.set(1,.6,.45);ball('bow knot',.21,0,0,-.12,gold,bow);star(-.12,.95,-.6,.18,gold,head);
 function fashion(){dress.material=dressColors[state.outfit%4];sleeves.forEach(s=>s.material=dressColors[state.outfit%4]);hairParts.forEach(s=>s.material=hairColors[state.hair%4]);}
@@ -121,7 +121,7 @@ $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniel
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
 function showRoom(next:Room){room=next;for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
-const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;
+const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible');
 $('#action-label').textContent=room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';
 wall.diffuseColor=Color3.FromHexString(room==='stage'?'#9d77c5':room==='bathroom'?'#c8e6f1':room==='kitchen'?'#ffe0cc':room==='closet'?'#f4c9df':'#f9d0ec');
 floorMat.diffuseColor=Color3.FromHexString(room==='stage'?'#b5a1df':room==='bathroom'?'#d8edf5':room==='kitchen'?'#f4d7c0':'#e4c8ee');rim.diffuse=Color3.FromHexString(entry.accent);
@@ -131,6 +131,10 @@ button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</spa
 animate('wave',1.1);}
 function toast(msg:string){$('#toast').textContent=msg;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
 function reward(msg:string){const el=$('#reward');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
+function reactionBubble(text:string){$('#mood-message').textContent=text;const tag=$('#character-tag');tag.classList.add('visible');clearTimeout(reactionTimer);reactionTimer=window.setTimeout(()=>tag.classList.remove('visible'),1700);}
+function heartBurst(x:number,y:number,strong=false){const el=$('#touch-effects');const icons=strong?['💖','💗','✨','💕','🌟','💜','🎀']:['💗','✨','💕','💖'];icons.forEach((icon,i)=>{const particle=document.createElement('span');particle.className='touch-heart';particle.textContent=icon;particle.style.left=x+'px';particle.style.top=y+'px';const angle=-Math.PI*(.15+.7*i/Math.max(1,icons.length-1));particle.style.setProperty('--dx',Math.cos(angle)*(45+i%3*17)+'px');particle.style.setProperty('--dy',(-60-i%3*20)+'px');particle.style.setProperty('--rot',(-24+i*11)+'deg');particle.style.animationDelay=(i%3)*65+'ms';el.append(particle);window.setTimeout(()=>particle.remove(),1450);});}
+function touchDaniela(x:number,y:number,headTap:boolean){const now=performance.now();touchStreak=now-lastTouch<1300?touchStreak+1:1;lastTouch=now;const bigLaugh=touchStreak>=3||headTap;animate(bigLaugh?'laugh':'giggle',bigLaugh?1.75:1.25);state.happiness=num(state.happiness+(bigLaugh?2:1));heartBurst(x,y,bigLaugh);reactionBubble(touchStreak>=5?'¡Para, que me da la risa! 😂':bigLaugh?'¡Jijijí! 😂💖':'¡Jeje! 💕');if(touchStreak===5)reward('+5 💗');render();save();sound(bigLaugh?[784,988,1175,988]:[880,1046]);if('vibrate' in navigator)navigator.vibrate?.(bigLaugh?[12,24,12]:12);$('#tutorial').classList.add('hidden');try{localStorage.setItem('danielakpop-tutorial','yes');}catch{}}
+
 function sound(notes:number[]=[523,659,784]){if(!soundEnabled)return;try{const ctx=new AudioContext();notes.forEach((hz,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),time=ctx.currentTime+i*.095;osc.frequency.value=hz;gain.gain.setValueAtTime(.0001,time);gain.gain.exponentialRampToValueAtTime(.045,time+.015);gain.gain.exponentialRampToValueAtTime(.0001,time+.23);osc.connect(gain);gain.connect(ctx.destination);osc.start(time);osc.stop(time+.24);});setTimeout(()=>void ctx.close(),900);}catch{}}
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
 function perform(i:number){const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
@@ -142,7 +146,9 @@ state.coins=Math.max(0,state.coins+a.coins);gainXP(a.xp);animate(a.move);
 const outfitNames=['Fresa pop','Lavender dream','Mint candy','Peach sparkle'],hairNames=['Chocolate','Strawberry','Lavender','Honey'];
 toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':a.message);
 reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();save();}
-canvas.addEventListener('pointerup',e=>{const r=canvas.getBoundingClientRect(),hit=scene.pick(e.clientX-r.left,e.clientY-r.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){animate('wave',1.8);state.happiness=num(state.happiness+1);reward('💖');render();save();sound([784,1046]);}});
+canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
+canvas.addEventListener('pointercancel',()=>{touchStart=null;});
+canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh?.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=8.2;camera.target.set(0,1.86,.3);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
@@ -152,14 +158,14 @@ try{if(localStorage.getItem('danielakpop-tutorial'))$('#tutorial').classList.add
 for(let i=0;i<17;i++){const item=document.createElement('span');item.className='particle';item.textContent=i%5===0?'♥':i%2?'✦':'✧';item.style.setProperty('--x',(i*37+11)%98+'%');item.style.setProperty('--y',(i*19+13)%75+'%');item.style.setProperty('--size',(9+i%4*4)+'px');item.style.setProperty('--time',(5+i%5)+'s');item.style.setProperty('--delay',(i%8*-.8)+'s');item.style.color=i%3?'#ffb7dc':'#fff5ce';$('#sparkles').append(item);}
 showRoom('bedroom');fashion();render();
 engine.runRenderLoop(()=>{const now=performance.now(),t=now/1000,e=(now-started)/1000;if(e>duration&&move!=='idle')move='idle';
-body.position.y=move==='dance'?Math.abs(Math.sin(e*7))*.21:move==='jump'?Math.abs(Math.sin(e*5))*.32:move==='sleep'?-.23:Math.sin(t*2.1)*.046;
+body.position.y=move==='dance'?Math.abs(Math.sin(e*7))*.21:move==='jump'?Math.abs(Math.sin(e*5))*.32:move==='laugh'?Math.abs(Math.sin(e*13))*.09:move==='giggle'?Math.abs(Math.sin(e*8))*.05:move==='sleep'?-.23:Math.sin(t*2.1)*.046;
 body.rotation.y=move==='spin'?e*6:move==='dance'?Math.sin(e*4)*.34:Math.sin(t*.8)*.065;
-body.rotation.z=move==='sleep'?.12:move==='dance'?Math.sin(e*7)*.09:Math.sin(t*1.2)*.018;
-arms[0].rotation.z=move==='dance'?Math.sin(e*9)*.72:move==='jump'?-.65:move==='bath'?-.35:-.08;
-arms[1].rotation.z=move==='wave'?Math.sin(e*13)*.65+1.3:move==='dance'?-Math.sin(e*9)*.72:move==='eat'?.78:move==='jump'?.65:.08;
-head.rotation.z=move==='sleep'?.14:move==='dance'?Math.sin(e*4)*.08:Math.sin(t*1.1)*.046;
-head.rotation.x=move==='eat'?Math.sin(e*7)*.075:move==='sleep'?.15:0;
-const blink=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';eyeMeshes.forEach(o=>o.scaling.y=blink?.1:1.1);
+body.rotation.z=move==='sleep'?.12:move==='dance'?Math.sin(e*7)*.09:move==='laugh'?Math.sin(e*14)*.09:move==='giggle'?Math.sin(e*9)*.045:Math.sin(t*1.2)*.018;
+arms[0].rotation.z=move==='laugh'?-1.05+Math.sin(e*13)*.19:move==='giggle'?-.5+Math.sin(e*9)*.15:move==='dance'?Math.sin(e*9)*.72:move==='jump'?-.65:move==='bath'?-.35:-.08;
+arms[1].rotation.z=move==='laugh'?1.05-Math.sin(e*13)*.19:move==='giggle'?.5-Math.sin(e*9)*.15:move==='wave'?Math.sin(e*13)*.65+1.3:move==='dance'?-Math.sin(e*9)*.72:move==='eat'?.78:move==='jump'?.65:.08;
+head.rotation.z=move==='laugh'?Math.sin(e*11)*.15:move==='giggle'?Math.sin(e*9)*.08:move==='sleep'?.14:move==='dance'?Math.sin(e*4)*.08:Math.sin(t*1.1)*.046;
+head.rotation.x=move==='laugh'?-.07+Math.sin(e*8)*.06:move==='giggle'?-.03:move==='eat'?Math.sin(e*7)*.075:move==='sleep'?.15:0;
+const giggling=move==='laugh'||move==='giggle';const blink=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';eyeMeshes.forEach(o=>o.scaling.y=giggling?.27:blink?.1:1.1);mouth.setEnabled(!giggling);laughingMouth.setEnabled(giggling);laughingMouth.scaling.y=move==='laugh'?.9+Math.sin(e*15)*.2:.6;
 bow.rotation.z=Math.sin(t*2)*.08;orbs.forEach((o,i)=>o.scaling.setAll(1+Math.sin(t*2+i*.7)*.18));scene.render();});
 addEventListener('resize',()=>engine.resize());
 setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.16);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();save();},60000);
