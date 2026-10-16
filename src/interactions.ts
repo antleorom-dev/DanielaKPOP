@@ -9,7 +9,7 @@ type Dependencies={
  idol:TransformNode;body:TransformNode;head:TransformNode;dress:Mesh;groups:Record<Room,TransformNode>;
  skin:StandardMaterial;arms:TransformNode[];
  getRoom:()=>Room;getHygiene:()=>number;changeHygiene:(amount:number)=>void;
- perform:(index:number)=>void;animate:(name:string,duration?:number)=>void;
+ perform:(index:number)=>void;animate:(name:'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3',duration?:number)=>void;
  toast:(msg:string)=>void;reward:(msg:string)=>void;sound:(notes?:number[])=>void;
 };
 const base=import.meta.env.BASE_URL;
