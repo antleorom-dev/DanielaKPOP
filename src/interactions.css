@@ -1,0 +1,29 @@
+
+/* Touch-friendly interactive play systems: source assets stay in Babylon canvas. */
+#activity-tools{position:absolute;z-index:7;bottom:188px;left:50%;transform:translateX(-50%);display:flex;gap:7px;justify-content:center;align-items:center;pointer-events:none;width:min(90vw,480px)}
+#activity-tools button{pointer-events:auto;cursor:pointer;border:2px solid #fff;border-radius:21px;padding:9px 17px;color:#80519a;font-size:12px;font-weight:900;background:linear-gradient(140deg,#fffafc,#ffe0f3);box-shadow:0 5px 18px #d77aba50;transition:transform .2s,box-shadow .2s;white-space:nowrap}
+#activity-tools button:hover{transform:translateY(-3px);box-shadow:0 9px 23px #d77aba60}
+#activity-tools button:active{transform:scale(.94)}
+#activity-tools .wash-hint{border-radius:20px;padding:7px 10px;font-size:11px;font-weight:900;background:#fffbee;color:#9665a0;border:2px solid white;white-space:nowrap;box-shadow:0 5px 16px #a078b135}
+#activity-tools [hidden]{display:none}
+#drag-ghost{position:fixed;z-index:25;pointer-events:none;display:none;transform:translate(-50%,-50%);filter:drop-shadow(0 8px 10px #9a65a7);font-size:58px;will-change:top,left}
+#drag-ghost.dragging{display:block;animation:ghost-pulse .45s ease-in-out infinite alternate}
+@keyframes ghost-pulse{to{transform:translate(-50%,-50%) rotate(12deg) scale(1.1)}}
+.activity-effect{position:fixed;z-index:16;pointer-events:none;font-size:33px;transform:translate(-50%,-50%);animation:activity-pop .9s ease-out forwards}
+@keyframes activity-pop{0%{opacity:.1;transform:translate(-50%,-50%) scale(.4)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-160%) rotate(22deg) scale(1.6)}}
+.action-card{touch-action:none;user-select:none;-webkit-user-select:none}
+.action-row.has-five-actions{width:min(790px,100%);gap:6px}
+.action-row.has-five-actions .action-card{min-width:0;padding:5px 6px}
+.action-row.has-five-actions .action-emoji{font-size:19px}
+.action-row.has-five-actions .action-card strong{font-size:11px}
+.action-row.has-five-actions .action-card small{font-size:8px}
+@media(max-width:680px){
+ #activity-tools{bottom:158px;width:100%;max-width:95vw}
+ #activity-tools button{padding:8px 13px;font-size:11px}
+ #activity-tools .wash-hint{font-size:9px;padding:7px}
+ .action-row.has-five-actions{overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+ .action-row.has-five-actions::-webkit-scrollbar{display:none}
+ .action-row.has-five-actions .action-card{flex:0 0 30%;min-width:96px}
+ .action-row.has-five-actions .action-emoji{font-size:19px}
+}
+@media(max-height:660px){#activity-tools{bottom:126px}}
