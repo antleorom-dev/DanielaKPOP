@@ -1,6 +1,7 @@
 
 import {Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Vector3, TransformNode, ArcRotateCamera, Matrix} from '@babylonjs/core';
 import './interactions.css';
+import {installRoomAssets,installHeldFood} from './assets';
 
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Mode='sponge'|'water'|null;
@@ -109,10 +110,13 @@ export function createInteractions(c:Dependencies){
  function feed(index:number){
   const isDrink=index===1;
   const emotes=['🍓','🥤','🧁'];
-  const item=ball('held food',isDrink?.26:.35,-.02,1.65,-.77,isDrink?aquaMat:swimsuitMat,c.body);
+  const holder=new TransformNode('food in hand',c.scene);holder.parent=c.body;holder.position.set(.4,1.35,-.82);
+  const item=ball('fallback food',isDrink?.26:.35,0,0,0,isDrink?aquaMat:swimsuitMat,holder);
   item.scaling.set(1,isDrink?1.8:.85,1);
+  const asset=['strawberry','soda-can','cupcake'][index]||'strawberry';
+  void installHeldFood(c.scene,asset,holder).then(ok=>{if(ok&&!holder.isDisposed())item.setEnabled(false);});
   c.animate(isDrink?'drink':'eat',2.7);
-  let n=0;const t=setInterval(()=>{n++;const f=n/20;item.position.set(.4*(1-f),1.43+f*.45,-.8);item.scaling.scaleInPlace(.96);if(n>=20){clearInterval(t);item.dispose();}},90);
+  let n=0;const t=setInterval(()=>{n++;const f=n/20;holder.position.set(.4*(1-f),1.43+f*.45,-.8);holder.scaling.scaleInPlace(.96);if(n>=20){clearInterval(t);holder.dispose(false,true);}},90);
   c.toast(isDrink?'¡Glup, glup! ¡Qué refrescante! 🥤':'¡Ñam, ñam! ¡Qué rico! '+emotes[index]);
  }
  function showBubbles(){foam.forEach((m,i)=>m.setEnabled(c.getRoom()==='bathroom'&&i<Math.round(foamLevel*foam.length)));}
@@ -187,6 +191,7 @@ export function createInteractions(c:Dependencies){
  }
  c.canvas.addEventListener('pointerup',tap3D);
  function enterRoom(room:Room){
+  void installRoomAssets(room,c.scene,c.groups[room]);
   if(room!=='stage'&&stagePlaying){audio.pause();audio.currentTime=0;stagePlaying=false;}
   if(room!=='bathroom'){foamLevel=0;interactionMode=null;waterUntil=0;}
   sync();
