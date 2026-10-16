@@ -43,7 +43,7 @@ export function makeVolleyball(c:Props){
   if(!c.isHome()||phase!=='idle'||pointerId!==-1)return;
   if(!ballPick(e.clientX,e.clientY))return;
   pointerId=e.pointerId;grabX=e.clientX;grabY=e.clientY;grabAt=performance.now();
-  c.camera.detachControl(c.canvas);
+  c.camera.detachControl();
   c.canvas.setPointerCapture(e.pointerId);
   e.preventDefault();
  }
