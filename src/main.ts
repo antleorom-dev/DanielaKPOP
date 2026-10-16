@@ -162,5 +162,5 @@ head.rotation.x=move==='eat'?Math.sin(e*7)*.075:move==='sleep'?.15:0;
 const blink=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';eyeMeshes.forEach(o=>o.scaling.y=blink?.1:1.1);
 bow.rotation.z=Math.sin(t*2)*.08;orbs.forEach((o,i)=>o.scaling.setAll(1+Math.sin(t*2+i*.7)*.18));scene.render();});
 addEventListener('resize',()=>engine.resize());
-setInterval(()=>{if(document.hidden)return;state.hunger=num(state.hunger-.2);state.energy=num(state.energy-.1);state.happiness=num(state.happiness-.12);state.hygiene=num(state.hygiene-.08);render();save();},60000);
+setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.16);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();save();},60000);
 addEventListener('pagehide',save);
