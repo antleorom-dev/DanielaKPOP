@@ -74,6 +74,7 @@ export function createInteractions(c:Dependencies){
  const volleyButton=document.createElement('button');volleyButton.className='volley-switch';volleyButton.textContent='🏐 Lanzar pelota';volleyButton.addEventListener('click',throwBall);tools.append(volleyButton);
  const dragGhost=document.createElement('div');dragGhost.id='drag-ghost';document.querySelector('#app')!.append(dragGhost);
  let activeDrags=0;
+ let feeding:{holder:TransformNode;started:number;drink:boolean}|null=null;
  function sync(){
   const bathroom=c.getRoom()==='bathroom',stage=c.getRoom()==='stage',home=c.getRoom()==='bedroom';
   tools.dataset.room=c.getRoom();
@@ -108,16 +109,19 @@ export function createInteractions(c:Dependencies){
   const el=document.createElement('span');el.className='activity-effect';el.textContent=icon;el.style.left=x+'px';el.style.top=y+'px';document.querySelector('#app')!.append(el);setTimeout(()=>el.remove(),950);
  }
  function feed(index:number){
+  // Daniela grips food in her right hand; her shoulder animation raises it to her mouth.
+  if(feeding){feeding.holder.dispose(false,true);feeding=null;}
   const isDrink=index===1;
-  const emotes=['🍓','🥤','🧁'];
-  const holder=new TransformNode('food in hand',c.scene);holder.parent=c.body;holder.position.set(.4,1.35,-.82);
-  const item=ball('fallback food',isDrink?.26:.35,0,0,0,isDrink?aquaMat:swimsuitMat,holder);
-  item.scaling.set(1,isDrink?1.8:.85,1);
-  const asset=['strawberry','soda-can','cupcake'][index]||'strawberry';
-  void installHeldFood(c.scene,asset,holder).then(ok=>{if(ok&&!holder.isDisposed())item.setEnabled(false);});
-  c.animate(isDrink?'drink':'eat',2.7);
-  let n=0;const t=setInterval(()=>{n++;const f=n/20;holder.position.set(.4*(1-f),1.43+f*.45,-.8);holder.scaling.scaleInPlace(.96);if(n>=20){clearInterval(t);holder.dispose(false,true);}},90);
-  c.toast(isDrink?'¡Glup, glup! ¡Qué refrescante! 🥤':'¡Ñam, ñam! ¡Qué rico! '+emotes[index]);
+  const holder=new TransformNode('food held by Daniela',c.scene);
+  holder.parent=c.arms[1];
+  holder.position.set(.2,-.72,-.33);
+  const fallback=ball('visible food',isDrink?.32:.35,0,0,0,isDrink?aquaMat:swimsuitMat,holder);
+  fallback.scaling.set(isDrink?.70:1,isDrink?1.40:.82,1);
+  void installHeldFood(c.scene,['strawberry','soda-can','cupcake'][index]||'strawberry',holder)
+   .then(ok=>{if(ok&&!holder.isDisposed())fallback.setEnabled(false);});
+  feeding={holder,started:performance.now(),drink:isDrink};
+  c.animate(isDrink?'drink':'eat',3.25);
+  c.toast(isDrink?'¡Daniela coge su refresco y bebe! 🥤':'¡Daniela lo coge y le da un mordisquito! 🍓');
  }
  function showBubbles(){foam.forEach((m,i)=>m.setEnabled(c.getRoom()==='bathroom'&&i<Math.round(foamLevel*foam.length)));}
  function scrub(){
@@ -193,10 +197,19 @@ export function createInteractions(c:Dependencies){
  function enterRoom(room:Room){
   void installRoomAssets(room,c.scene,c.groups[room]);
   if(room!=='stage'&&stagePlaying){audio.pause();audio.currentTime=0;stagePlaying=false;}
+  if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
   if(room!=='bathroom'){foamLevel=0;interactionMode=null;waterUntil=0;}
   sync();
  }
  function tick(now:number){
+  if(feeding){
+   const elapsed=(now-feeding.started)/1000;
+   const chewing=Math.max(0,Math.min(1,(elapsed-1)/1.45));
+   const finishing=Math.max(0,Math.min(1,(elapsed-2.55)/.52));
+   feeding.holder.rotation.x=feeding.drink?-.55*chewing*(1-finishing):Math.sin(elapsed*12)*.08;
+   feeding.holder.scaling.setAll(Math.max(.05,1-chewing*(feeding.drink?.18:.48)-finishing*.55));
+   if(elapsed>=3.15){feeding.holder.dispose(false,true);feeding=null;c.reward('¡ÑAM! 💗');}
+  }
   if(stagePlaying&&c.getRoom()==='stage'&&now-lastMusicDance>3700){lastMusicDance=now;musicDanceIndex++;c.animate((['dance2','dance3','dance','sing'] as const)[musicDanceIndex%4],3.3);}
   speakers.forEach((o,i)=>o.scaling.setAll(stagePlaying?1+Math.sin(now/210+i*2)*.12:1));
   const bath=c.getRoom()==='bathroom';
