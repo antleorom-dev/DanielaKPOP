@@ -1,47 +1,91 @@
-
-import {Scene,SceneLoader,TransformNode} from '@babylonjs/core';
+import {Scene,SceneLoader,TransformNode,AbstractMesh,Vector3} from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
+
 const base=import.meta.env.BASE_URL;
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
-type Prop={name:string,x:number,z:number,height:number};
+type Prop={name:string;x:number;z:number;height:number;replace?:string[]};
 const positions:Partial<Record<Room,Prop[]>>={
- bedroom:[{name:'Houseplant_1',x:-5,z:1.9,height:1.6},{name:'Bookshelf',x:4.9,z:4.3,height:2.35},{name:'Carpet_Round',x:0,z:1.2,height:.12},{name:'Light_Floor1',x:5.3,z:1.2,height:2.1}],
- kitchen:[{name:'Kitchen_Fridge',x:-4.4,z:4.4,height:3.1},{name:'Kitchen_Sink',x:3.8,z:3.6,height:1.3},{name:'Houseplant_5',x:-3.7,z:2.5,height:1.2}],
- bathroom:[{name:'Bathroom_Shower1',x:4.6,z:3.5,height:3},{name:'Bathroom_Sink',x:-3.9,z:3.6,height:1.6},{name:'Bathroom_Bathtub',x:3,z:4.1,height:1.1}],
- closet:[{name:'Houseplant_5',x:4.9,z:2.4,height:1.6}]
+ bedroom:[
+  {name:'Bed_King',x:3,z:3.7,height:1.65,replace:['bed base','mattress','blanket','pillow','headboard']},
+  {name:'Bookshelf',x:4.9,z:5.45,height:2.9},
+  {name:'Carpet_Round',x:-.5,z:.9,height:.09},
+  {name:'Houseplant_1',x:-5,z:2.3,height:1.8},
+  {name:'Light_Floor1',x:5.4,z:2.15,height:1.9},
+  {name:'Table_RoundSmall',x:-3.5,z:2.0,height:1.05}
+ ],
+ kitchen:[
+  {name:'Kitchen_Fridge',x:-4.2,z:4.45,height:3.1,replace:['fridge','fridge color']},
+  {name:'Kitchen_Sink',x:3.5,z:3.75,height:1.36},
+  {name:'Houseplant_5',x:-3.4,z:2.4,height:1.35},
+  {name:'Table_RoundSmall',x:-1.7,z:2.6,height:1.1}
+ ],
+ bathroom:[
+  {name:'Bathroom_Shower1',x:4.5,z:4.2,height:2.8},
+  {name:'Bathroom_Sink',x:-3.7,z:4.15,height:1.55,replace:['bath sink','sink top']},
+  {name:'Bathroom_Bathtub',x:3,z:4.2,height:1.2,replace:['bathtub','water']}
+ ],
+ closet:[{name:'Houseplant_5',x:4.85,z:2.1,height:1.65}]
 };
 const attempted=new Set<Room>();
-const available=new Map<string,boolean>();
+const okCache=new Map<string,boolean>();
 async function exists(url:string){
- if(available.has(url))return available.get(url)!;
- try{const r=await fetch(url,{method:'HEAD'});available.set(url,r.ok);return r.ok;}catch{return false;}
+ if(okCache.has(url))return okCache.get(url)!;
+ try{const r=await fetch(url,{method:'HEAD'});okCache.set(url,r.ok);return r.ok;}catch{return false;}
+}
+function bounds(root:AbstractMesh){
+ root.computeWorldMatrix(true);
+ return root.getHierarchyBoundingVectors(true);
 }
 export async function installRoomAssets(room:Room,scene:Scene,group:TransformNode){
- if(attempted.has(room))return;attempted.add(room);
+ if(attempted.has(room))return;
+ attempted.add(room);
+ let loadedCount=0;
  for(const p of positions[room]??[]){
-  const file=p.name+'.glb',url=base+'assets/interior/'+file;
-  if(!await exists(url))continue;
+  const file=p.name+'.glb',folder=base+'assets/interior/';
+  if(!await exists(folder+file))continue;
   try{
-   const loaded=await SceneLoader.ImportMeshAsync('',base+'assets/interior/',file,scene);
-   const root=loaded.meshes[0];if(!root)continue;root.parent=group;root.computeWorldMatrix(true);
-   const bounds=root.getHierarchyBoundingVectors(true);
-   const span=bounds.max.subtract(bounds.min);
-   const scale=p.height/Math.max(span.y,.001);
-   if(!Number.isFinite(scale)||scale<=.01||scale>=500){root.dispose(false,true);continue;}
-   root.scaling.setAll(scale);root.computeWorldMatrix(true);
-   const b=root.getHierarchyBoundingVectors(true);
-   root.position.set(p.x-(b.min.x+b.max.x)/2,-b.min.y,p.z-(b.min.z+b.max.z)/2);
-  }catch(e){console.debug('Decoration unavailable:',p.name,e);}
+   const imported=await SceneLoader.ImportMeshAsync('',folder,file,scene);
+   const root=imported.meshes[0];
+   if(!root)continue;
+   const before=bounds(root);
+   const height=before.max.y-before.min.y;
+   const scale=p.height/Math.max(height,.001);
+   if(!Number.isFinite(scale)||scale<.01||scale>500){root.dispose(false,true);continue;}
+   root.scaling.scaleInPlace(scale);
+   const after=bounds(root);
+   const center=after.min.add(after.max).scale(.5);
+   // Determine world-origin correction *before* reparenting so exported asset offsets don't hide furniture.
+   root.position.addInPlace(new Vector3(p.x-center.x,-after.min.y,p.z-center.z));
+   root.parent=group;
+   root.isPickable=false;
+   imported.meshes.forEach(m=>m.isPickable=false);
+   // Only replace our primitive placeholder if the real imported model loaded successfully.
+   if(p.replace){
+    group.getChildMeshes(false).filter(m=>p.replace!.some(n=>m.name===n)).forEach(m=>{if(!imported.meshes.includes(m))m.setEnabled(false);});
+   }
+   loadedCount++;
+  }catch(error){console.warn('Could not display interior model',p.name,error);}
  }
+ console.info('DanielaKPOP 3D room',room,'imported',loadedCount,'of',(positions[room]??[]).length,'models');
 }
 export async function installHeldFood(scene:Scene,name:string,holder:TransformNode):Promise<boolean>{
- const url=base+'assets/food/'+name+'.glb';
+ const folder=base+'assets/food/',url=folder+name+'.glb';
  if(!await exists(url)||holder.isDisposed())return false;
  try{
-  const result=await SceneLoader.ImportMeshAsync('',base+'assets/food/',name+'.glb',scene);
-  const root=result.meshes[0];if(!root)return false;
+  const loaded=await SceneLoader.ImportMeshAsync('',folder,name+'.glb',scene);
+  const root=loaded.meshes[0];
+  if(!root)return false;
   if(holder.isDisposed()){root.dispose(false,true);return false;}
-  root.parent=holder;root.scaling.setAll(name==='soda-can'?.55:.52);
+  const before=bounds(root);
+  const span=before.max.subtract(before.min);
+  const targetHeight=name==='soda-can'?.42:name==='cupcake'?.31:.34;
+  const size=Math.max(span.x,span.y,span.z,.001);
+  const factor=targetHeight/size;
+  root.scaling.scaleInPlace(factor);
+  const b=bounds(root);
+  root.position.subtractInPlace(b.min.add(b.max).scale(.5));
+  root.parent=holder;
+  loaded.meshes.forEach(m=>m.isPickable=false);
   return true;
- }catch(e){console.debug('Food asset unavailable:',name,e);return false;}
+ }catch(error){console.warn('Could not display food GLB',name,error);return false;}
 }
