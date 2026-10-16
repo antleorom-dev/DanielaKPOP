@@ -44,7 +44,7 @@ export function dressRooms(scene:Scene, groups:Groups){
   cube(room,'poster frame',w+.16,h+.16,.08,x,y,z+.04,m.snow);
   const panel=cube(room,'poster '+label,w,h,.09,x,y,z,m[bg]);
   const tex=new DynamicTexture('poster texture '+label,{width:512,height:512},scene,false);
-  const ctx=tex.getContext();
+  const ctx=tex.getContext() as unknown as CanvasRenderingContext2D;
   ctx.clearRect(0,0,512,512);ctx.fillStyle=palettes[bg as keyof typeof palettes]??'#ffffff';ctx.fillRect(0,0,512,512);
   ctx.fillStyle='#ffffff65';ctx.beginPath();ctx.arc(115,120,98,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(390,365,122,0,Math.PI*2);ctx.fill();
   ctx.fillStyle=palettes[fg as keyof typeof palettes]??'#ffffff';
