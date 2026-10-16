@@ -146,7 +146,7 @@ export function createBath(c:Context){
  }
  function enter(isBath:boolean){
   active=isBath;painting=false;
-  if(isBath){seedVisibleDirt();setTool('soap');c.camera.detachControl(c.canvas);}
+  if(isBath){seedVisibleDirt();setTool('soap');c.camera.detachControl();}
   else {setTool(null);clearFoam();c.camera.attachControl(c.canvas,true);c.canvas.style.cursor='';}
   dirt.forEach(p=>p.mesh.setEnabled(isBath&&p.mesh.isEnabled()));
   if(isBath)seedVisibleDirt();
