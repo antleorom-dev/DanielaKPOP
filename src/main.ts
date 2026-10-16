@@ -1,8 +1,9 @@
 import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh} from '@babylonjs/core';
 import './style.css';
+import {createInteractions} from './interactions';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
-type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised';
+type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3';
 type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
 const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,lastSaved:Date.now(),lastGift:''};
@@ -10,25 +11,27 @@ let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};const mins=Math.min(240,Math.max(0,(Date.now()-(old.lastSaved||Date.now()))/60000));state.hunger=Math.max(0,state.hunger-mins*.13);state.energy=Math.max(0,state.energy-mins*.08);state.hygiene=Math.max(0,state.hygiene-mins*.05);state.happiness=Math.max(0,state.happiness-mins*.06);}}catch{}
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
-let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let soundEnabled=true;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let soundEnabled=true;let play:ReturnType<typeof createInteractions>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
 act('🧸','Mimos','+ felicidad',['#ffa6c9','#ef77b8'],'wave',{happiness:12},0,9,'¡Qué abrazo tan bonito! 💖'),
 act('💤','Dormir','+ energía',['#b7a5fb','#8b84ed'],'sleep',{energy:24,hunger:-4},0,11,'¡Una siesta reparadora! 🌙'),
-act('🎈','Jugar','+ felicidad',['#ffcf82','#ffa76b'],'jump',{happiness:14,energy:-6,hunger:-3},0,14,'¡Qué divertido! ✨')]},
+act('🏐','Voleibol','¡Golpea la pelota!',['#ffcf82','#ffa76b'],'volley',{happiness:14,energy:-6,hunger:-3},0,14,'¡Punto para Daniela! 🏐')]},
 kitchen:{title:'Cocina dulce',kicker:'✦ SWEET LITTLE CAFÉ ✦',sub:'¡El menú favorito de Daniela!',accent:'#ffc4a8',actions:[
 act('🍓','Fresas','10 monedas',['#ff9fb4','#f77d8c'],'eat',{hunger:22,happiness:4},-10,9,'¡Ñam! Fresas deliciosas 🍓'),
-act('🧋','Bubble tea','15 monedas',['#d1acf4','#a47de0'],'eat',{hunger:14,happiness:10},-15,13,'¡Su bebida favorita! 🧋'),
+act('🥤','Refresco','15 monedas',['#d1acf4','#a47de0'],'drink',{hunger:14,happiness:10},-15,13,'¡Qué refrescante! 🥤'),
 act('🧁','Cupcake','20 monedas',['#ffc891','#fa9db4'],'eat',{hunger:26,happiness:12},-20,17,'¡Un cupcake mágico! 🧁')]},
 bathroom:{title:'Baño burbuja',kicker:'✦ GLOW UP TIME ✦',sub:'Brilla por dentro y por fuera',accent:'#a8e6eb',actions:[
-act('🫧','Bañito','+ higiene',['#99dcef','#77bdea'],'bath',{hygiene:34,happiness:4},0,12,'¡Limpita y reluciente! 🫧'),
-act('🧴','Skincare','+ higiene',['#e4bbff','#b69bee'],'wave',{hygiene:17,happiness:7},0,9,'¡Rutina de belleza! 💆‍♀️'),
-act('🦷','Dientes','+ higiene',['#a3f1dc','#70c8bb'],'jump',{hygiene:14},0,8,'¡Sonrisa brillante! ✨')]},
+act('🧽','Esponja','Arrastra hasta Daniela',['#99dcef','#77bdea'],'bath',{},0,2,'¡Espuma! 🫧'),
+act('🚿','Agua','Aclarar las burbujas',['#e4bbff','#b69bee'],'bath',{},0,2,'¡Agüita fresca! 🚿'),
+act('🧴','Skincare','+ higiene',['#a3f1dc','#70c8bb'],'wave',{hygiene:14,happiness:4},0,8,'¡Sonrisa brillante! ✨')]},
 stage:{title:'Dance studio',kicker:'✦ DREAMS COME TRUE ✦',sub:'El escenario es todo tuyo',accent:'#c2a1fc',actions:[
 act('🎶','Bailar','+ 12 monedas',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-9,hunger:-5,hygiene:-3},12,18,'¡Dale al ritmo! 🎶'),
-act('🎤','Ensayar','+ 18 monedas',['#ff9dc8','#e577ba'],'dance',{energy:-14,hunger:-5,happiness:8},18,23,'¡Cada día canta mejor! 🎤'),
-act('🌟','Concierto','+ 35 monedas',['#ffd18c','#f6a36c'],'spin',{energy:-22,hunger:-10,happiness:20},35,40,'¡El público te adora! 🌟')]},
+act('🎤','Cantar','+ 18 monedas',['#ff9dc8','#e577ba'],'sing',{energy:-10,hunger:-4,happiness:8},18,23,'¡Qué voz de estrella! 🎤'),
+act('🪩','Dance pop','+ 15 monedas',['#aa9efb','#d7a4ff'],'dance2',{energy:-12,happiness:12},15,20,'¡Coreografía perfecta! 🪩'),
+act('💃','Dance cute','+ 15 monedas',['#f3a4bb','#ea80c2'],'dance3',{energy:-12,happiness:12},15,20,'¡Qué adorable! 💃'),
+act('🌟','Concierto','+ 35 monedas',['#ffd18c','#f6a36c'],'sing',{energy:-22,hunger:-10,happiness:20},35,40,'¡El público te adora! 🌟')]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
@@ -119,7 +122,7 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){room=next;for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){room=next;play?.enterRoom(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible');
 $('#action-label').textContent=room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';
@@ -127,7 +130,7 @@ wall.diffuseColor=Color3.FromHexString(room==='stage'?'#9d77c5':room==='bathroom
 floorMat.diffuseColor=Color3.FromHexString(room==='stage'?'#b5a1df':room==='bathroom'?'#d8edf5':room==='kitchen'?'#f4d7c0':'#e4c8ee');rim.diffuse=Color3.FromHexString(entry.accent);
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
-button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>perform(i));row.append(button);});
+button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
 animate('wave',1.1);}
 function toast(msg:string){$('#toast').textContent=msg;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
 function reward(msg:string){const el=$('#reward');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
@@ -137,7 +140,7 @@ function touchDaniela(x:number,y:number,headTap:boolean){const now=performance.n
 
 function sound(notes:number[]=[523,659,784]){if(!soundEnabled)return;try{const ctx=new AudioContext();notes.forEach((hz,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),time=ctx.currentTime+i*.095;osc.frequency.value=hz;gain.gain.setValueAtTime(.0001,time);gain.gain.exponentialRampToValueAtTime(.045,time+.015);gain.gain.exponentialRampToValueAtTime(.0001,time+.23);osc.connect(gain);gain.connect(ctx.destination);osc.start(time);osc.stop(time+.24);});setTimeout(()=>void ctx.close(),900);}catch{}}
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
-function perform(i:number){const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
+function perform(i:number){if(play?.beforeAction(room,i))return;const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
 if(room==='stage'&&state.energy<10){toast('¡Daniela está agotada! Llévala a descansar 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
@@ -145,7 +148,7 @@ fashion();for(const [need,delta] of Object.entries(a.effect) as [Need,number][])
 state.coins=Math.max(0,state.coins+a.coins);gainXP(a.xp);animate(a.move);
 const outfitNames=['Fresa pop','Lavender dream','Mint candy','Peach sparkle'],hairNames=['Chocolate','Strawberry','Lavender','Honey'];
 toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':a.message);
-reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();save();}
+reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh?.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
@@ -156,17 +159,18 @@ $('#daily-gift').addEventListener('click',()=>{const today=new Date().toLocaleDa
 $('#close-tutorial').addEventListener('click',()=>{$('#tutorial').classList.add('hidden');try{localStorage.setItem('danielakpop-tutorial','yes');}catch{}});
 try{if(localStorage.getItem('danielakpop-tutorial'))$('#tutorial').classList.add('hidden');}catch{}
 for(let i=0;i<17;i++){const item=document.createElement('span');item.className='particle';item.textContent=i%5===0?'♥':i%2?'✦':'✧';item.style.setProperty('--x',(i*37+11)%98+'%');item.style.setProperty('--y',(i*19+13)%75+'%');item.style.setProperty('--size',(9+i%4*4)+'px');item.style.setProperty('--time',(5+i%5)+'s');item.style.setProperty('--delay',(i%8*-.8)+'s');item.style.color=i%3?'#ffb7dc':'#fff5ce';$('#sparkles').append(item);}
+play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,arms,getRoom:()=>room,getHygiene:()=>state.hygiene,changeHygiene:(amount)=>{state.hygiene=num(state.hygiene+amount);state.happiness=num(state.happiness+2);render();save();},perform,animate,toast,reward,sound});
 showRoom('bedroom');fashion();render();
 engine.runRenderLoop(()=>{const now=performance.now(),t=now/1000,e=(now-started)/1000;if(e>duration&&move!=='idle')move='idle';
-body.position.y=move==='dance'?Math.abs(Math.sin(e*7))*.21:move==='jump'?Math.abs(Math.sin(e*5))*.32:move==='laugh'?Math.abs(Math.sin(e*13))*.09:move==='giggle'?Math.abs(Math.sin(e*8))*.05:move==='sleep'?-.23:Math.sin(t*2.1)*.046;
+body.position.y=move==='dance2'?Math.abs(Math.sin(e*10))*.27:move==='dance3'?Math.abs(Math.sin(e*5))*.17:move==='volley'?Math.abs(Math.sin(e*13))*.12:move==='dance'?Math.abs(Math.sin(e*7))*.21:move==='jump'?Math.abs(Math.sin(e*5))*.32:move==='laugh'?Math.abs(Math.sin(e*13))*.09:move==='giggle'?Math.abs(Math.sin(e*8))*.05:move==='sleep'?-.23:Math.sin(t*2.1)*.046;
 body.rotation.y=move==='spin'?e*6:move==='dance'?Math.sin(e*4)*.34:Math.sin(t*.8)*.065;
 body.rotation.z=move==='sleep'?.12:move==='dance'?Math.sin(e*7)*.09:move==='laugh'?Math.sin(e*14)*.09:move==='giggle'?Math.sin(e*9)*.045:Math.sin(t*1.2)*.018;
-arms[0].rotation.z=move==='laugh'?-1.05+Math.sin(e*13)*.19:move==='giggle'?-.5+Math.sin(e*9)*.15:move==='dance'?Math.sin(e*9)*.72:move==='jump'?-.65:move==='bath'?-.35:-.08;
-arms[1].rotation.z=move==='laugh'?1.05-Math.sin(e*13)*.19:move==='giggle'?.5-Math.sin(e*9)*.15:move==='wave'?Math.sin(e*13)*.65+1.3:move==='dance'?-Math.sin(e*9)*.72:move==='eat'?.78:move==='jump'?.65:.08;
-head.rotation.z=move==='laugh'?Math.sin(e*11)*.15:move==='giggle'?Math.sin(e*9)*.08:move==='sleep'?.14:move==='dance'?Math.sin(e*4)*.08:Math.sin(t*1.1)*.046;
-head.rotation.x=move==='laugh'?-.07+Math.sin(e*8)*.06:move==='giggle'?-.03:move==='eat'?Math.sin(e*7)*.075:move==='sleep'?.15:0;
-const giggling=move==='laugh'||move==='giggle';const blink=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';eyeMeshes.forEach(o=>o.scaling.y=giggling?.27:blink?.1:1.1);mouth.setEnabled(!giggling);laughingMouth.setEnabled(giggling);laughingMouth.scaling.y=move==='laugh'?.9+Math.sin(e*15)*.2:.6;
-bow.rotation.z=Math.sin(t*2)*.08;orbs.forEach((o,i)=>o.scaling.setAll(1+Math.sin(t*2+i*.7)*.18));scene.render();});
+arms[0].rotation.z=move==='volley'?-1.5+Math.sin(e*15)*.32:move==='sing'?-0.38+Math.sin(e*3)*.25:move==='dance2'?Math.cos(e*8)*1.1:move==='dance3'?-1+Math.sin(e*5)*.38:move==='laugh'?-1.05+Math.sin(e*13)*.19:move==='giggle'?-.5+Math.sin(e*9)*.15:move==='dance'?Math.sin(e*9)*.72:move==='jump'?-.65:move==='bath'?-.35:-.08;
+arms[1].rotation.z=move==='volley'?1.5-Math.sin(e*15)*.32:move==='sing'?.9+Math.sin(e*6)*.12:move==='dance2'?-Math.cos(e*8)*1.1:move==='dance3'?1-Math.cos(e*5)*.38:move==='laugh'?1.05-Math.sin(e*13)*.19:move==='giggle'?.5-Math.sin(e*9)*.15:move==='wave'?Math.sin(e*13)*.65+1.3:move==='dance'?-Math.sin(e*9)*.72:move==='drink'?1.0:move==='eat'?.78:move==='jump'?.65:.08;
+head.rotation.z=move==='laugh'?Math.sin(e*11)*.15:move==='giggle'?Math.sin(e*9)*.08:move==='volley'?Math.sin(e*14)*.12:move==='sing'?Math.sin(e*5)*.06:move==='dance2'?Math.sin(e*9)*.14:move==='dance3'?Math.cos(e*6)*.13:move==='sleep'?.14:move==='dance'?Math.sin(e*4)*.08:Math.sin(t*1.1)*.046;
+head.rotation.x=move==='laugh'?-.07+Math.sin(e*8)*.06:move==='giggle'?-.03:move==='sing'?Math.sin(e*10)*.085:move==='drink'?-.11+Math.sin(e*4)*.05:move==='eat'?Math.sin(e*7)*.075:move==='sleep'?.15:0;
+const giggling=move==='laugh'||move==='giggle';const blink=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';eyeMeshes.forEach(o=>o.scaling.y=giggling?.27:blink?.1:1.1);mouth.setEnabled(!giggling);laughingMouth.setEnabled(giggling||move==='sing');laughingMouth.scaling.y=move==='sing'?.75+Math.sin(e*11)*.4:move==='laugh'?.9+Math.sin(e*15)*.2:.6;mouth.setEnabled(!(giggling||move==='sing'));
+bow.rotation.z=Math.sin(t*2)*.08;orbs.forEach((o,i)=>o.scaling.setAll(1+Math.sin(t*2+i*.7)*.18));play?.tick(now);scene.render();});
 addEventListener('resize',()=>engine.resize());
 setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.16);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();save();},60000);
 addEventListener('pagehide',save);
