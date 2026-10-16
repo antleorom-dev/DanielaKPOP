@@ -18,6 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Extract uploaded game resources
+        run: |
+          if [ -f DanielaKPOP-recursos-v0.4.zip ]; then
+            unzip -oq DanielaKPOP-recursos-v0.4.zip -d .
+          fi
       - run: npm install
       - run: npm run build -- --base=/DanielaKPOP/
       - uses: actions/configure-pages@v5
