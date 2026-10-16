@@ -20,9 +20,14 @@ jobs:
           node-version: '22'
       - name: Extract uploaded game resources
         run: |
-          if [ -f DanielaKPOP-recursos-v0.4.zip ]; then
+          if [ -f public/assets/DanielaKPOP-recursos-v0.4.zip ]; then
+            unzip -oq public/assets/DanielaKPOP-recursos-v0.4.zip -d .
+          elif [ -f DanielaKPOP-recursos-v0.4.zip ]; then
             unzip -oq DanielaKPOP-recursos-v0.4.zip -d .
           fi
+          test -f public/assets/studio-song.mp3 || { echo "ERROR: falta studio-song.mp3 en el paquete"; exit 1; }
+          test -f public/assets/interior/Bed_King.glb || { echo "ERROR: falta Bed_King.glb en el paquete"; exit 1; }
+          echo "Recursos de música y mobiliario listos para el despliegue."
       - run: npm install
       - run: npm run build -- --base=/DanielaKPOP/
       - uses: actions/configure-pages@v5
