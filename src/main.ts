@@ -1,9 +1,10 @@
 import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
+import {dressRooms} from './decor';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
-type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3';
+type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
 type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
 const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,lastSaved:Date.now(),lastGift:''};
@@ -31,6 +32,8 @@ act('🎶','Bailar','+ 12 monedas',['#e7a4ff','#aa82ed'],'dance',{happiness:12,e
 act('🎤','Cantar','+ 18 monedas',['#ff9dc8','#e577ba'],'sing',{energy:-10,hunger:-4,happiness:8},18,23,'¡Qué voz de estrella! 🎤'),
 act('🪩','Dance pop','+ 15 monedas',['#aa9efb','#d7a4ff'],'dance2',{energy:-12,happiness:12},15,20,'¡Coreografía perfecta! 🪩'),
 act('💃','Dance cute','+ 15 monedas',['#f3a4bb','#ea80c2'],'dance3',{energy:-12,happiness:12},15,20,'¡Qué adorable! 💃'),
+act('🔥','Hip-hop','+ 20 monedas',['#db9ffd','#a47eec'],'dance4',{energy:-14,happiness:14},20,24,'¡Daniela domina el ritmo! 🔥'),
+act('🪩','Disco','+ 17 monedas',['#f6b889','#e78ac8'],'dance5',{energy:-12,happiness:11},17,22,'¡Pura energía disco! ✨'),
 act('🌟','Concierto','+ 35 monedas',['#ffd18c','#f6a36c'],'sing',{energy:-22,hunger:-10,happiness:20},35,40,'¡El público te adora! 🌟')]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
@@ -61,6 +64,7 @@ box('floor',14,.26,11,0,-.18,1.05,floorMat);box('back wall',14,7,.3,0,3.25,6.3,w
 for(let i=-6;i<=6;i++)for(let j=-4;j<=5;j++)if((i+j)%2===0)box('tile',.97,.012,.97,i,0,j+.7,white).visibility=.12;
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
 const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene)};
+dressRooms(scene,groups);
 const bed=groups.bedroom;
 box('bed base',3.2,.48,1.85,3,.36,3.75,wood,bed);box('mattress',3.05,.32,1.72,3,.71,3.7,white,bed);box('blanket',3,.12,1.02,3,.92,3.44,lilac,bed);
 for(const x of [2.25,3.25])ball('pillow',.63,x,.94,4.14,white,bed).scaling.set(1.17,.37,.75);
@@ -91,7 +95,13 @@ box('fancy mirror',2.4,3.9,.13,-3.8,2.18,5.8,gold,closet);box('mirror glass',2.1
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
 const shadow=cyl('contact shadow',1.6,1.6,.024,0,.015,0,mat('shadow','#d2a2ce'),idol);shadow.visibility=.27;
-for(const s of [-1,1]){ball('shoe',.43,s*.37,.17,-.14,white,body).scaling.set(1.1,.5,1.33);ball('leg',.43,s*.34,.59,0,skin,body).scaling.y=1.15;cyl('sock',.41,.41,.3,s*.34,.33,0,trim,body);}
+const legs:TransformNode[]=[];
+for(const side of [-1,1]){
+ const joint=new TransformNode('animated leg hip',scene);joint.parent=body;joint.position.set(side*.34,.86,0);legs.push(joint);
+ ball('shoe',.43,side*.03,-.69,-.14,white,joint).scaling.set(1.1,.5,1.33);
+ ball('leg',.43,0,-.27,0,skin,joint).scaling.y=1.15;
+ cyl('sock',.41,.41,.3,0,-.53,0,trim,joint);
+}
 ball('shirt',1.24,0,1.54,0,trim,body).scaling.set(.86,.9,.72);
 const dress=cyl('dress',.98,1.53,.93,0,1,0,dressColors[state.outfit%4],body);
 ball('collar',.3,0,1.92,-.46,trim,body).scaling.set(1.05,.5,.3);
@@ -99,6 +109,10 @@ for(let i=0;i<8;i++){const a=Math.PI*2*i/8;ball('lace',.23,Math.cos(a)*.7,.56,Ma
 ball('dress badge',.17,0,1.38,-.51,gold,body).scaling.set(1.1,.96,.3);
 const arms:TransformNode[]=[];const sleeves:Mesh[]=[];
 for(const s of [-1,1]){const pivot=new TransformNode('arm pivot',scene);pivot.parent=body;pivot.position.set(s*.67,1.79,0);arms.push(pivot);sleeves.push(ball('puff sleeve',.46,s*.13,-.18,0,dressColors[state.outfit%4],pivot));ball('arm',.4,s*.2,-.43,0,skin,pivot).scaling.y=1.45;ball('hand',.36,s*.2,-.72,0,skin,pivot);}
+const microphone=new TransformNode('microphone in hand',scene);microphone.parent=arms[1];
+cyl('microphone handle',.14,.14,.45,.2,-.83,-.23,dark,microphone);
+ball('microphone head',.27,.2,-1.08,-.23,gold,microphone);
+microphone.setEnabled(false);
 const head=new TransformNode('head',scene);head.parent=body;head.position.set(0,2.56,0);
 ball('face',1.65,0,0,-.055,skin,head).scaling.set(.97,1.03,.89);
 const hairParts:Mesh[]=[];function hair(n:string,d:number,x:number,y:number,z:number){const o=ball(n,d,x,y,z,hairColors[state.hair%4],head);hairParts.push(o);return o;}
@@ -140,7 +154,7 @@ function touchDaniela(x:number,y:number,headTap:boolean){const now=performance.n
 
 function sound(notes:number[]=[523,659,784]){if(!soundEnabled)return;try{const ctx=new AudioContext();notes.forEach((hz,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),time=ctx.currentTime+i*.095;osc.frequency.value=hz;gain.gain.setValueAtTime(.0001,time);gain.gain.exponentialRampToValueAtTime(.045,time+.015);gain.gain.exponentialRampToValueAtTime(.0001,time+.23);osc.connect(gain);gain.connect(ctx.destination);osc.start(time);osc.stop(time+.24);});setTimeout(()=>void ctx.close(),900);}catch{}}
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
-function perform(i:number){if(play?.beforeAction(room,i))return;const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
+function perform(i:number){if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
 if(room==='stage'&&state.energy<10){toast('¡Daniela está agotada! Llévala a descansar 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
@@ -151,7 +165,7 @@ toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&
 reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
-canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh?.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
+canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh?.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=8.2;camera.target.set(0,1.86,.3);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
@@ -159,27 +173,80 @@ $('#daily-gift').addEventListener('click',()=>{const today=new Date().toLocaleDa
 $('#close-tutorial').addEventListener('click',()=>{$('#tutorial').classList.add('hidden');try{localStorage.setItem('danielakpop-tutorial','yes');}catch{}});
 try{if(localStorage.getItem('danielakpop-tutorial'))$('#tutorial').classList.add('hidden');}catch{}
 for(let i=0;i<17;i++){const item=document.createElement('span');item.className='particle';item.textContent=i%5===0?'♥':i%2?'✦':'✧';item.style.setProperty('--x',(i*37+11)%98+'%');item.style.setProperty('--y',(i*19+13)%75+'%');item.style.setProperty('--size',(9+i%4*4)+'px');item.style.setProperty('--time',(5+i%5)+'s');item.style.setProperty('--delay',(i%8*-.8)+'s');item.style.color=i%3?'#ffb7dc':'#fff5ce';$('#sparkles').append(item);}
-play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,arms,getRoom:()=>room,getHygiene:()=>state.hygiene,changeHygiene:(amount)=>{state.hygiene=num(state.hygiene+amount);state.happiness=num(state.happiness+2);render();save();},perform,animate,toast,reward,sound});
+play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,arms,
+ getRoom:()=>room,getHygiene:()=>state.hygiene,
+ changeHygiene:(amount)=>{state.hygiene=num(state.hygiene+amount);state.happiness=num(state.happiness+1);render();save();},
+ onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
+ perform,animate,toast,reward,sound});
 showRoom('bedroom');fashion();render();
-engine.runRenderLoop(()=>{const now=performance.now(),t=now/1000,e=(now-started)/1000;if(e>duration&&move!=='idle')move='idle';
-body.position.y=move==='dance2'?Math.abs(Math.sin(e*10))*.27:move==='dance3'?Math.abs(Math.sin(e*5))*.17:move==='volley'?Math.abs(Math.sin(e*13))*.12:move==='dance'?Math.abs(Math.sin(e*7))*.21:move==='jump'?Math.abs(Math.sin(e*5))*.32:move==='laugh'?Math.abs(Math.sin(e*13))*.09:move==='giggle'?Math.abs(Math.sin(e*8))*.05:move==='sleep'?-.23:Math.sin(t*2.1)*.046;
-body.rotation.y=move==='spin'?e*6:move==='dance'?Math.sin(e*4)*.34:Math.sin(t*.8)*.065;
-body.rotation.z=move==='sleep'?.12:move==='dance'?Math.sin(e*7)*.09:move==='laugh'?Math.sin(e*14)*.09:move==='giggle'?Math.sin(e*9)*.045:Math.sin(t*1.2)*.018;
-arms[0].rotation.z=move==='volley'?-1.5+Math.sin(e*15)*.32:move==='sing'?-0.38+Math.sin(e*3)*.25:move==='dance2'?Math.cos(e*8)*1.1:move==='dance3'?-1+Math.sin(e*5)*.38:move==='laugh'?-1.05+Math.sin(e*13)*.19:move==='giggle'?-.5+Math.sin(e*9)*.15:move==='dance'?Math.sin(e*9)*.72:move==='jump'?-.65:move==='bath'?-.35:-.08;
-const eating=move==='eat'||move==='drink';
-const gripLift=Math.max(0,Math.min(1,(e-.12)/.69));
-const gripDown=Math.max(0,Math.min(1,(e-2.50)/.57));
-const bringToMouth=gripLift*(1-gripDown);
-arms[1].position.z=eating?-.43*bringToMouth:0;
-arms[1].rotation.z=eating?.08-2.44*bringToMouth+(e>1&&e<2.5?Math.sin(e*12)*.045:0):move==='volley'?1.5-Math.sin(e*15)*.32:move==='sing'?.9+Math.sin(e*6)*.12:move==='dance2'?-Math.cos(e*8)*1.1:move==='dance3'?1-Math.cos(e*5)*.38:move==='laugh'?1.05-Math.sin(e*13)*.19:move==='giggle'?.5-Math.sin(e*9)*.15:move==='wave'?Math.sin(e*13)*.65+1.3:move==='dance'?-Math.sin(e*9)*.72:move==='jump'?.65:.08;
-head.rotation.z=move==='laugh'?Math.sin(e*11)*.15:move==='giggle'?Math.sin(e*9)*.08:move==='volley'?Math.sin(e*14)*.12:move==='sing'?Math.sin(e*5)*.06:move==='dance2'?Math.sin(e*9)*.14:move==='dance3'?Math.cos(e*6)*.13:move==='sleep'?.14:move==='dance'?Math.sin(e*4)*.08:Math.sin(t*1.1)*.046;
-head.rotation.x=move==='laugh'?-.07+Math.sin(e*8)*.06:move==='giggle'?-.03:move==='sing'?Math.sin(e*10)*.085:move==='drink'?-.09+Math.sin(e*6)*.043:move==='eat'?Math.sin(e*12)*.065:move==='sleep'?.15:0;
-const giggling=move==='laugh'||move==='giggle';const blink=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';
-eyeMeshes.forEach(o=>o.scaling.y=giggling?.27:eating?.74:blink?.1:1.1);
-const mouthMoving=giggling||move==='sing'||eating;
-mouth.setEnabled(!mouthMoving);laughingMouth.setEnabled(mouthMoving);
-laughingMouth.scaling.y=move==='eat'?.34+Math.abs(Math.sin(e*13))*.43:move==='drink'?.23+Math.abs(Math.sin(e*7))*.19:move==='sing'?.75+Math.sin(e*11)*.4:move==='laugh'?.9+Math.sin(e*15)*.2:.6;
-bow.rotation.z=Math.sin(t*2)*.08;orbs.forEach((o,i)=>o.scaling.setAll(1+Math.sin(t*2+i*.7)*.18));play?.tick(now);scene.render();});
+engine.runRenderLoop(()=>{
+ const now=performance.now(),t=now/1000,e=(now-started)/1000;
+ if(e>duration&&move!=='idle')move='idle';
+ const a=e;const sin=Math.sin,cos=Math.cos,abs=Math.abs;
+ const dance=move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
+ const fast=move==='dance2'||move==='dance4';
+ const beat=fast?9:move==='dance3'?5.5:move==='dance5'?6.5:7;
+ const b=sin(a*beat),step=sin(a*beat*.5);
+ const isEating=move==='eat'||move==='drink';
+ const isVolley=move==='volley';
+ microphone.setEnabled(move==='sing'&&room==='stage');
+ // Each choreography uses its own weight shift, bounce, turns, arms and steps.
+ body.position.x=dance?move==='dance4'?sin(a*4)*.16:move==='dance5'?sin(a*3)*.2:sin(a*beat*.5)*.12:0;
+ body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
+  isVolley?abs(sin(a*13))*.22:move==='jump'?abs(sin(a*5))*.32:
+  move==='laugh'?abs(sin(a*13))*.09:move==='giggle'?abs(sin(a*8))*.05:
+  move==='sleep'?-.23:sin(t*2.1)*.046;
+ body.rotation.x=dance?move==='dance4'?.14+sin(a*beat)*.13:move==='dance5'?sin(a*3)*.08:sin(a*beat)*.05:
+  isVolley?-.16*sin(a*9):0;
+ body.rotation.y=move==='spin'?a*6:move==='dance5'?sin(a*2.4)*.46:
+  dance?sin(a*4)*.18:sin(t*.8)*.065;
+ body.rotation.z=move==='sleep'?.12:move==='dance4'?sin(a*beat/2)*.16:
+  move==='dance3'?sin(a*4)*.11:dance?sin(a*beat)*.075:
+  move==='laugh'?sin(a*14)*.09:move==='giggle'?sin(a*9)*.045:sin(t*1.2)*.018;
+ legs[0].rotation.x=dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):0;
+ legs[1].rotation.x=dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):0;
+ legs[0].rotation.z=dance?(move==='dance5'?.12+step*.13:step*.1):0;
+ legs[1].rotation.z=dance?(move==='dance5'?-.12-step*.13:-step*.1):0;
+ // A K-pop routine should not share the same generic arm animation.
+ let left=.08,right=-.08,leftX=0,rightX=0;
+ if(move==='wave'){right=1.3+sin(a*13)*.65;}
+ else if(move==='jump'){left=-.65;right=.65;}
+ else if(move==='bath'){left=-.35;right=.35+sin(a*7)*.2;}
+ else if(move==='dance'){left=sin(a*8)*.85;right=-sin(a*8)*.85;leftX=.23*cos(a*4);rightX=-.23*cos(a*4);}
+ else if(move==='dance2'){left=-1.1+sin(a*10)*.4;right=1.1-cos(a*10)*.4;leftX=cos(a*9)*.53;rightX=-cos(a*9)*.53;}
+ else if(move==='dance3'){left=-1.0+sin(a*5.5)*.32;right=1.0-cos(a*5.5)*.32;leftX=.4;rightX=-.4;}
+ else if(move==='dance4'){left=-.35+sin(a*10)*.83;right=.35+cos(a*10)*.83;leftX=-.48;rightX=.48;}
+ else if(move==='dance5'){left=sin(a*3)>0?-2.2:-.35;right=sin(a*3)>0?.35:2.2;leftX=.17;rightX=-.17;}
+ else if(move==='sing'){left=-.34+sin(a*3)*.22;right=-1.7+sin(a*6)*.1;rightX=-.19;}
+ else if(isVolley){left=-1.72+sin(a*11)*.32;right=1.72-sin(a*11)*.32;leftX=-.16;rightX=-.16;}
+ else if(move==='laugh'){left=-1.05+sin(a*13)*.19;right=1.05-sin(a*13)*.19;}
+ else if(move==='giggle'){left=-.5+sin(a*9)*.15;right=.5-sin(a*9)*.15;}
+ const gripUp=Math.max(0,Math.min(1,(a-.12)/.69));
+ const gripDown=Math.max(0,Math.min(1,(a-2.5)/.57));
+ const bringToMouth=gripUp*(1-gripDown);
+ arms[0].rotation.z=left;arms[0].rotation.x=leftX;
+ arms[1].position.z=isEating?-.43*bringToMouth:0;
+ arms[1].rotation.z=isEating?.08-2.44*bringToMouth+(a>1&&a<2.5?sin(a*12)*.045:0):right;
+ arms[1].rotation.x=isEating?-.15*bringToMouth:rightX;
+ head.rotation.z=move==='laugh'?sin(a*11)*.15:move==='giggle'?sin(a*9)*.08:
+  dance?sin(a*beat*.62)*.13:isVolley?sin(a*14)*.12:
+  move==='sleep'?.14:sin(t*1.1)*.046;
+ head.rotation.x=move==='laugh'?-.07+sin(a*8)*.06:move==='giggle'?-.03:
+  move==='sing'?sin(a*10)*.085:move==='drink'?-.09+sin(a*6)*.043:
+  move==='eat'?sin(a*12)*.065:move==='sleep'?.15:dance?sin(a*beat)*.07:0;
+ const giggling=move==='laugh'||move==='giggle';
+ const blinking=(t%4.1>3.82&&t%4.1<3.94)||move==='sleep';
+ eyeMeshes.forEach(o=>o.scaling.y=giggling?.27:isEating?.74:blinking?.1:1.1);
+ const mouthMoving=giggling||move==='sing'||isEating;
+ mouth.setEnabled(!mouthMoving);laughingMouth.setEnabled(mouthMoving);
+ laughingMouth.scaling.y=move==='eat'?.34+abs(sin(a*13))*.43:
+  move==='drink'?.23+abs(sin(a*7))*.19:move==='sing'?.75+sin(a*11)*.4:
+  move==='laugh'?.9+sin(a*15)*.2:.6;
+ bow.rotation.z=sin(t*2)*.08;
+ orbs.forEach((o,i)=>o.scaling.setAll(1+sin(t*2+i*.7)*.18));
+ play?.tick(now);
+ scene.render();
+});
 addEventListener('resize',()=>engine.resize());
 setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.16);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();save();},60000);
 addEventListener('pagehide',save);
