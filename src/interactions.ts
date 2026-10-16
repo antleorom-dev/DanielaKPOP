@@ -1,227 +1,262 @@
-
-import {Scene, Mesh, MeshBuilder, StandardMaterial, Color3, Vector3, TransformNode, ArcRotateCamera, Matrix} from '@babylonjs/core';
+import {Scene,Mesh,MeshBuilder,StandardMaterial,Color3,Vector3,TransformNode,ArcRotateCamera,Matrix} from '@babylonjs/core';
 import './interactions.css';
 import {installRoomAssets,installHeldFood} from './assets';
+import {createBath} from './bath';
+import {makeVolleyball} from './volleyball';
 
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
-type Mode='sponge'|'water'|null;
+type Move='idle'|'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3'|'dance4'|'dance5';
 type Dependencies={
  scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;
  idol:TransformNode;body:TransformNode;head:TransformNode;dress:Mesh;groups:Record<Room,TransformNode>;
  skin:StandardMaterial;arms:TransformNode[];
  getRoom:()=>Room;getHygiene:()=>number;changeHygiene:(amount:number)=>void;
- perform:(index:number)=>void;animate:(name:'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3',duration?:number)=>void;
+ onVolleyHit:()=>void;
+ perform:(index:number)=>void;animate:(name:Move,duration?:number)=>void;
  toast:(msg:string)=>void;reward:(msg:string)=>void;sound:(notes?:number[])=>void;
 };
 const base=import.meta.env.BASE_URL;
 export function createInteractions(c:Dependencies){
- const bubbleMat=new StandardMaterial('bath foam pearlescent',c.scene);
- bubbleMat.diffuseColor=Color3.FromHexString('#c7f6ff');bubbleMat.emissiveColor=Color3.FromHexString('#a9dff0');bubbleMat.alpha=.81;
- const grimeMat=new StandardMaterial('visible soft dirt',c.scene);
- grimeMat.diffuseColor=Color3.FromHexString('#9e807f');grimeMat.alpha=.65;
- const aquaMat=new StandardMaterial('shower droplets',c.scene);
- aquaMat.diffuseColor=Color3.FromHexString('#5dcbe8');aquaMat.alpha=.67;
- const swimsuitMat=new StandardMaterial('pink swimsuit',c.scene);swimsuitMat.diffuseColor=Color3.FromHexString('#fb8fbd');
- const white=new StandardMaterial('sport white',c.scene);white.diffuseColor=Color3.FromHexString('#fff9fa');
- const pink=new StandardMaterial('stereo glow',c.scene);pink.diffuseColor=Color3.FromHexString('#e99ed2');pink.emissiveColor=Color3.FromHexString('#34104b');
- function ball(name:string,diameter:number,x:number,y:number,z:number,m:StandardMaterial,parent:TransformNode){
-  const mesh=MeshBuilder.CreateSphere(name,{diameter,segments:12},c.scene);mesh.parent=parent;mesh.position.set(x,y,z);mesh.material=m;return mesh;
+ const bubbleMaterial=new StandardMaterial('shower pearlescent',c.scene);
+ bubbleMaterial.diffuseColor=Color3.FromHexString('#cdf3ff');
+ bubbleMaterial.alpha=.88;
+ const pink=new StandardMaterial('stereo pink',c.scene);
+ pink.diffuseColor=Color3.FromHexString('#f1a3d3');
+ const bright=new StandardMaterial('stereo bright',c.scene);
+ bright.diffuseColor=Color3.FromHexString('#a7f0ff');
+ bright.emissiveColor=Color3.FromHexString('#38cde6');
+ const white=new StandardMaterial('volleyball white',c.scene);
+ white.diffuseColor=Color3.FromHexString('#fffdf9');
+ const skinPink=new StandardMaterial('bathing suit',c.scene);
+ skinPink.diffuseColor=Color3.FromHexString('#f7a0c9');
+ const seams=new StandardMaterial('volleyball piping',c.scene);
+ seams.diffuseColor=Color3.FromHexString('#8d97d9');
+ const toy=new StandardMaterial('food fallback',c.scene);
+ toy.diffuseColor=Color3.FromHexString('#f99cba');
+ function sphere(n:string,d:number,x:number,y:number,z:number,m:StandardMaterial,parent:TransformNode){
+  const mesh=MeshBuilder.CreateSphere(n,{diameter:d,segments:14},c.scene);
+  mesh.parent=parent;mesh.position.set(x,y,z);mesh.material=m;return mesh;
  }
- const top=MeshBuilder.CreateSphere('swimsuit top',{diameter:.94,segments:14},c.scene);
- top.parent=c.body;top.position.set(0,1.55,-.025);top.scaling.set(.89,.46,.83);top.material=swimsuitMat;
- const bottom=MeshBuilder.CreateCylinder('swimsuit bottoms',{diameterTop:.91,diameterBottom:1.12,height:.41,tessellation:20},c.scene);
- bottom.parent=c.body;bottom.position.set(0,.94,0);bottom.material=swimsuitMat;
- const spots=[
-  ball('dirt cheek one',.24,-.45,-.37,-.738,grimeMat,c.head),
-  ball('dirt cheek two',.18,.45,-.37,-.745,grimeMat,c.head),
-  ball('dirt dress one',.31,-.25,1.15,-.62,grimeMat,c.body),
-  ball('dirt dress two',.25,.36,.95,-.64,grimeMat,c.body)
- ];
- spots.forEach((mesh,i)=>mesh.scaling.set(1,.7,.24+(i%2)*.1));
- const foam=Array.from({length:23},(_,i)=>{
-  const a=i*2.39996,r=.24+.44*Math.sqrt((i+1)/23),y=.72+(i%7)*.24;
-  const b=ball('soap bubble '+i,.12+(i%4)*.055,Math.cos(a)*r,y,-.68-Math.sin(a)*.085,bubbleMat,c.body);
-  b.setEnabled(false);return b;
- });
- const waterDrops=Array.from({length:27},(_,i)=>{
-  const d=ball('falling water '+i,.06+(i%4)*.02,Math.sin(i*5)*.77,2.6,-.75+Math.cos(i*3)*.21,aquaMat,c.idol);
-  d.setEnabled(false);return d;
- });
- let foamLevel=0,waterUntil=0,stagePlaying=false,interactionMode:Mode=null,lastScrub=0,volleyUntil=0,volleyStart=0,lastMusicDance=0,musicDanceIndex=0;
- const audio=new Audio(base+'assets/studio-song.mp3');audio.loop=true;audio.preload='none';audio.volume=.62;
- const stereo=new TransformNode('interactive stereo',c.scene);stereo.parent=c.groups.stage;
- function cube(name:string,w:number,h:number,d:number,x:number,y:number,z:number,m:StandardMaterial){
-  const o=MeshBuilder.CreateBox(name,{width:w,height:h,depth:d},c.scene);o.parent=stereo;o.position.set(x,y,z);o.material=m;return o;
+ const bath=createBath({scene:c.scene,canvas:c.canvas,camera:c.camera,body:c.body,head:c.head,
+  getHygiene:c.getHygiene,changeHygiene:c.changeHygiene,toast:c.toast,sound:c.sound});
+ // On entering the bath, Daniela changes her outfit (all pieces, not only the dress).
+ const swimsuitTop=sphere('bikini top',.94,0,1.55,-.025,skinPink,c.body);
+ swimsuitTop.scaling.set(.89,.46,.83);
+ const swimsuitBottom=MeshBuilder.CreateCylinder('bikini bottom',{diameterTop:.91,diameterBottom:1.12,height:.41,tessellation:20},c.scene);
+ swimsuitBottom.parent=c.body;swimsuitBottom.position.set(0,.94,0);swimsuitBottom.material=skinPink;
+ const outfitMeshes=c.body.getChildMeshes(false).filter(m=>['dress','shirt','collar','puff sleeve','lace','dress badge'].includes(m.name)&&m!==swimsuitTop&&m!==swimsuitBottom);
+ const stereo=new TransformNode('interactive stereo',c.scene);
+ stereo.parent=c.groups.stage;
+ function stereoBox(n:string,w:number,h:number,d:number,x:number,y:number,z:number,mat:StandardMaterial){
+  const mesh=MeshBuilder.CreateBox('stereo '+n,{width:w,height:h,depth:d},c.scene);
+  mesh.parent=stereo;mesh.position.set(x,y,z);mesh.material=mat;return mesh;
  }
- cube('stereo main body',1.44,.85,.54,3.15,1.05,1.15,white);
- cube('stereo front',1.33,.67,.09,3.15,1.05,.85,pink);
- const speakers=[-1,1].map(s=>{
-  const o=MeshBuilder.CreateCylinder('stereo speaker', {diameter:.42,height:.10,tessellation:24},c.scene);
-  o.parent=stereo;o.position.set(3.15+s*.42,1.04,.76);o.rotation.x=Math.PI/2;o.material=swimsuitMat;return o;
+ stereoBox('case',1.5,.98,.62,3.1,1.06,1.07,white);
+ stereoBox('front',1.38,.83,.10,3.1,1.08,.71,pink);
+ stereoBox('top',1.53,.13,.7,3.1,1.6,1.07,white);
+ const stereoScreen=stereoBox('display',.40,.22,.05,3.1,1.29,.62,bright);
+ const speakerParts=[-1,1].map(s=>{
+  const p=MeshBuilder.CreateCylinder('stereo speaker',{diameter:.41,height:.1,tessellation:24},c.scene);
+  p.parent=stereo;p.position.set(3.1+s*.43,1.04,.61);p.rotation.x=Math.PI/2;p.material=skinPink;return p;
  });
- const screen=cube('stereo screen',.36,.22,.05,3.15,1.27,.76,aquaMat);
- cube('stereo top',1.58,.1,.66,3.15,1.51,1.13,white);
- const volleyball=ball('volleyball 3D',.55,-2,1,-1.2,white,c.groups.bedroom);
- const seams=new StandardMaterial('volleyball seams',c.scene);seams.diffuseColor=Color3.FromHexString('#7c94e5');
- for(let a=0;a<3;a++){
-  const ring=MeshBuilder.CreateTorus('volleyball stripe '+a,{diameter:.57,thickness:.027,tessellation:28},c.scene);
-  ring.parent=volleyball;ring.rotation.set(a*Math.PI/3,a*Math.PI/4,0);ring.material=seams;
+ const audio=new Audio(base+'assets/studio-song.mp3');
+ audio.loop=true;audio.volume=.6;audio.preload='none';
+ let musicPlaying=false,lastDance=0,danceIndex=0;
+ const volleyball=sphere('volleyball 3D',.58,-2.6,.35,-3.0,white,c.groups.bedroom);
+ for(let i=0;i<3;i++){
+  const strip=MeshBuilder.CreateTorus('volleyball stripe',{diameter:.59,thickness:.025,tessellation:32},c.scene);
+  strip.parent=volleyball;strip.rotation.set(i*Math.PI/3,i*Math.PI/5,0);strip.material=seams;
  }
- const tools=document.createElement('div');tools.id='activity-tools';tools.setAttribute('aria-live','polite');document.querySelector('#app')!.append(tools);
- const audioControl=document.createElement('button');audioControl.type='button';audioControl.className='music-switch';audioControl.textContent='🎵 Encender música';audioControl.setAttribute('aria-label','Encender o apagar minicadena del estudio');audioControl.addEventListener('click',toggleStereo);
- tools.append(audioControl);
- const washHint=document.createElement('span');washHint.className='wash-hint';washHint.textContent='🧽 Esponja → 🚿 Agua';tools.append(washHint);
- const volleyButton=document.createElement('button');volleyButton.className='volley-switch';volleyButton.textContent='🏐 Lanzar pelota';volleyButton.addEventListener('click',throwBall);tools.append(volleyButton);
- const dragGhost=document.createElement('div');dragGhost.id='drag-ghost';document.querySelector('#app')!.append(dragGhost);
- let activeDrags=0;
+ const volley=makeVolleyball({
+  scene:c.scene,canvas:c.canvas,camera:c.camera,ball:volleyball,isHome:()=>c.getRoom()==='bedroom',
+  animateHit:()=>{c.animate('volley',1.25);c.sound([480,670,940]);},
+  onHit:(combo)=>{c.onVolleyHit();c.reward(combo>1?'🏐 COMBO ×'+combo:'🏐 ¡PUNTAZO!');c.toast(combo>1?'¡'+combo+' toques seguidos! 🏐':'¡Daniela te devuelve la pelota! 🏐');}
+ });
+ const tools=document.createElement('div');tools.id='activity-tools';tools.setAttribute('aria-live','polite');
+ document.querySelector('#app')!.append(tools);
+ const musicButton=document.createElement('button');musicButton.type='button';musicButton.className='music-switch';
+ musicButton.setAttribute('aria-label','Encender o apagar la minicadena del estudio');
+ musicButton.textContent='🎵 Encender música';
+ musicButton.addEventListener('click',()=>void toggleStereo());
+ tools.append(musicButton);
+ const washHint=document.createElement('span');washHint.className='wash-hint';
+ washHint.textContent='🧽 Elige jabón y frota';tools.append(washHint);
+ const ballButton=document.createElement('button');ballButton.type='button';ballButton.className='volley-switch';
+ ballButton.textContent='🏐 Tira la pelota';tools.append(ballButton);
+ const ghost=document.createElement('div');ghost.id='drag-ghost';document.querySelector('#app')!.append(ghost);
+ let currentDrag:{pointer:number;x:number;y:number;at:number;moved:boolean}|null=null;
+ ballButton.style.touchAction='none';
+ ballButton.addEventListener('pointerdown',e=>{
+  currentDrag={pointer:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),moved:false};
+  ballButton.setPointerCapture(e.pointerId);
+ });
+ ballButton.addEventListener('pointermove',e=>{
+  if(!currentDrag||currentDrag.pointer!==e.pointerId)return;
+  if(Math.hypot(e.clientX-currentDrag.x,e.clientY-currentDrag.y)>10)currentDrag.moved=true;
+  if(currentDrag.moved){ghost.textContent='🏐';ghost.classList.add('dragging');ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';e.preventDefault();}
+ });
+ ballButton.addEventListener('pointerup',e=>{
+  if(!currentDrag||currentDrag.pointer!==e.pointerId)return;
+  const shot=currentDrag;currentDrag=null;ghost.classList.remove('dragging');
+  if(!volley.launch(e.clientX-shot.x,e.clientY-shot.y,performance.now()-shot.at))c.toast('Espera a que vuelva la pelota 🏐');
+  ballButton.dataset.ignoreClick='1';
+  setTimeout(()=>delete ballButton.dataset.ignoreClick,100);
+ });
+ ballButton.addEventListener('pointercancel',()=>{currentDrag=null;ghost.classList.remove('dragging');});
+ ballButton.addEventListener('click',e=>{if(ballButton.dataset.ignoreClick==='1')return;if((e as MouseEvent).detail===0)volley.launch();});
  let feeding:{holder:TransformNode;started:number;drink:boolean}|null=null;
+ function feed(index:number){
+  if(feeding){feeding.holder.dispose(false,true);feeding=null;}
+  const isDrink=index===1;
+  const holder=new TransformNode('food held in Daniela hand',c.scene);holder.parent=c.arms[1];
+  holder.position.set(.2,-.72,-.33);
+  const dummy=sphere('food while model loads',isDrink?.32:.35,0,0,0,isDrink?bright:toy,holder);
+  dummy.scaling.set(isDrink?.70:1,isDrink?1.40:.82,1);
+  const model=['strawberry','soda-can','cupcake'][index]||'strawberry';
+  void installHeldFood(c.scene,model,holder).then(success=>{
+   if(success&&!holder.isDisposed())dummy.setEnabled(false);
+  });
+  feeding={holder,started:performance.now(),drink:isDrink};
+  c.animate(isDrink?'drink':'eat',3.25);
+  c.toast(isDrink?'¡Daniela está bebiendo! 🥤':'¡Daniela ha cogido la comida! 🍓');
+ }
  function sync(){
-  const bathroom=c.getRoom()==='bathroom',stage=c.getRoom()==='stage',home=c.getRoom()==='bedroom';
-  tools.dataset.room=c.getRoom();
-  washHint.hidden=!bathroom;audioControl.hidden=!stage;volleyButton.hidden=!home;
-  top.setEnabled(bathroom);bottom.setEnabled(bathroom);c.dress.setEnabled(!bathroom);
-  spots.forEach((s,i)=>s.setEnabled(c.getHygiene()<92-(i*13)));
-  foam.forEach((m,i)=>m.setEnabled(bathroom&&i<Math.round(foamLevel*foam.length)));
-  audioControl.textContent=stagePlaying?'⏹ Apagar música':'🎵 Encender música';
-  screen.material=stagePlaying?aquaMat:pink;
+  const room=c.getRoom(),isBath=room==='bathroom';
+  tools.dataset.room=room;
+  washHint.hidden=!isBath;musicButton.hidden=room!=='stage';ballButton.hidden=room!=='bedroom';
+  swimsuitTop.setEnabled(isBath);swimsuitBottom.setEnabled(isBath);
+  outfitMeshes.forEach(m=>m.setEnabled(!isBath));
+  musicButton.textContent=musicPlaying?'⏹ Apagar música':'🎵 Encender música';
+  stereoScreen.material=musicPlaying?bright:pink;
+  washHint.textContent=bath.getTool()==='water'?'🚿 Agua elegida: frota para aclarar':bath.getTool()==='soap'?'🧽 Jabón elegido: frota sobre Daniela':'🫧 Elige jabón o agua';
+  document.querySelectorAll<HTMLButtonElement>('#actions .action-card').forEach((el,i)=>{
+   if(isBath&&i<2)el.classList.toggle('bath-selected',bath.getTool()===(i===0?'soap':'water'));
+   else el.classList.remove('bath-selected');
+  });
  }
  async function toggleStereo(){
   if(c.getRoom()!=='stage')return;
-  if(stagePlaying){audio.pause();audio.currentTime=0;stagePlaying=false;c.toast('Minicadena apagada 🎵');sync();return;}
+  if(musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;sync();c.toast('¡Música apagada! 🎵');return;}
   try{
-   audio.currentTime=0;await audio.play();stagePlaying=true;lastMusicDance=performance.now();musicDanceIndex=0;c.toast('¡La música está sonando! 🎶');c.animate('dance',3.2);
-  }catch{
-   stagePlaying=false;c.toast('La canción aún no está en GitHub: sube assets/studio-song.mp3');
-  }
+   audio.currentTime=0;await audio.play();musicPlaying=true;lastDance=performance.now();danceIndex=0;
+   c.animate('dance',3.5);c.toast('¡Que empiece el concierto! 🎶');
+  }catch{musicPlaying=false;c.toast('No se puede reproducir la canción en este navegador');}
   sync();
  }
- audio.addEventListener('error',()=>{stagePlaying=false;sync();});
- function playerHit(x:number,y:number){
-  const r=c.canvas.getBoundingClientRect(),px=x-r.left,py=y-r.top;
-  const result=c.scene.pick(px,py,m=>m===volleyball||m===c.dress||m.isDescendantOf(c.body));
-  if(result?.hit)return true;
-  const center=Vector3.Project(new Vector3(c.idol.position.x,1.7,c.idol.position.z),Matrix.Identity(),c.scene.getTransformMatrix(),c.camera.viewport.toGlobal(c.scene.getEngine().getRenderWidth(),c.scene.getEngine().getRenderHeight()));
-  const screenX=r.left+center.x*r.width/c.scene.getEngine().getRenderWidth();
-  const screenY=r.top+center.y*r.height/c.scene.getEngine().getRenderHeight();
-  return Math.hypot(x-screenX,y-screenY)<Math.min(170,r.width*.26);
- }
- function effectAt(x:number,y:number,icon:string){
-  const el=document.createElement('span');el.className='activity-effect';el.textContent=icon;el.style.left=x+'px';el.style.top=y+'px';document.querySelector('#app')!.append(el);setTimeout(()=>el.remove(),950);
- }
- function feed(index:number){
-  // Daniela grips food in her right hand; her shoulder animation raises it to her mouth.
-  if(feeding){feeding.holder.dispose(false,true);feeding=null;}
-  const isDrink=index===1;
-  const holder=new TransformNode('food held by Daniela',c.scene);
-  holder.parent=c.arms[1];
-  holder.position.set(.2,-.72,-.33);
-  const fallback=ball('visible food',isDrink?.32:.35,0,0,0,isDrink?aquaMat:swimsuitMat,holder);
-  fallback.scaling.set(isDrink?.70:1,isDrink?1.40:.82,1);
-  void installHeldFood(c.scene,['strawberry','soda-can','cupcake'][index]||'strawberry',holder)
-   .then(ok=>{if(ok&&!holder.isDisposed())fallback.setEnabled(false);});
-  feeding={holder,started:performance.now(),drink:isDrink};
-  c.animate(isDrink?'drink':'eat',3.25);
-  c.toast(isDrink?'¡Daniela coge su refresco y bebe! 🥤':'¡Daniela lo coge y le da un mordisquito! 🍓');
- }
- function showBubbles(){foam.forEach((m,i)=>m.setEnabled(c.getRoom()==='bathroom'&&i<Math.round(foamLevel*foam.length)));}
- function scrub(){
-  if(c.getRoom()!=='bathroom')return;
-  interactionMode='sponge';foamLevel=Math.min(1,foamLevel+.23);
-  showBubbles();c.animate('bath',1.5);c.toast(foamLevel>.8?'¡Muchísima espuma! Ahora aclara 🚿':'¡Cosquillitas de jabón! 🫧');
-  c.sound([784,980]);lastScrub=performance.now();
- }
- function rinse(){
-  if(c.getRoom()!=='bathroom')return;
-  interactionMode='water';waterUntil=performance.now()+1400;
-  const clean=foamLevel>.05?Math.ceil(foamLevel*38):7;foamLevel=Math.max(0,foamLevel-.38);
-  c.changeHygiene(clean);showBubbles();c.animate('bath',1.4);c.reward('+'+clean+' 🫧');
-  c.toast(foamLevel===0?'¡Daniela está limpita! 💖':'¡Agüita fresca! Sigue aclarando 🚿');c.sound([620,810,1046]);
- }
- function throwBall(){
-  if(c.getRoom()!=='bedroom')return;
-  volleyStart=performance.now();volleyUntil=volleyStart+1800;
-  volleyball.setEnabled(true);c.animate('volley',2.1);c.reward('🏐 ¡TOQUE!');c.toast('¡Qué remate! ¡Otra vez! 🏐');c.sound([390,655,850]);
- }
- function afterAction(room:Room,index:number){
-  if(room==='kitchen')feed(index);
-  if(room==='bedroom'&&index===2)throwBall();
-  if(room==='stage'&&index===1)c.animate('sing',3.5);
-  if(room==='stage'&&index===2)c.animate('dance2',4.1);
-  if(room==='stage'&&index===3)c.animate('dance3',4.1);
-  if(room==='stage'&&index===4)c.animate('sing',3.5);
+ audio.addEventListener('error',()=>{musicPlaying=false;sync();});
+ function selectBath(index:number){
+  bath.setTool(index===0?'soap':'water');
   sync();
  }
  function beforeAction(room:Room,index:number):boolean{
-  if(room!=='bathroom')return false;
-  if(index===0){scrub();return true;}
-  if(index===1){rinse();return true;}
-  return false;
+  if(room!=='bathroom'||index>1)return false;
+  selectBath(index);
+  return true;
  }
- function decorateActions(room:Room, row:HTMLElement){
+ function afterAction(room:Room,index:number){
+  if(room==='kitchen')feed(index);
+  if(room==='stage'){
+   const actions:Move[]=['dance','sing','dance2','dance3','dance4','dance5','sing'];
+   c.animate(actions[index]||'dance',index===6?4.9:3.7);
+  }
+  sync();
+ }
+ function playerHit(x:number,y:number){
+  const r=c.canvas.getBoundingClientRect();
+  const hit=c.scene.pick(x-r.left,y-r.top,m=>m.isDescendantOf(c.body)&&m.isEnabled()&&m.isVisible&&m.isPickable);
+  if(hit?.hit)return true;
+  // Slightly generous touch target on small displays.
+  const center=Vector3.Project(new Vector3(c.idol.position.x,1.6,c.idol.position.z),Matrix.Identity(),c.scene.getTransformMatrix(),c.camera.viewport.toGlobal(c.scene.getEngine().getRenderWidth(),c.scene.getEngine().getRenderHeight()));
+  const sx=r.left+center.x*r.width/c.scene.getEngine().getRenderWidth();
+  const sy=r.top+center.y*r.height/c.scene.getEngine().getRenderHeight();
+  return Math.hypot(x-sx,y-sy)<Math.min(130,r.width*.21);
+ }
+ function decorateActions(room:Room,row:HTMLElement){
   row.classList.toggle('has-five-actions',room==='stage');
   row.querySelectorAll<HTMLButtonElement>('button').forEach((button,i)=>{
-   button.dataset.dragged='0';
-   let startX=0,startY=0,dragging=false,pointer=-1;
-   button.addEventListener('pointerdown',e=>{startX=e.clientX;startY=e.clientY;dragging=false;pointer=e.pointerId;dragGhost.textContent=(button.querySelector('.action-emoji')?.textContent||'💗');});
-   button.addEventListener('pointermove',e=>{
-    if(pointer!==e.pointerId)return;
-    if(!dragging&&Math.hypot(e.clientX-startX,e.clientY-startY)>12){dragging=true;activeDrags++;dragGhost.classList.add('dragging');button.dataset.dragged='1';button.setPointerCapture(e.pointerId);}
-    if(dragging){dragGhost.style.left=e.clientX+'px';dragGhost.style.top=e.clientY+'px';e.preventDefault();}
+   button.dataset.dragged='0';button.style.touchAction='none';
+   let sourcePointer=-1,startX=0,startY=0,dragging=false;
+   button.addEventListener('pointerdown',e=>{
+    sourcePointer=e.pointerId;startX=e.clientX;startY=e.clientY;dragging=false;
+    ghost.textContent=button.querySelector('.action-emoji')?.textContent||'💗';
+    if(room==='bathroom'&&i<2)selectBath(i);
    });
-   const done=(e:PointerEvent)=>{
-    if(pointer!==e.pointerId)return;
-    pointer=-1;
+   button.addEventListener('pointermove',e=>{
+    if(sourcePointer!==e.pointerId)return;
+    if(!dragging&&Math.hypot(e.clientX-startX,e.clientY-startY)>12){
+     dragging=true;button.dataset.dragged='1';button.setPointerCapture(e.pointerId);ghost.classList.add('dragging');
+    }
+    if(dragging){
+     ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';
+     if(room==='bathroom'&&i<2)bath.paint(e.clientX,e.clientY);
+     e.preventDefault();
+    }
+   });
+   const finish=(e:PointerEvent)=>{
+    if(sourcePointer!==e.pointerId)return;
+    sourcePointer=-1;
     if(!dragging)return;
-    dragging=false;activeDrags=Math.max(0,activeDrags-1);dragGhost.classList.toggle('dragging',activeDrags>0);
-    const valid=playerHit(e.clientX,e.clientY);
-    if(valid){
-     if(room==='bathroom'&&i===0)scrub();
-     else if(room==='bathroom'&&i===1)rinse();
-     else if(room==='bedroom'&&i===2)c.perform(i);
-     else if(room==='kitchen')c.perform(i);
-     else if(room==='stage')c.perform(i);
-     effectAt(e.clientX,e.clientY,room==='bathroom'?'🫧':room==='bedroom'?'🏐':'💖');
-    }else c.toast('¡Arrástralo hasta Daniela! ✨');
-    setTimeout(()=>button.dataset.dragged='0',400);
+    dragging=false;ghost.classList.remove('dragging');
+    if(room==='bathroom'&&i<2){
+     bath.paint(e.clientX,e.clientY,true);bath.finish();
+    }else if(playerHit(e.clientX,e.clientY)){
+     // Successful food drag triggers the same paid action exactly once.
+     if(room==='kitchen')c.perform(i);
+     else if(room==='bedroom'&&i===2)volley.launch();
+     else c.perform(i);
+    }else c.toast('¡Suéltalo encima de Daniela! ✨');
+    setTimeout(()=>button.dataset.dragged='0',350);
    };
-   button.addEventListener('pointerup',done);
-   button.addEventListener('pointercancel',()=>{pointer=-1;dragging=false;activeDrags=0;dragGhost.classList.remove('dragging');setTimeout(()=>button.dataset.dragged='0',300);});
+   button.addEventListener('pointerup',finish);
+   button.addEventListener('pointercancel',()=>{sourcePointer=-1;dragging=false;ghost.classList.remove('dragging');setTimeout(()=>button.dataset.dragged='0',300);});
   });
+  sync();
  }
- function tap3D(e:PointerEvent){
+ // Direct finger-painting after selecting sponge or shower.
+ let brushPointer=-1;
+ c.canvas.addEventListener('pointerdown',e=>{
+  if(c.getRoom()!=='bathroom'||!bath.getTool())return;
+  brushPointer=e.pointerId;
+  bath.startAt(e.clientX,e.clientY);
+  c.canvas.setPointerCapture(e.pointerId);
+ });
+ c.canvas.addEventListener('pointermove',e=>{
+  if(e.pointerId===brushPointer)bath.moveAt(e.clientX,e.clientY);
+ });
+ c.canvas.addEventListener('pointerup',e=>{if(e.pointerId===brushPointer){brushPointer=-1;bath.finish();}});
+ c.canvas.addEventListener('pointercancel',()=>{brushPointer=-1;bath.finish();});
+ // Physical stereo meshes also respond to touches and clicks.
+ c.canvas.addEventListener('pointerup',e=>{
   if(c.getRoom()!=='stage')return;
-  const r=c.canvas.getBoundingClientRect();const hit=c.scene.pick(e.clientX-r.left,e.clientY-r.top);
-  if(hit?.hit&&hit.pickedMesh&&(hit.pickedMesh.isDescendantOf(stereo)))void toggleStereo();
- }
- c.canvas.addEventListener('pointerup',tap3D);
+  const r=c.canvas.getBoundingClientRect();
+  const hit=c.scene.pick(e.clientX-r.left,e.clientY-r.top,m=>m.isDescendantOf(stereo));
+  if(hit?.hit)void toggleStereo();
+ });
  function enterRoom(room:Room){
-  void installRoomAssets(room,c.scene,c.groups[room]);
-  if(room!=='stage'&&stagePlaying){audio.pause();audio.currentTime=0;stagePlaying=false;}
+  if(room!=='stage'&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;}
   if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
-  if(room!=='bathroom'){foamLevel=0;interactionMode=null;waterUntil=0;}
+  brushPointer=-1;
+  bath.enter(room==='bathroom');
+  void installRoomAssets(room,c.scene,c.groups[room]);
   sync();
  }
  function tick(now:number){
-  if(feeding){
-   const elapsed=(now-feeding.started)/1000;
-   const chewing=Math.max(0,Math.min(1,(elapsed-1)/1.45));
-   const finishing=Math.max(0,Math.min(1,(elapsed-2.55)/.52));
-   feeding.holder.rotation.x=feeding.drink?-.55*chewing*(1-finishing):Math.sin(elapsed*12)*.08;
-   feeding.holder.scaling.setAll(Math.max(.05,1-chewing*(feeding.drink?.18:.48)-finishing*.55));
-   if(elapsed>=3.15){feeding.holder.dispose(false,true);feeding=null;c.reward('¡ÑAM! 💗');}
+  if(musicPlaying&&c.getRoom()==='stage'&&now-lastDance>3600){
+   lastDance=now;danceIndex++;
+   const choreography:Move[]=['dance2','dance4','dance3','dance5','dance','sing'];
+   c.animate(choreography[danceIndex%choreography.length],3.45);
   }
-  if(stagePlaying&&c.getRoom()==='stage'&&now-lastMusicDance>3700){lastMusicDance=now;musicDanceIndex++;c.animate((['dance2','dance3','dance','sing'] as const)[musicDanceIndex%4],3.3);}
-  speakers.forEach((o,i)=>o.scaling.setAll(stagePlaying?1+Math.sin(now/210+i*2)*.12:1));
-  const bath=c.getRoom()==='bathroom';
-  foam.forEach((b,i)=>{if(!b.isEnabled())return;b.position.y=.72+(i%7)*.24+Math.sin(now/400+i)*.045;});
-  waterDrops.forEach((d,i)=>{const on=bath&&now<waterUntil;d.setEnabled(on);if(on)d.position.y=2.8-((now/130+i*.31)%2.8);});
-  const active=c.getRoom()==='bedroom'&&now<volleyUntil;
-  if(active){
-   const t=(now-volleyStart)/1800;
-   volleyball.position.set(-3.4+6.5*t,.47+Math.sin(t*Math.PI)*2.1,-1.2);
-   volleyball.rotation.x+=.16;volleyball.rotation.z+=.1;
-  }else volleyball.position.set(-2.5,.3,-1.3);
+  speakerParts.forEach((m,i)=>m.scaling.setAll(musicPlaying?1+Math.sin(now/155+i*3)*.12:1));
+  bath.tick(now);volley.tick(now);
+  if(feeding){
+   const seconds=(now-feeding.started)/1000;
+   const chew=Math.max(0,Math.min(1,(seconds-1)/1.4));
+   const done=Math.max(0,Math.min(1,(seconds-2.55)/.53));
+   feeding.holder.rotation.x=feeding.drink?-.52*chew*(1-done):Math.sin(seconds*14)*.07;
+   feeding.holder.scaling.setAll(Math.max(.045,1-chew*(feeding.drink?.18:.46)-done*.6));
+   if(seconds>3.2){feeding.holder.dispose(false,true);feeding=null;c.reward('¡ÑAM! 💗');}
+  }
  }
- sync();
- return{enterRoom,decorateActions,afterAction,beforeAction,tick,sync,throwBall,scrub,rinse,toggleStereo};
+ function throwBall(){if(!volley.launch())c.toast('¡Espera que la pelota vuelva! 🏐');}
+ return {beforeAction,afterAction,decorateActions,enterRoom,tick,throwBall,isPainting:()=>brushPointer!==-1||bath.isPainting(),sync};
 }
