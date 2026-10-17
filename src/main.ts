@@ -75,6 +75,8 @@ function star(x:number,y:number,z:number,s:number,m:StandardMaterial,p?:Transfor
 box('floor',14,.26,11,0,-.18,1.05,floorMat);box('back wall',14,7,.3,0,3.25,6.3,wall);box('side wall',.3,7,11,-7,3.25,1.05,side);box('skirting',14,.22,.16,0,.08,6.08,white);
 const tileMat=mat('very subtle tile','#eee4ef');for(let i=-6;i<=6;i++)for(let j=-4;j<=5;j++)if((i+j)%2===0)box('tile',.97,.012,.97,i,0,j+.7,tileMat).visibility=.07;
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
+const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
+function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,baseY:mesh.position.y,speed,phase,amp});return mesh;}
 const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene)};
 dressRooms(scene,groups);
 const bed=groups.bedroom;
@@ -87,22 +89,39 @@ box('poster frame',1.65,1.65,.12,0,3.65,6.07,white,bed);box('poster',1.46,1.45,.
 box('window frame',2.45,2.3,.15,-4.7,3.55,6.04,white,bed);box('sky',2.15,2.03,.16,-4.7,3.55,5.93,blue,bed);
 for(const x of [-4.97,-4.67,-4.38])ball('cloud',.45,x,3.5,5.79,white,bed);
 box('left curtain',.42,2.5,.23,-5.85,3.53,5.83,dressColors[0],bed);box('right curtain',.42,2.5,.23,-3.54,3.53,5.83,dressColors[0],bed);
+cyl('soft bedroom rug',3.4,3.4,.035,-.5,.03,2.15,dressColors[0],bed);
+for(let i=0;i<7;i++)lively(ball('bedroom fairy light',.11,-2.6+i*.82,4.72,5.78,i%2?gold:pink,bed),.0014,.045,i*.8);
+ball('plush bunny body',.65,4.65,.55,3.5,white,bed).scaling.set(.8,1,.7);ball('plush bunny head',.55,4.65,1.02,3.45,white,bed);
+for(const x of [4.48,4.82]){const ear=ball('plush bunny ear',.27,x,1.42,3.48,pink,bed);ear.scaling.set(.52,1.35,.5);}
+cyl('plant pot',.58,.72,.62,-5.35,.32,3.5,gold,bed);for(let i=0;i<5;i++){const leaf=lively(ball('plant leaf',.45,-5.35+(i-2)*.14,.78+(i%2)*.15,3.5,mint,bed),.0011,.035,i);leaf.scaling.set(.38,1.1,.42);}
 const kit=groups.kitchen;box('kitchen cabinet',5.1,1.65,1.7,2.1,.75,4.27,white,kit);box('counter',5.2,.22,1.9,2.1,1.67,4.27,yellow,kit);
 for(let x=.4;x<4.4;x+=1.2){box('cabinet door',.96,1.3,.08,x,.73,3.34,mint,kit);ball('handle',.09,x,1,3.28,gold,kit);}
 box('upper cabinet',3.1,1.25,.72,2.5,3.95,5.9,white,kit);
 for(const x of [1.5,2.5,3.5])box('upper door',.9,1.05,.13,x,3.95,5.48,mint,kit);
 cyl('cake stand',1.15,1.15,.13,1.4,1.88,4,white,kit);cyl('cake',.9,.9,.45,1.4,2.16,4,dressColors[0],kit);ball('icing',.84,1.4,2.42,4,white,kit).scaling.y=.3;ball('cherry',.23,1.4,2.6,4,gold,kit);
 box('fridge',1.75,3.1,1.5,-4.2,1.55,4.6,white,kit);box('fridge color',1.59,1.7,.06,-4.2,2.13,3.82,mint,kit);
+cyl('kitchen round table',2.15,2.15,.16,-1.45,1.02,3.35,white,kit);cyl('table pedestal',.38,.5,1.0,-1.45,.5,3.35,gold,kit);
+const fruitBowl=cyl('fruit bowl',.9,.65,.22,-1.45,1.18,3.35,lilac,kit);
+for(let i=0;i<6;i++)lively(ball('fruit',.24,-1.72+(i%3)*.27,1.36+Math.floor(i/3)*.12,3.28+(i%2)*.15,i%2?pink:gold,kit),.0015,.025,i);
+for(const x of [-2.55,-.35]){cyl('kitchen stool',.75,.75,.18,x,.58,2.8,mint,kit);cyl('stool leg',.16,.16,.55,x,.28,2.8,gold,kit);}
 const bath=groups.bathroom;box('bathtub',3.5,1.3,2.1,3.1,.72,4.12,white,bath);box('water',3.16,.08,1.8,3.1,1.39,4.1,blue,bath);
 for(let i=0;i<13;i++)ball('bubble',.12+(i%4)*.07,1.8+(i*37%25)/10,1.5+(i%3)*.24,3.4+(i*19%15)/10,white,bath).visibility=.7;
 box('bath sink',1.7,1.22,1.05,-3.8,.63,4.1,mint,bath);box('sink top',1.9,.21,1.21,-3.8,1.36,4.1,white,bath);box('bath mirror',1.75,2.1,.12,-3.8,3,5.88,gold,bath);box('mirror surface',1.53,1.89,.12,-3.8,3,5.77,blue,bath);
+for(let i=0;i<9;i++)lively(ball('floating bath bubble',.14+(i%3)*.055,-5+i*1.15,2.2+(i%4)*.45,5.55,white,bath),.0011+i*.00005,.12,i*.7);
+box('towel rail',2,.09,.1,-1.9,2.45,5.72,gold,bath);box('fluffy towel',1.25,1.25,.12,-1.9,1.88,5.63,dressColors[0],bath);
+for(let i=0;i<3;i++){cyl('bath bottle',.25,.3,.65,-4.3+i*.45,1.82,4.25,i%2?pink:mint,bath);}
 const stage=groups.stage;box('riser',10,.52,5.7,0,.23,3,purple,stage);box('dance floor',8.7,.06,4.7,0,.53,2.65,stageMat,stage);box('neon wall',10,5,.15,0,3.4,5.9,purple,stage);
 for(let i=0;i<3;i++)ring('concert neon',1.2+i*.9,.075,0,3.2,5.7,i%2?pink:gold,stage);
 for(const x of [-4.1,4.1]){cyl('speaker',1,1,2.1,x,1.9,4.9,purple,stage);ring('woofer rim',.64,.12,x,1.6,4.37,pink,stage);ball('woofer',.4,x,1.6,4.31,lilac,stage);ring('tweeter',.35,.09,x,2.36,4.37,gold,stage);}
 for(let i=0;i<9;i++)star(-4+i,4.9+(i%3)*.18,5.7,.22,i%2?gold:pink,stage);
+for(const x of [-3,-1.5,1.5,3]){const spot=lively(ball('stage moving light',.24,x,4.55,5.48,x<0?pink:gold,stage),.0023,.18,x);spot.scaling.set(.75,1.6,.55);}
+for(let i=0;i<8;i++){const conf=lively(box('stage confetti',.08,.25,.04,-3.6+i*1.03,2.4+(i%3)*.62,5.35,i%2?gold:pink,stage),.0016,.18,i);conf.rotation.z=i*.7;}
 const closet=groups.closet;box('wardrobe',3.6,4,1.3,3.5,2,4.8,white,closet);box('wardrobe back',3.2,3.64,.14,3.5,2,4.07,lilac,closet);
 for(const x of [2.75,3.5,4.25]){box('dress display',.6,1.15,.14,x,2.6,3.97,dressColors[Math.round(x*3)%4],closet);ball('hanger',.12,x,3.32,3.96,gold,closet);}
 box('fancy mirror',2.4,3.9,.13,-3.8,2.18,5.8,gold,closet);box('mirror glass',2.12,3.62,.14,-3.8,2.18,5.69,blue,closet);box('bench',2.4,.38,1,0,.43,4,dressColors[0],closet);
+cyl('closet round rug',3.25,3.25,.035,-.4,.025,2.45,dressColors[0],closet);
+for(let i=0;i<6;i++)lively(ball('closet sparkle bulb',.12,-2.1+i*.82,4.55,5.55,i%2?white:gold,closet),.0015,.05,i);
+box('shoe shelf',2.25,.12,.75,4.3,.42,2.65,white,closet);for(let i=0;i<4;i++){const shoe=ball('display shoe',.34,3.55+i*.48,.68,2.5,dressColors[i%4],closet);shoe.scaling.set(1.25,.42,.72);}
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
@@ -255,19 +274,20 @@ engine.runRenderLoop(()=>{
  const fast=move==='dance2'||move==='dance4';
  const beat=fast?9:move==='dance3'?5.5:move==='dance5'?6.5:7;
  const b=sin(a*beat),step=sin(a*beat*.5);
+ const popBeat=sin(a*8.4),cuteBeat=sin(a*5.2),hipBeat=sin(a*10.8),discoBeat=sin(a*6.2);
+ const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
  const isEating=move==='eat'||move==='drink';
  const isVolley=move==='volley';
  microphone.setEnabled(move==='sing'&&room==='stage');
  // Each choreography uses its own weight shift, bounce, turns, arms and steps.
- body.position.x=dance?move==='dance4'?sin(a*4)*.16:move==='dance5'?sin(a*3)*.2:sin(a*beat*.5)*.12:0;
+ body.position.x=dance?move==='dance2'?sin(a*4.2)*.19+(popPhrase===2?.10:0):move==='dance3'?sin(a*2.6)*.15:move==='dance4'?sin(a*5.4)*.22:move==='dance5'?sin(a*3.1)*.25:sin(a*beat*.5)*.12:0;
  body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
   isVolley?abs(sin(a*13))*.22:move==='jump'?abs(sin(a*5))*.32:
   move==='laugh'?abs(sin(a*13))*.09:move==='giggle'?abs(sin(a*8))*.05:
   move==='sleep'?-.23:sin(t*1.75)*.035+sin(t*.63)*.012;
  body.rotation.x=dance?move==='dance4'?.14+sin(a*beat)*.13:move==='dance5'?sin(a*3)*.08:sin(a*beat)*.05:
   isVolley?-.16*sin(a*9):0;
- body.rotation.y=move==='spin'?a*6:move==='dance5'?sin(a*2.4)*.46:
-  dance?sin(a*4)*.18:sin(t*.8)*.065;
+ body.rotation.y=move==='spin'?a*6:move==='dance2'?(popPhrase===3?sin(a*7)*.48:sin(a*3.8)*.16):move==='dance3'?sin(a*2.1)*.22:move==='dance4'?(hipPhrase===1?sin(a*8)*.34:sin(a*4.8)*.18):move==='dance5'?sin(a*2.4)*.58:move==='dance'?sin(a*4)*.18:sin(t*.8)*.065;
  body.rotation.z=move==='sleep'?.12:move==='dance4'?sin(a*beat/2)*.16:
   move==='dance3'?sin(a*4)*.11:dance?sin(a*beat)*.075:
   move==='laugh'?sin(a*14)*.09:move==='giggle'?sin(a*9)*.045:sin(t*1.2)*.018;
@@ -281,10 +301,10 @@ engine.runRenderLoop(()=>{
  else if(move==='jump'){left=-.65;right=.65;}
  else if(move==='bath'){left=-.35;right=.35+sin(a*7)*.2;}
  else if(move==='dance'){left=sin(a*8)*.85;right=-sin(a*8)*.85;leftX=.23*cos(a*4);rightX=-.23*cos(a*4);}
- else if(move==='dance2'){left=-1.1+sin(a*10)*.4;right=1.1-cos(a*10)*.4;leftX=cos(a*9)*.53;rightX=-cos(a*9)*.53;}
- else if(move==='dance3'){left=-1.0+sin(a*5.5)*.32;right=1.0-cos(a*5.5)*.32;leftX=.4;rightX=-.4;}
- else if(move==='dance4'){left=-.35+sin(a*10)*.83;right=.35+cos(a*10)*.83;leftX=-.48;rightX=.48;}
- else if(move==='dance5'){left=sin(a*3)>0?-2.2:-.35;right=sin(a*3)>0?.35:2.2;leftX=.17;rightX=-.17;}
+ else if(move==='dance2'){if(popPhrase===0){left=-1.25+popBeat*.28;right=1.25-popBeat*.28;leftX=.52;rightX=-.52;}else if(popPhrase===1){left=-.2+popBeat*.95;right=.2-popBeat*.95;leftX=-.28;rightX=.28;}else if(popPhrase===2){left=-1.75;right=-1.75+popBeat*.25;leftX=.15;rightX=-.15;}else{left=-.55+popBeat*.4;right=.55+popBeat*.4;leftX=.62;rightX=-.62;}}
+ else if(move==='dance3'){if(cutePhrase===0){left=-.72+cuteBeat*.22;right=.72-cuteBeat*.22;leftX=.48;rightX=-.48;}else if(cutePhrase===1){left=-1.5;right=1.5;leftX=.18;rightX=-.18;}else if(cutePhrase===2){left=-.22+abs(cuteBeat)*.48;right=.22-abs(cuteBeat)*.48;leftX=.58;rightX=-.58;}else{left=-1.02+cuteBeat*.25;right=1.02-cuteBeat*.25;leftX=.35;rightX=-.35;}}
+ else if(move==='dance4'){if(hipPhrase===0){left=-.25+hipBeat*.9;right=.25+cos(a*10.8)*.9;leftX=-.55;rightX=.55;}else if(hipPhrase===1){left=-1.7+hipBeat*.18;right=-.55;leftX=-.22;rightX=.5;}else if(hipPhrase===2){left=.55;right=1.7-hipBeat*.18;leftX=-.5;rightX=.22;}else{left=-.65+hipBeat*.55;right=.65-hipBeat*.55;leftX=-.62;rightX=.62;}}
+ else if(move==='dance5'){if(discoPhrase===0){left=-2.2;right=.35+discoBeat*.18;}else if(discoPhrase===1){left=-.35;right=2.2;}else if(discoPhrase===2){left=-1.25+discoBeat*.38;right=1.25-discoBeat*.38;}else{left=-2.05+abs(discoBeat)*.55;right=2.05-abs(discoBeat)*.55;}leftX=.17;rightX=-.17;}
  else if(move==='sing'){left=-.34+sin(a*3)*.22;right=-1.7+sin(a*6)*.1;rightX=-.19;}
  else if(isVolley){left=-1.72+sin(a*11)*.32;right=1.72-sin(a*11)*.32;leftX=-.16;rightX=-.16;}
  else if(move==='laugh'){left=-1.05+sin(a*13)*.19;right=1.05-sin(a*13)*.19;}
@@ -338,6 +358,7 @@ engine.runRenderLoop(()=>{
  bow.rotation.z=sin(t*1.7)*.055+sin(t*.43)*.018;
  bow.rotation.x=sin(t*1.1)*.025;
  orbs.forEach((o,i)=>o.scaling.setAll(1+sin(t*2+i*.7)*.18));
+ roomMotion.forEach((item,i)=>{if(!item.mesh.isDisposed()){item.mesh.position.y=item.baseY+sin(now*item.speed+item.phase)*item.amp;item.mesh.rotation.y+=.0015*((i%3)-1);}});
  play?.tick(now);
  scene.render();
 });
