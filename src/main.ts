@@ -132,6 +132,7 @@ const hairParts:Mesh[]=[];function hair(n:string,d:number,x:number,y:number,z:nu
 hair('hair cap',1.77,0,.28,.065).scaling.set(1.02,.78,.94);hair('fringe',1.43,0,.59,-.43).scaling.set(1,.39,.63);
 for(const x of [-.46,-.18,.15,.45])hair('bang',.48,x,.39,-.69).scaling.set(.88,.76,.49);
 const eyelids:Mesh[]=[];
+const eyeGlints:Mesh[]=[];
 const twinTails:Mesh[]=[];
 const eyeMeshes:Mesh[]=[];
 for(const s of [-1,1]){hair('side hair',.53,s*.78,-.25,-.08).scaling.set(.62,1.9,.85);
@@ -139,7 +140,8 @@ for(const s of [-1,1]){hair('side hair',.53,s*.78,-.25,-.08).scaling.set(.62,1.9
 ball('hair tie',.27,s*.87,.15,.02,pink,head);
 const eye=ball('big eye',.33,s*.33,-.08,-.755,dark,head);eye.scaling.set(.8,1.1,.25);eyeMeshes.push(eye);
 const lid=ball('soft eyelid',.35,s*.33,-.08,-.784,skin,head);lid.scaling.set(.83,.025,.25);lid.visibility=0;eyelids.push(lid);
-ball('eye light',.11,s*.33-.055,-.005,-.823,white,head).scaling.z=.35;ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head);
+const glint=ball('eye light',.11,s*.33-.055,-.005,-.823,white,head);glint.scaling.z=.35;eyeGlints.push(glint);
+ eyeGlints.push(ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head));
 ball('cheek',.3,s*.62,-.31,-.68,blush,head).scaling.set(.85,.35,.2);
  ball('eye outer lash',.12,s*.48,.02,-.77,dark,head).scaling.set(.58,.22,.22);
  ball('eyebrow',.17,s*.32,.22,-.74,hairColors[state.hair%4],head).scaling.set(1,.20,.22);
@@ -392,6 +394,7 @@ engine.runRenderLoop(()=>{
  const close=move==='sleep'?1:blink;
  eyelids.forEach(lid=>{lid.visibility=close>.025?1:0;lid.scaling.y=.025+close*.94;});
  eyeMeshes.forEach(eye=>eye.scaling.y=(giggling?.27:isEating?.74:1.1)*(1-.94*close));
+ eyeGlints.forEach(glint=>glint.visibility=1-close);
  // Lightweight secondary motion, driven by the same rhythm as the idle/dance.
  twinTails.forEach((tail,i)=>{
   const side=i===0?-1:1;

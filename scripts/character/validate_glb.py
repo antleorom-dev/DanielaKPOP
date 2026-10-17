@@ -48,7 +48,7 @@ if not any(node.get("skin") is not None for node in nodes):
 out={
     "generator":"Blender headless / GitHub Actions",
     "format":"glTF 2.0 (GLB)",
-    "file":"daniela-rigged.glb",
+    "file":path.name,
     "size_bytes":len(data),
     "skin_count":len(skins),
     "joint_count":max(len(skin.get("joints",[])) for skin in skins),
