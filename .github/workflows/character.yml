@@ -1,6 +1,10 @@
 name: Generate Daniela rigged 3D (Blender)
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/character/**'
+      - '.github/workflows/character.yml'
   push:
     paths:
       - 'scripts/character/**'
@@ -26,7 +30,8 @@ jobs:
           mkdir -p build/character
           blender --background --factory-startup --python-exit-code 1 --python scripts/character/generate_daniela.py -- \
             --output build/character/daniela-rigged.glb \
-            --blend-output build/character/daniela-source.blend
+            --blend-output build/character/daniela-source.blend \\
+            --preview-output build/character/daniela-legacy.png
       - name: Validate skeleton, GLB and animation clips
         run: |
           python3 scripts/character/validate_glb.py \
@@ -37,7 +42,8 @@ jobs:
           blender --background --factory-startup --python-exit-code 1 --python scripts/character/generate_daniela.py -- \\
             --variant original-inspired \\
             --output build/character/daniela-original-inspired.glb \\
-            --blend-output build/character/daniela-original-inspired.blend
+            --blend-output build/character/daniela-original-inspired.blend \\
+            --preview-output build/character/daniela-original-inspired.png
       - name: Validate original-inspired GLB and animation clips
         run: |
           python3 scripts/character/validate_glb.py \\
