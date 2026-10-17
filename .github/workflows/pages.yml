@@ -31,7 +31,7 @@ jobs:
       - name: Generate animated Daniela with free Blender (cloud-only)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y blender python3-numpy
+          sudo apt-get install -y blender python3-numpy libegl1 libgl1 libopengl0 libglx-mesa0
           mkdir -p public/assets/characters build/character
           blender --background --factory-startup --python-exit-code 1 \
             --python scripts/character/generate_daniela.py -- \
