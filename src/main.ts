@@ -16,12 +16,12 @@ try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as Stat
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
-let concertActive=false,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let concertActive=false,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
 act('🧸','Mimos','+ felicidad',['#ffa6c9','#ef77b8'],'wave',{happiness:12},0,9,'¡Qué abrazo tan bonito! 💖'),
-act('💤','Dormir','+ energía',['#b7a5fb','#8b84ed'],'sleep',{energy:24,hunger:-4},0,11,'¡Una siesta reparadora! 🌙'),
+act('💤','Dormir','Hasta recuperar energía',['#b7a5fb','#8b84ed'],'sleep',{},0,11,'Dulces sueños, Daniela 🌙'),
 act('🏐','Voleibol','¡Golpea la pelota!',['#ffcf82','#ffa76b'],'volley',{happiness:14,energy:-6,hunger:-3},0,14,'¡Punto para Daniela! 🏐')]},
 kitchen:{title:'Cocina dulce',kicker:'✦ SWEET LITTLE CAFÉ ✦',sub:'¡El menú favorito de Daniela!',accent:'#ffc4a8',actions:[
 act('🍓','Fresas','10 monedas',['#ff9fb4','#f77d8c'],'eat',{hunger:22,happiness:4},-10,9,'¡Ñam! Fresas deliciosas 🍓'),
@@ -37,27 +37,27 @@ act('🧽','Esponja','Arrastra hasta Daniela',['#99dcef','#77bdea'],'bath',{},0,
 act('🚿','Agua','Aclarar las burbujas',['#e4bbff','#b69bee'],'bath',{},0,2,'¡Agüita fresca! 🚿'),
 act('🧴','Skincare','+ higiene',['#a3f1dc','#70c8bb'],'wave',{hygiene:14,happiness:4},0,8,'¡Sonrisa brillante! ✨')]},
 stage:{title:'Dance studio',kicker:'✦ DREAMS COME TRUE ✦',sub:'El escenario es todo tuyo',accent:'#c2a1fc',actions:[
-act('🎶','Bailar','+ 12 monedas',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-4,hunger:-5,hygiene:-3},12,18,'¡Dale al ritmo! 🎶'),
-act('🎤','Cantar','+ 18 monedas',['#ff9dc8','#e577ba'],'sing',{energy:-5,hunger:-4,happiness:8},18,23,'¡Qué voz de estrella! 🎤'),
-act('🪩','Dance pop','+ 15 monedas',['#aa9efb','#d7a4ff'],'dance2',{energy:-6,happiness:12},15,20,'¡Coreografía perfecta! 🪩'),
-act('💃','Dance cute','+ 15 monedas',['#f3a4bb','#ea80c2'],'dance3',{energy:-6,happiness:12},15,20,'¡Qué adorable! 💃'),
-act('🔥','Hip-hop','+ 20 monedas',['#db9ffd','#a47eec'],'dance4',{energy:-7,happiness:14},20,24,'¡Daniela domina el ritmo! 🔥'),
-act('🪩','Disco','+ 17 monedas',['#f6b889','#e78ac8'],'dance5',{energy:-6,happiness:11},17,22,'¡Pura energía disco! ✨'),
-act('🌟','Concierto','+ 35 monedas',['#ffd18c','#f6a36c'],'sing',{energy:-11,hunger:-10,happiness:20},35,40,'¡El público te adora! 🌟')]},
+act('🎶','Bailar','Ensayar · +2 ★',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-4,hunger:-5,hygiene:-3},2,18,'¡Dale al ritmo! 🎶'),
+act('🎤','Cantar','Ensayo · +3 ★',['#ff9dc8','#e577ba'],'sing',{energy:-5,hunger:-4,happiness:8},3,23,'¡Qué voz de estrella! 🎤'),
+act('🪩','Dance pop','Ensayo · +2 ★',['#aa9efb','#d7a4ff'],'dance2',{energy:-6,happiness:12},2,20,'¡Coreografía perfecta! 🪩'),
+act('💃','Dance cute','Ensayo · +2 ★',['#f3a4bb','#ea80c2'],'dance3',{energy:-6,happiness:12},2,20,'¡Qué adorable! 💃'),
+act('🔥','Hip-hop','Ensayo · +3 ★',['#db9ffd','#a47eec'],'dance4',{energy:-7,happiness:14},3,24,'¡Daniela domina el ritmo! 🔥'),
+act('🪩','Disco','Ensayo · +2 ★',['#f6b889','#e78ac8'],'dance5',{energy:-6,happiness:11},2,22,'¡Pura energía disco! ✨'),
+act('🌟','Concierto','Ingresos del LIVE',['#ffd18c','#f6a36c'],'sing',{energy:-11,hunger:-10,happiness:20},0,40,'¡El público te adora! 🌟')]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
-engine.setHardwareScalingLevel(Math.max(1.25,devicePixelRatio/1.35));
+let renderScale=Math.max(1.25,devicePixelRatio/1.35);engine.setHardwareScalingLevel(renderScale);
 const scene=new Scene(engine);scene.skipPointerMovePicking=true;scene.clearColor=new Color4(.97,.81,.92,1);
 const camera=new ArcRotateCamera('camera',-Math.PI/2,1.23,9.25,new Vector3(0,1.8,-.35),scene);
 camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadiusLimit=12.5;camera.lowerBetaLimit=.85;camera.upperBetaLimit=1.48;camera.lowerAlphaLimit=-Math.PI/2-.48;camera.upperAlphaLimit=-Math.PI/2+.48;camera.wheelPrecision=48;camera.pinchPrecision=140;
 const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.83;amb.diffuse=new Color3(1,.92,1);
 const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.47;
 const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=1.35;rim.diffuse=new Color3(1,.45,.76);rim.range=12;
-new GlowLayer('fairytale glow',scene).intensity=.15;
+const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.15;
 function setSceneLighting(factor:number){
  const f=Math.max(.45,Math.min(1.55,factor));
  amb.intensity=.83*f;sun.intensity=.47*f;rim.intensity=1.35*f;
@@ -124,6 +124,62 @@ box('fancy mirror',2.4,3.9,.13,-3.8,2.18,5.8,gold,closet);box('mirror glass',2.1
 cyl('closet round rug',3.25,3.25,.035,-.4,.025,2.45,dressColors[0],closet);
 for(let i=0;i<6;i++)lively(ball('closet sparkle bulb',.12,-2.1+i*.82,4.55,5.55,i%2?white:gold,closet),.0015,.05,i);
 box('shoe shelf',2.25,.12,.75,4.3,.42,2.65,white,closet);for(let i=0;i<4;i++){const shoe=ball('display shoe',.34,3.55+i*.48,.68,2.5,dressColors[i%4],closet);shoe.scaling.set(1.25,.42,.72);}
+// Lightweight extra decoration: five themed rooms, no texture downloads or new lights.
+const decorMeshStart=scene.meshes.length;
+const bookColors=[pink,lilac,mint,gold];
+box('bedside table',.82,.65,.72,4.8,.4,2.25,white,bed);
+box('bedside drawer',.7,.3,.05,4.8,.48,1.87,pink,bed);
+cyl('bedside lamp base',.18,.26,.12,4.8,.79,2.25,gold,bed);
+cyl('bedside lamp shade',.62,.34,.48,4.8,1.09,2.25,trim,bed);
+box('bookshelf bedroom',2,.14,.55,-2.8,2.35,5.57,white,bed);
+for(let i=0;i<5;i++)box('bedroom storybook',.23,.42+(i%2)*.12,.3,-3.5+i*.33,2.62,5.46,bookColors[i%4],bed);
+for(const x of [2.25,3.75])ball('bed heart cushion',.46,x,1.12,3.3,pink,bed).scaling.set(1.15,.5,.75);
+ball('sleepy moon decor',.56,-1.4,4.13,5.77,gold,bed).scaling.z=.25;
+box('dreams wall trim',2.8,.07,.1,3.1,3.96,5.78,white,bed);
+for(const x of [1.95,2.85,3.75])ball('dreams pearl',.18,x,3.96,5.67,pink,bed);
+
+// Café: recipe board, pastry display, pastel lighting and small kitchen details.
+box('cafe chalkboard frame',2.15,1.7,.12,-.45,3.55,5.92,gold,kit);
+box('cafe chalkboard',1.91,1.47,.13,-.45,3.55,5.82,purple,kit);
+for(let i=0;i<3;i++)box('chalk menu line',1.12-i*.17,.045,.04,-.45,3.96-i*.33,5.73,i===1?pink:white,kit);
+cyl('cafe pendant shade',1.1,.48,.4,-1.45,4.65,2.75,pink,kit);
+cyl('cafe pendant bulb',.29,.29,.18,-1.45,4.37,2.75,gold,kit);
+box('pastry tray',1.15,.09,.68,3.5,1.85,3.72,white,kit);
+for(let i=0;i<3;i++){const cake=ball('mini pastry',.3,3.12+i*.35,2.05,3.68,i===1?lilac:pink,kit);cake.scaling.set(1,.55,1);ball('pastry cherry',.09,3.12+i*.35,2.21,3.68,gold,kit);}
+box('cafe wall shelf',1.5,.12,.35,-5.25,3.25,5.67,white,kit);
+for(let i=0;i<3;i++)cyl('spice jar',.27,.27,.39,-5.65+i*.39,3.5,5.59,i===1?gold:mint,kit);
+
+// Bathroom: soft spa atmosphere and practical accessories.
+box('spa wall shelf',2.15,.12,.46,.45,3.5,5.65,white,bath);
+for(let i=0;i<4;i++){cyl('spa bottle',.28,.28,.5,-.25+i*.42,3.79,5.56,i%2?pink:mint,bath);ball('spa cap',.16,-.25+i*.42,4.08,5.56,gold,bath);}
+box('bath rug',2.4,.045,1.25,1.8,.04,1.5,mint,bath);
+for(let i=0;i<4;i++)ball('bath rug tuft',.16,1+i*.42,.11,1.05,white,bath).scaling.y=.3;
+box('shower curtain rail',3.6,.08,.08,3.1,3.65,3.05,gold,bath);
+for(let i=0;i<5;i++)box('spa curtain fold',.53,1.4,.07,1.9+i*.55,2.85,3.05,i%2?trim:mint,bath).visibility=.55;
+cyl('soap dish',.6,.6,.08,-3.2,1.52,3.77,white,bath);
+ball('pink soap',.36,-3.2,1.62,3.77,pink,bath).scaling.y=.42;
+
+// Studio: illuminated LED panels, floor strips and backstage props.
+for(const x of [-3.25,3.25]){
+ box('studio led frame',1.05,2.55,.12,x,3.05,5.7,gold,stage);
+ box('studio led panel',.85,2.35,.14,x,3.05,5.58,lilac,stage);
+ for(let i=0;i<4;i++)box('studio led stripe',.67,.065,.04,x,2.2+i*.52,5.47,i%2?pink:mint,stage);
+}
+for(const x of [-3.7,3.7])box('dance floor edge glow',.1,.035,3.3,x,.58,2.6,pink,stage);
+box('studio console',1.35,.6,.8,4.75,.95,1.15,purple,stage);
+box('studio console screen',.85,.28,.05,4.75,1.26,.72,mint,stage);
+for(let i=0;i<3;i++)ball('studio mixer dial',.13,4.35+i*.38,1.3,1.2,gold,stage);
+
+// Closet: fashion accessories and a glowing make-up station.
+box('closet accessory shelf',1.65,.12,.48,-.75,2.95,5.58,white,closet);
+for(let i=0;i<3;i++){ball('boutique handbag',.36,-1.24+i*.5,3.25,5.49,i%2?pink:lilac,closet).scaling.set(1,.75,.55);ring('bag handle',.24,.045,-1.24+i*.5,3.49,5.47,gold,closet);}
+box('makeup counter',1.5,.17,.7,-3.8,1.12,4.35,white,closet);
+for(let i=0;i<3;i++)cyl('lipstick case',.14,.14,.3,-4.18+i*.32,1.37,4.12,i===1?gold:pink,closet);
+for(const x of [-4.95,-2.65])for(const y of [1.25,2.05,2.85,3.65])ball('mirror bulb',.17,x,y,5.66,white,closet);
+box('outfit inspiration frame',1.25,1.35,.12,1.1,3.85,5.88,gold,closet);
+box('outfit inspiration print',1.04,1.15,.13,1.1,3.85,5.77,pink,closet);
+star(1.1,3.9,5.68,.48,white,closet);
+for(const decoration of scene.meshes.slice(decorMeshStart))decoration.isPickable=false;
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
@@ -212,6 +268,50 @@ function fashion(){
  twinTails.forEach(tail=>tail.setEnabled([0,1,4,6].includes(hairStyle)));
 }
 fashion();
+// A complete sleep cycle: Daniela walks to her bed, lies down, recovers gradually,
+// then gets up. Leaving the bedroom cancels safely without losing earned energy.
+type SleepPhase='awake'|'walking'|'resting'|'waking';
+let sleepPhase:SleepPhase='awake',sleepClock=0,sleepLast=0,sleepRestStart=0,sleepLastPaint=0;
+const smooth=(n:number)=>{const t=Math.max(0,Math.min(1,n));return t*t*(3-2*t);};
+function resetSleepPose(){
+ idol.position.set(0,0,-1.33);idol.rotation.x=0;idol.scaling.setAll(1);
+ shadow.visibility=.27;camera.target.set(0,1.8,-.35);
+}
+function stopSleep(){
+ if(sleepPhase==='awake')return;
+ sleepPhase='awake';resetSleepPose();move='idle';started=performance.now();duration=2;
+}
+function startSleep(){
+ if(sleepPhase!=='awake'){toast('Daniela está descansando… 💤');return;}
+ if(state.energy>=100){toast('¡Daniela ya tiene toda su energía! 💜');return;}
+ sleepPhase='walking';sleepClock=performance.now();sleepLast=sleepClock;sleepLastPaint=0;
+ animate('idle',3.5);reactionBubble('Voy a mi camita… 💤',false,2700);
+ $('#scene-desc').textContent='🌙 Daniela se dirige a su cama';save();
+}
+function tickSleep(now:number){
+ if(sleepPhase==='awake')return;
+ const dt=Math.min(.07,Math.max(0,(now-sleepLast)/1000));sleepLast=now;
+ if(sleepPhase==='walking'){
+  const walk=smooth((now-sleepClock)/2400),lie=smooth((now-sleepClock-2400)/1400);
+  idol.position.set(3*walk,1.05*lie,-1.33+3.83*walk);idol.rotation.x=Math.PI*.5*lie;
+  idol.scaling.setAll(1-.4*lie);shadow.visibility=.27*(1-lie);
+  camera.target.set(1.6*walk,1.8-.12*lie,-.35+2.15*walk);
+  if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
+ }else if(sleepPhase==='resting'){
+  state.energy=Math.min(100,state.energy+dt*1.25);
+  if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 Descansando… energía '+num(state.energy)+'%';render();}
+  if(state.energy>=100&&now-sleepRestStart>9500){
+   sleepPhase='waking';sleepClock=now;move='idle';started=now;duration=2.5;
+   state.hunger=num(state.hunger-3);gainXP(11);save();toast('¡Daniela ha recuperado toda su energía! 🌞');reactionBubble('¡Qué bien he dormido! 💗',false,2600);
+  }
+ }else{
+  const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1700),r=1-walk;
+  idol.position.set(3*r,1.05*(1-stand),-1.33+3.83*r);idol.rotation.x=Math.PI*.5*(1-stand);
+  idol.scaling.setAll(1-.4*(1-stand));shadow.visibility=.27*stand;
+  camera.target.set(1.6*r,1.8-.12*(1-stand),-.35+2.15*r);
+  if(walk>=1){stopSleep();$('#scene-desc').textContent=rooms.bedroom.sub;render();}
+ }
+}
 function save(){state.lastSaved=Date.now();try{localStorage.setItem('danielakpop-v2',JSON.stringify(state));}catch{}}
 function render(){for(const n of ['hunger','happiness','energy','hygiene'] as Need[]){$('#'+n+'-value').textContent=num(state[n])+'%';$('#'+n+'-meter').style.width=num(state[n])+'%';}
 $('#coins').textContent=state.coins.toLocaleString('es-ES');$('#followers').textContent=state.followers.toLocaleString('es-ES');$('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
@@ -223,7 +323,7 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(room==='stage'&&next!=='stage'&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(room==='bedroom'&&next!=='bedroom')stopSleep();if(room==='stage'&&next!=='stage'&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
 $('#action-label').textContent=room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
@@ -266,17 +366,34 @@ function sfx(kind:Sfx){const ctx=audio();if(!ctx)return;
  osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+v.duration+.01);}
 }
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
-const liveMessages=['¡Daniela te amooo! 💜','ESA COREO 🔥','queen!! 👑','qué monaaa 😭💕','otra canción porfa 🎤','SLAYYY ✨','el outfit 💖','🔥🔥🔥','acabo de llegar y YA SOY FAN 😭','esa voz!!! 🎤💜'];
-const liveUsers=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: ','@purplewave: ','@danistars: '];
+const liveMessages=[
+ '¡Daniela te amooo! 💜','ESA COREO 🔥','queen!! 👑','qué monaaa 😭💕','otra canción porfa 🎤',
+ 'SLAYYY ✨','el outfit 💖','🔥🔥🔥','acabo de llegar y YA SOY FAN 😭','esa voz!!! 🎤💜',
+ '¡Los pasos van con el beat!','¿Cómo se llama esta canción? 🎶','Estoy viendo esto con mi hermana 🥹',
+ '¡Saluditos desde España! 🇪🇸','¡Hola desde México! 🇲🇽','La iluminación está preciosa ✨',
+ '¿Habrá un bis?','¡El peinado de hoy! 😍','Qué buena energía en el escenario','¿De dónde es el vestido?',
+ '¡Ya te sigo! 💜','¡Nueva fan por aquí!','Me salió en para ti y me quedé','La voz me pone la piel de gallina',
+ '¡Ese giro fue increíble!','¡Otra vez esa coreo, porfa!','¡Estoy aprendiendo el baile! 💃',
+ 'Se nota todo el ensayo','El ritmo me tiene atrapada','¡Mi parte favorita de la canción!',
+ '¡¡NO ME ESPERABA ESE PASO!!','¡VAMOS DANIELA!','¿Cuándo es el próximo directo?',
+ 'Esto merece millones de likes','Pongan el volumen a tope 🔊','¡La cámara captó el momento!',
+ '¡Qué adorable la sonrisa!','¡Necesito una playlist de Daniela!','¿Alguien más está bailando en casa?',
+ 'Los corazoncitos no paran 💕','¡La mejor noche!','¡Gracias por cantar para nosotros!',
+ 'Me encantan las luces lilas','¡El final de la coreo! 👏','¡Dale, que tú puedes!',
+ '¡La ropa combina con el escenario!','¿Se puede pedir otra canción?','¡Qué bonito ambiente!',
+ '¡Mi primera vez en este LIVE!','¡Ya tengo mi canción favorita!'
+];
+const liveUsers=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: ','@purplewave: ','@danistars: ','@moonberry: ','@luna_pop: ','@mintcloud: ','@sweetidol: ','@starry_night: ','@berrytea: ','@fan_rosa: ','@melodygirl: ','@neon_dream: ','@cloud9: ','@kawaii_dance: ','@peachy: ','@popcornfan: ','@dani_forever: '];
 function paintLiveStats(){
  $('#live-likes').textContent=liveLikes.toLocaleString('es-ES');$('#live-comment-count').textContent=liveComments.toLocaleString('es-ES');
  $('#live-viewers').textContent=liveViewers.toLocaleString('es-ES');$('#live-follower-gain').textContent=liveFollowerGain.toLocaleString('es-ES');
  $('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
 }
+const recentLiveComments:string[]=[];
 function liveReactionBurst(power=1){
  const reactions=$('#live-reactions'),comments=$('#live-comments'),count=Math.min(5,2+Math.round(power));
  for(let i=0;i<count;i++)setTimeout(()=>{if(!concertActive)return;const r=document.createElement('span');r.className='live-reaction';r.textContent=['♥','💜','🔥','✨','😍','👏'][Math.floor(Math.random()*6)];r.style.setProperty('--rx',(8+Math.random()*82)+'%');r.style.setProperty('--drift',(2.1+Math.random()*1.8)+'s');reactions.append(r);while(reactions.children.length>18)reactions.firstElementChild?.remove();setTimeout(()=>r.remove(),2600);},i*90);
- if(Math.random()<Math.min(.92,.32+power*.18)){const c=document.createElement('div');c.className='live-comment';c.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)]+liveMessages[Math.floor(Math.random()*liveMessages.length)];comments.append(c);while(comments.children.length>5)comments.firstElementChild?.remove();}
+ if(Math.random()<Math.min(.92,.32+power*.18)){const c=document.createElement('div');c.className='live-comment';const options=liveMessages.filter(m=>!recentLiveComments.includes(m));const message=options[Math.floor(Math.random()*options.length)]||liveMessages[0];recentLiveComments.push(message);if(recentLiveComments.length>10)recentLiveComments.shift();c.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)]+message;comments.append(c);while(comments.children.length>5)comments.firstElementChild?.remove();}
 }
 function socialBoost(kind:'dance'|'sing'|'concert'){
  if(!concertActive)return;
@@ -290,25 +407,27 @@ function socialBoost(kind:'dance'|'sing'|'concert'){
 }
 function startConcert(){
  if(concertActive){socialBoost('sing');return;}
- concertActive=true;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1.2;lastLiveTick=performance.now();
+ concertActive=true;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1.2;lastLiveTick=performance.now();concertStartedAt=lastLiveTick;livePerformanceSeconds=0;
  $('#live-comments').replaceChildren();$('#live-reactions').replaceChildren();const live=$('#studio-live');live.classList.add('visible');live.setAttribute('aria-hidden','false');
- paintLiveStats();socialBoost('concert');toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
+ paintLiveStats();toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
 }
 function endConcert(announce=true){
  if(!concertActive)return;
- concertActive=false;const gained=liveFollowerGain;
- const popGain=Math.max(0,Math.min(3,Math.floor((gained/180)+(liveViewers/1300)+(liveLikes/4200))));
- const concertPay=Math.max(5,Math.floor(liveLikes/28+liveViewers/95+gained*1.15));
+ concertActive=false;const eligible=performance.now()-concertStartedAt>=12000;
+ const gained=eligible?liveFollowerGain:0;
+ const popGain=eligible?Math.max(0,Math.min(3,Math.floor((gained/180)+(liveViewers/1300)+(liveLikes/4200)))):0;
+ const effort=Math.min(1,livePerformanceSeconds/35);
+ const concertPay=eligible?Math.max(12,Math.floor((liveLikes/14+liveViewers/55+gained*1.7)*(.3+.7*effort))):0;
  state.followers=Math.max(0,state.followers+gained);state.popularity=num(state.popularity+popGain);state.coins+=concertPay;state.lastConcertAt=Date.now();state.concerts++;
  $('#studio-live').classList.remove('visible');$('#studio-live').setAttribute('aria-hidden','true');$('#followers-live').textContent='';
  document.querySelectorAll('.career-card').forEach(card=>{card.classList.remove('career-updated');void (card as HTMLElement).offsetWidth;card.classList.add('career-updated');});
- if(announce){toast('¡Concierto terminado! +'+gained+' seguidores · +'+popGain+'% popularidad · +'+concertPay+' ★');reward('¡CARRERA +! ✨');}
+ if(announce){toast(eligible?'¡Concierto terminado! +'+gained+' seguidores · +'+popGain+'% popularidad · +'+concertPay+' ★':'¡Concierto muy corto! Actúa al menos 12 segundos para ganar fans y dinero 💜');if(eligible)reward('¡CARRERA +! ✨');}
  liveFollowerGain=0;render();save();
 }
 function socialTick(now:number){
  if(!concertActive||room!=='stage'||now-lastLiveTick<1500)return;lastLiveTick=now;
  const performing=move==='sing'||move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
- const singing=move==='sing',power=performing?(singing?2.15:2.45):.45;
+ const singing=move==='sing',power=performing?(singing?2.15:2.45):.45;if(performing)livePerformanceSeconds+=1.5;
  liveMomentum=Math.max(.75,Math.min(5.5,liveMomentum*.91+(performing?.36:-.05)));
  const scale=power*liveMomentum;
  liveViewers=Math.max(0,liveViewers+Math.floor((2+Math.random()*8)*scale)-(performing?0:Math.floor(Math.random()*4)));
@@ -330,7 +449,7 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();sfx('ball');return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
+function perform(i:number){if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();sfx('ball');return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
 if(room==='stage'&&state.energy<10){toast('¡Daniela está agotada! Llévala a descansar 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
@@ -361,8 +480,18 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
 showRoom('bedroom');fashion();render();updateNeedAlerts();
+let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
- const now=performance.now(),t=now/1000,e=(now-started)/1000;
+ if(document.hidden)return;
+ const now=performance.now();
+ // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
+ if(now-performanceCheckAt>7500){
+  performanceCheckAt=now;const fps=engine.getFps();
+  if(fps<39){slowSamples++;fastSamples=0;}else if(fps>55){fastSamples++;slowSamples=0;}else{slowSamples=0;fastSamples=0;}
+  if(slowSamples>=2){const next=Math.min(2.25,renderScale+.22);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}glow.isEnabled=false;slowSamples=0;}
+  if(fastSamples>=3){const next=Math.max(1.25,renderScale-.12);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}if(fps>57)glow.isEnabled=true;fastSamples=0;}
+ }
+ tickSleep(now);const t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
  const a=e;const sin=Math.sin,cos=Math.cos,abs=Math.abs;
  const dance=move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
@@ -371,7 +500,7 @@ engine.runRenderLoop(()=>{
  const b=sin(a*beat),step=sin(a*beat*.5);
  const popBeat=sin(a*8.4),cuteBeat=sin(a*5.2),hipBeat=sin(a*10.8),discoBeat=sin(a*6.2);
  const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
- const isEating=move==='eat'||move==='drink';
+ const isEating=move==='eat'||move==='drink';const walkingToBed=(sleepPhase==='walking'&&now-sleepClock<2400)||(sleepPhase==='waking'&&now-sleepClock>900);
  const isVolley=move==='volley';
  const singing=move==='sing'&&room==='stage';
  microphone.setEnabled(singing);
@@ -381,15 +510,15 @@ engine.runRenderLoop(()=>{
  body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
   isVolley?abs(sin(a*13))*.22:move==='jump'?abs(sin(a*5))*.32:
   move==='laugh'?abs(sin(a*13))*.09:move==='giggle'?abs(sin(a*8))*.05:
-  move==='sleep'?-.23:sin(t*1.75)*.035+sin(t*.63)*.012;
+  move==='sleep'?-.23:walkingToBed?abs(sin(t*9))*.07:sin(t*1.75)*.035+sin(t*.63)*.012;
  body.rotation.x=dance?move==='dance4'?.14+sin(a*beat)*.13:move==='dance5'?sin(a*3)*.08:sin(a*beat)*.05:
   isVolley?-.16*sin(a*9):0;
  body.rotation.y=move==='spin'?a*6:move==='dance2'?(popPhrase===3?sin(a*7)*.48:sin(a*3.8)*.16):move==='dance3'?sin(a*2.1)*.22:move==='dance4'?(hipPhrase===1?sin(a*8)*.34:sin(a*4.8)*.18):move==='dance5'?sin(a*2.4)*.58:move==='dance'?sin(a*4)*.18:sin(t*.8)*.065;
  body.rotation.z=move==='sleep'?.12:move==='dance4'?sin(a*beat/2)*.16:
   move==='dance3'?sin(a*4)*.11:dance?sin(a*beat)*.075:
   move==='laugh'?sin(a*14)*.09:move==='giggle'?sin(a*9)*.045:sin(t*1.2)*.018;
- legs[0].rotation.x=move==='dance2'?popBeat*.42:move==='dance3'?cuteBeat*.22:move==='dance4'?hipBeat*.48:move==='dance5'?discoBeat*.28:dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):0;
- legs[1].rotation.x=move==='dance2'?-popBeat*.42:move==='dance3'?-cuteBeat*.22:move==='dance4'?-hipBeat*.48:move==='dance5'?-discoBeat*.28:dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):0;
+ legs[0].rotation.x=move==='dance2'?popBeat*.42:move==='dance3'?cuteBeat*.22:move==='dance4'?hipBeat*.48:move==='dance5'?discoBeat*.28:dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):walkingToBed?sin(t*9)*.45:0;
+ legs[1].rotation.x=move==='dance2'?-popBeat*.42:move==='dance3'?-cuteBeat*.22:move==='dance4'?-hipBeat*.48:move==='dance5'?-discoBeat*.28:dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):walkingToBed?-sin(t*9)*.45:0;
  legs[0].rotation.z=dance?(move==='dance5'?.12+step*.13:step*.1):0;
  legs[1].rotation.z=dance?(move==='dance5'?-.12-step*.13:-step*.1):0;
  // A K-pop routine should not share the same generic arm animation.
