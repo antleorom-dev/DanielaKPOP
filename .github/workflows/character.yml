@@ -19,12 +19,12 @@ jobs:
       - name: Install free Blender (headless)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
           blender --version | head -n 2
       - name: Build rigged chibi and 16 clips
         run: |
           mkdir -p build/character
-          blender --background --factory-startup --python scripts/character/generate_daniela.py -- \
+          blender --background --factory-startup --python-exit-code 1 --python scripts/character/generate_daniela.py -- \
             --output build/character/daniela-rigged.glb \
             --blend-output build/character/daniela-source.blend
       - name: Validate skeleton, GLB and animation clips
