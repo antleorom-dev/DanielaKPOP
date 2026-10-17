@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6d8ed">
+  <meta name="description" content="Laboratorio 3D de DanielaKPOP: esqueleto y animaciones generadas por Blender en la nube.">
+  <title>DanielaKPOP · Laboratorio 3D</title>
+</head>
+<body>
+  <main id="lab">
+    <canvas id="lab-canvas" aria-label="Visor 3D de Daniela articulada" tabindex="0"></canvas>
+    <header class="lab-header">
+      <div class="lab-brand"><span class="lab-logo">✦</span>
+        <div><span>MY LITTLE IDOL</span><strong>Daniela<span>KPOP</span> · LAB</strong></div>
+      </div>
+      <a href="./" class="lab-back">← Volver al juego</a>
+    </header>
+    <div class="lab-hint">Arrastra para girar · Pellizca para acercar</div>
+    <div class="lab-loading" id="lab-loading" role="status" aria-live="polite">✦ Generando magia 3D...</div>
+    <section class="lab-panel" aria-label="Animaciones del personaje 3D">
+      <div class="lab-panel-head">
+        <div><strong>🎀 Daniela articulada</strong><p id="lab-info">Modelo experimental creado automáticamente en GitHub Actions</p></div>
+        <span class="lab-badge">PROTOTIPO</span>
+      </div>
+      <div id="lab-clips" class="lab-clips"></div>
+      <p class="lab-foot">Esta es una versión de prueba independiente. El personaje y las mecánicas del juego original no se han sustituido.</p>
+    </section>
+  </main>
+  <script type="module" src="/src/character-preview.ts"></script>
+</body>
+</html>
