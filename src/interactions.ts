@@ -97,12 +97,12 @@ export function createInteractions(c:Dependencies){
  });
  ballButton.addEventListener('pointerup',e=>{
   if(!currentDrag||currentDrag.pointer!==e.pointerId)return;
-  const shot=currentDrag;currentDrag=null;ghost.classList.remove('dragging');
+  const shot=currentDrag;currentDrag=null;ghost.classList.remove('dragging','over-target');
   if(!volley.launch(e.clientX-shot.x,e.clientY-shot.y,performance.now()-shot.at))c.toast('Espera a que vuelva la pelota 🏐');
   ballButton.dataset.ignoreClick='1';
   setTimeout(()=>delete ballButton.dataset.ignoreClick,100);
  });
- ballButton.addEventListener('pointercancel',()=>{currentDrag=null;ghost.classList.remove('dragging');});
+ ballButton.addEventListener('pointercancel',()=>{currentDrag=null;ghost.classList.remove('dragging','over-target');});
  ballButton.addEventListener('click',e=>{if(ballButton.dataset.ignoreClick==='1')return;if((e as MouseEvent).detail===0)volley.launch();});
  let feeding:{holder:TransformNode;started:number;drink:boolean}|null=null;
  function feed(index:number){
@@ -170,25 +170,32 @@ export function createInteractions(c:Dependencies){
   const center=Vector3.Project(new Vector3(c.idol.position.x,1.6,c.idol.position.z),Matrix.Identity(),c.scene.getTransformMatrix(),c.camera.viewport.toGlobal(c.scene.getEngine().getRenderWidth(),c.scene.getEngine().getRenderHeight()));
   const sx=r.left+center.x*r.width/c.scene.getEngine().getRenderWidth();
   const sy=r.top+center.y*r.height/c.scene.getEngine().getRenderHeight();
-  return Math.hypot(x-sx,y-sy)<Math.min(130,r.width*.21);
+  const dx=(x-sx)/Math.min(185,r.width*.29),dy=(y-sy)/Math.min(245,r.height*.38);
+  return dx*dx+dy*dy<1;
  }
  function decorateActions(room:Room,row:HTMLElement){
   row.classList.toggle('has-five-actions',room==='stage');
   row.querySelectorAll<HTMLButtonElement>('button').forEach((button,i)=>{
-   button.dataset.dragged='0';button.style.touchAction='pan-x';
-   let sourcePointer=-1,startX=0,startY=0,dragging=false;
+   button.dataset.dragged='0';
+   const directDrag=room==='kitchen'||(room==='bathroom'&&i<2);
+   button.style.touchAction=directDrag?'none':'pan-x';
+   let sourcePointer=-1,startX=0,startY=0,dragging=false,touchedDaniela=false;
    button.addEventListener('pointerdown',e=>{
-    sourcePointer=e.pointerId;startX=e.clientX;startY=e.clientY;dragging=false;
+    sourcePointer=e.pointerId;startX=e.clientX;startY=e.clientY;dragging=false;touchedDaniela=false;
+    if(directDrag)button.setPointerCapture(e.pointerId);
     ghost.textContent=button.querySelector('.action-emoji')?.textContent||'💗';
     if(room==='bathroom'&&i<2)selectBath(i);
    });
    button.addEventListener('pointermove',e=>{
     if(sourcePointer!==e.pointerId)return;
-    if(!dragging&&Math.abs(e.clientY-startY)>12&&Math.abs(e.clientY-startY)>Math.abs(e.clientX-startX)*.7){
+    const distance=Math.hypot(e.clientX-startX,e.clientY-startY);
+    const verticalIntent=Math.abs(e.clientY-startY)>Math.abs(e.clientX-startX)*.55;
+    if(!dragging&&distance>(directDrag?7:12)&&(directDrag||verticalIntent)){
      dragging=true;button.dataset.dragged='1';button.setPointerCapture(e.pointerId);ghost.classList.add('dragging');
     }
     if(dragging){
      ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';
+     if(room==='kitchen'&&playerHit(e.clientX,e.clientY)){touchedDaniela=true;ghost.classList.add('over-target');}else ghost.classList.remove('over-target');
      if(room==='bathroom'&&i<2)bath.paint(e.clientX,e.clientY);
      e.preventDefault();
     }
@@ -197,11 +204,11 @@ export function createInteractions(c:Dependencies){
     if(sourcePointer!==e.pointerId)return;
     sourcePointer=-1;
     if(!dragging)return;
-    dragging=false;ghost.classList.remove('dragging');
+    dragging=false;ghost.classList.remove('dragging','over-target');
     if(room==='bathroom'&&i<2){
      bath.paint(e.clientX,e.clientY,true);bath.finish();
-    }else if(playerHit(e.clientX,e.clientY)){
-     // Successful food drag triggers the same paid action exactly once.
+    }else if(playerHit(e.clientX,e.clientY)||touchedDaniela){
+     // Successful food drag is tolerant near Daniela and triggers once.
      if(room==='kitchen')c.perform(i);
      else if(room==='bedroom'&&i===2)volley.launch();
      else c.perform(i);
@@ -209,7 +216,7 @@ export function createInteractions(c:Dependencies){
     setTimeout(()=>button.dataset.dragged='0',350);
    };
    button.addEventListener('pointerup',finish);
-   button.addEventListener('pointercancel',()=>{sourcePointer=-1;dragging=false;ghost.classList.remove('dragging');setTimeout(()=>button.dataset.dragged='0',300);});
+   button.addEventListener('pointercancel',()=>{sourcePointer=-1;dragging=false;ghost.classList.remove('dragging','over-target');setTimeout(()=>button.dataset.dragged='0',300);});
   });
   sync();
  }

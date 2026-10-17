@@ -1,4 +1,4 @@
-import {Color3,Mesh,MeshBuilder,Scene,StandardMaterial,TransformNode,Vector3,ArcRotateCamera} from '@babylonjs/core';
+import {Color3,Mesh,MeshBuilder,Scene,StandardMaterial,TransformNode,Vector3,ArcRotateCamera,Matrix} from '@babylonjs/core';
 
 export type BathTool='soap'|'water'|null;
 type Bubble={mesh:Mesh;parent:TransformNode};
@@ -77,11 +77,25 @@ export function createBath(c:Context){
    if(!m.isDescendantOf(c.body))return false;
    return /^(face|shirt|dress|puff sleeve|arm|hand|leg|collar|cheek|nose|smile|big eye|hair cap|fringe|side hair|bang|twin tail|bow left|bow right|shoe|sock|bikini top|bikini bottom)/.test(m.name);
   });
-  if(!hit?.hit||!hit.pickedPoint||!hit.pickedMesh)return null;
+  if(!hit?.hit||!hit.pickedPoint||!hit.pickedMesh)return fallbackModel(x,y);
   const parent=hit.pickedMesh.isDescendantOf(c.head)?c.head:c.body;
   const inverse=parent.getWorldMatrix().clone();inverse.invert();
   const local=Vector3.TransformCoordinates(hit.pickedPoint,inverse);
   return{parent,local,world:hit.pickedPoint.clone()};
+ }
+ function fallbackModel(x:number,y:number){
+  const r=c.canvas.getBoundingClientRect(),engine=c.scene.getEngine();
+  const world=Vector3.TransformCoordinates(new Vector3(0,1.48,-.55),c.body.getWorldMatrix());
+  const projected=Vector3.Project(world,Matrix.Identity(),c.scene.getTransformMatrix(),c.camera.viewport.toGlobal(engine.getRenderWidth(),engine.getRenderHeight()));
+  const sx=r.left+projected.x*r.width/engine.getRenderWidth(),sy=r.top+projected.y*r.height/engine.getRenderHeight();
+  const rx=Math.min(170,r.width*.28),ry=Math.min(245,r.height*.38);
+  const dx=(x-sx)/rx,dy=(y-sy)/ry;
+  if(dx*dx+dy*dy>1)return null;
+  const useHead=dy<-.34,parent=useHead?c.head:c.body;
+  const local=useHead
+   ?new Vector3(Math.max(-.72,Math.min(.72,dx*.78)),Math.max(-.62,Math.min(.55,-(dy+.55)*.9)),-.78)
+   :new Vector3(Math.max(-.68,Math.min(.68,dx*.72)),Math.max(.55,Math.min(1.92,1.45-dy*1.05)),-.62);
+  return{parent,local,world:Vector3.TransformCoordinates(local,parent.getWorldMatrix())};
  }
  function bubbleWorldPosition(b:Bubble){b.mesh.computeWorldMatrix(true);return b.mesh.getAbsolutePosition();}
  function splash(parent:TransformNode,local:Vector3,mat:StandardMaterial,count:number,now:number){
