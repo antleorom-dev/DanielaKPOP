@@ -124,6 +124,60 @@ box('fancy mirror',2.4,3.9,.13,-3.8,2.18,5.8,gold,closet);box('mirror glass',2.1
 cyl('closet round rug',3.25,3.25,.035,-.4,.025,2.45,dressColors[0],closet);
 for(let i=0;i<6;i++)lively(ball('closet sparkle bulb',.12,-2.1+i*.82,4.55,5.55,i%2?white:gold,closet),.0015,.05,i);
 box('shoe shelf',2.25,.12,.75,4.3,.42,2.65,white,closet);for(let i=0;i<4;i++){const shoe=ball('display shoe',.34,3.55+i*.48,.68,2.5,dressColors[i%4],closet);shoe.scaling.set(1.25,.42,.72);}
+// Lightweight extra decoration: five themed rooms, no texture downloads or new lights.
+const bookColors=[pink,lilac,mint,gold];
+box('bedside table',.82,.65,.72,4.8,.4,2.25,white,bed);
+box('bedside drawer',.7,.3,.05,4.8,.48,1.87,pink,bed);
+cyl('bedside lamp base',.18,.26,.12,4.8,.79,2.25,gold,bed);
+cyl('bedside lamp shade',.62,.34,.48,4.8,1.09,2.25,trim,bed);
+box('bookshelf bedroom',2,.14,.55,-2.8,2.35,5.57,white,bed);
+for(let i=0;i<5;i++)box('bedroom storybook',.23,.42+(i%2)*.12,.3,-3.5+i*.33,2.62,5.46,bookColors[i%4],bed);
+for(const x of [2.25,3.75])ball('bed heart cushion',.46,x,1.12,3.3,pink,bed).scaling.set(1.15,.5,.75);
+ball('sleepy moon decor',.56,-1.4,4.13,5.77,gold,bed).scaling.z=.25;
+box('dreams wall trim',2.8,.07,.1,3.1,3.96,5.78,white,bed);
+for(const x of [1.95,2.85,3.75])ball('dreams pearl',.18,x,3.96,5.67,pink,bed);
+
+// Café: recipe board, pastry display, pastel lighting and small kitchen details.
+box('cafe chalkboard frame',2.15,1.7,.12,-.45,3.55,5.92,gold,kit);
+box('cafe chalkboard',1.91,1.47,.13,-.45,3.55,5.82,purple,kit);
+for(let i=0;i<3;i++)box('chalk menu line',1.12-i*.17,.045,.04,-.45,3.96-i*.33,5.73,i===1?pink:white,kit);
+cyl('cafe pendant shade',1.1,.48,.4,-1.45,4.65,2.75,pink,kit);
+cyl('cafe pendant bulb',.29,.29,.18,-1.45,4.37,2.75,gold,kit);
+box('pastry tray',1.15,.09,.68,3.5,1.85,3.72,white,kit);
+for(let i=0;i<3;i++){const cake=ball('mini pastry',.3,3.12+i*.35,2.05,3.68,i===1?lilac:pink,kit);cake.scaling.set(1,.55,1);ball('pastry cherry',.09,3.12+i*.35,2.21,3.68,gold,kit);}
+box('cafe wall shelf',1.5,.12,.35,-5.25,3.25,5.67,white,kit);
+for(let i=0;i<3;i++)cyl('spice jar',.27,.27,.39,-5.65+i*.39,3.5,5.59,i===1?gold:mint,kit);
+
+// Bathroom: soft spa atmosphere and practical accessories.
+box('spa wall shelf',2.15,.12,.46,.45,3.5,5.65,white,bath);
+for(let i=0;i<4;i++){cyl('spa bottle',.28,.28,.5,-.25+i*.42,3.79,5.56,i%2?pink:mint,bath);ball('spa cap',.16,-.25+i*.42,4.08,5.56,gold,bath);}
+box('bath rug',2.4,.045,1.25,1.8,.04,1.5,mint,bath);
+for(let i=0;i<4;i++)ball('bath rug tuft',.16,1+i*.42,.11,1.05,white,bath).scaling.y=.3;
+box('shower curtain rail',3.6,.08,.08,3.1,3.65,3.05,gold,bath);
+for(let i=0;i<5;i++)box('spa curtain fold',.53,1.4,.07,1.9+i*.55,2.85,3.05,i%2?trim:mint,bath).visibility=.55;
+cyl('soap dish',.6,.6,.08,-3.2,1.52,3.77,white,bath);
+ball('pink soap',.36,-3.2,1.62,3.77,pink,bath).scaling.y=.42;
+
+// Studio: illuminated LED panels, floor strips and backstage props.
+for(const x of [-3.25,3.25]){
+ box('studio led frame',1.05,2.55,.12,x,3.05,5.7,gold,stage);
+ box('studio led panel',.85,2.35,.14,x,3.05,5.58,lilac,stage);
+ for(let i=0;i<4;i++)box('studio led stripe',.67,.065,.04,x,2.2+i*.52,5.47,i%2?pink:mint,stage);
+}
+for(const x of [-3.7,3.7])box('dance floor edge glow',.1,.035,3.3,x,.58,2.6,pink,stage);
+box('studio console',1.35,.6,.8,4.75,.95,1.15,purple,stage);
+box('studio console screen',.85,.28,.05,4.75,1.26,.72,mint,stage);
+for(let i=0;i<3;i++)ball('studio mixer dial',.13,4.35+i*.38,1.3,1.2,gold,stage);
+
+// Closet: fashion accessories and a glowing make-up station.
+box('closet accessory shelf',1.65,.12,.48,-.75,2.95,5.58,white,closet);
+for(let i=0;i<3;i++){ball('boutique handbag',.36,-1.24+i*.5,3.25,5.49,i%2?pink:lilac,closet).scaling.set(1,.75,.55);ring('bag handle',.24,.045,-1.24+i*.5,3.49,5.47,gold,closet);}
+box('makeup counter',1.5,.17,.7,-3.8,1.12,4.35,white,closet);
+for(let i=0;i<3;i++)cyl('lipstick case',.14,.14,.3,-4.18+i*.32,1.37,4.12,i===1?gold:pink,closet);
+for(const x of [-4.95,-2.65])for(const y of [1.25,2.05,2.85,3.65])ball('mirror bulb',.17,x,y,5.66,white,closet);
+box('outfit inspiration frame',1.25,1.35,.12,1.1,3.85,5.88,gold,closet);
+box('outfit inspiration print',1.04,1.15,.13,1.1,3.85,5.77,pink,closet);
+star(1.1,3.9,5.68,.48,white,closet);
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
