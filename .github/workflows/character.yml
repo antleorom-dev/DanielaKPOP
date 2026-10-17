@@ -1,0 +1,40 @@
+name: Generate Daniela rigged 3D (Blender)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/character/**'
+      - '.github/workflows/character.yml'
+permissions:
+  contents: read
+concurrency:
+  group: danielakpop-character-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install free Blender (headless)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender
+          blender --version | head -n 2
+      - name: Build rigged chibi and 16 clips
+        run: |
+          mkdir -p build/character
+          blender --background --factory-startup --python scripts/character/generate_daniela.py -- \
+            --output build/character/daniela-rigged.glb \
+            --blend-output build/character/daniela-source.blend
+      - name: Validate skeleton, GLB and animation clips
+        run: |
+          python3 scripts/character/validate_glb.py \
+            build/character/daniela-rigged.glb \
+            --manifest build/character/daniela-manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DanielaKPOP-rigged-3D-${{ github.run_number }}
+          path: build/character/
+          retention-days: 14
+          if-no-files-found: error
