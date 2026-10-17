@@ -387,6 +387,7 @@ function paintLiveStats(){
  $('#live-viewers').textContent=liveViewers.toLocaleString('es-ES');$('#live-follower-gain').textContent=liveFollowerGain.toLocaleString('es-ES');
  $('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
 }
+const recentLiveComments:string[]=[];
 function liveReactionBurst(power=1){
  const reactions=$('#live-reactions'),comments=$('#live-comments'),count=Math.min(5,2+Math.round(power));
  for(let i=0;i<count;i++)setTimeout(()=>{if(!concertActive)return;const r=document.createElement('span');r.className='live-reaction';r.textContent=['♥','💜','🔥','✨','😍','👏'][Math.floor(Math.random()*6)];r.style.setProperty('--rx',(8+Math.random()*82)+'%');r.style.setProperty('--drift',(2.1+Math.random()*1.8)+'s');reactions.append(r);while(reactions.children.length>18)reactions.firstElementChild?.remove();setTimeout(()=>r.remove(),2600);},i*90);
