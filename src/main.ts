@@ -130,10 +130,11 @@ ball('face',1.65,0,0,-.055,skin,head).scaling.set(.97,1.03,.89);
 const hairParts:Mesh[]=[];function hair(n:string,d:number,x:number,y:number,z:number){const o=ball(n,d,x,y,z,hairColors[state.hair%4],head);hairParts.push(o);return o;}
 hair('hair cap',1.77,0,.28,.065).scaling.set(1.02,.78,.94);hair('fringe',1.43,0,.59,-.43).scaling.set(1,.39,.63);
 for(const x of [-.46,-.18,.15,.45])hair('bang',.48,x,.39,-.69).scaling.set(.88,.76,.49);
-const eyeMeshes:Mesh[]=[];
+// Keep the original face; add subtle, inexpensive eyelid motion.\nconst eyelids:Mesh[]=[];\nconst eyeMeshes:Mesh[]=[];
 for(const s of [-1,1]){hair('side hair',.53,s*.78,-.25,-.08).scaling.set(.62,1.9,.85);hair('twin tail',.9,s*1.04,-.21,.2).scaling.set(.7,1.18,.7);
 ball('hair tie',.27,s*.87,.15,.02,pink,head);
 const eye=ball('big eye',.33,s*.33,-.08,-.755,dark,head);eye.scaling.set(.8,1.1,.25);eyeMeshes.push(eye);
+const lid=ball('soft eyelid',.35,s*.33,-.08,-.784,skin,head);lid.scaling.set(.83,.025,.25);lid.visibility=0;eyelids.push(lid);
 ball('eye light',.11,s*.33-.055,-.005,-.823,white,head).scaling.z=.35;ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head);
 ball('cheek',.3,s*.62,-.31,-.68,blush,head).scaling.set(.85,.35,.2);
  ball('eye outer lash',.12,s*.48,.02,-.77,dark,head).scaling.set(.58,.22,.22);
@@ -198,6 +199,10 @@ editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,no
 showRoom('bedroom');fashion();render();
 engine.runRenderLoop(()=>{
  const now=performance.now(),t=now/1000,e=(now-started)/1000;
+ // Natural asynchronous blink, no allocations or new geometry per frame.
+ const blinkPhase=t%4.7;const blink=Math.max(0,1-Math.abs(blinkPhase-3.65)/.115);
+ for(const lid of eyelids){lid.visibility=blink>.02?1:0;lid.scaling.y=.025+blink*.94;}
+ for(const eye of eyeMeshes)eye.scaling.y=1.1*(1-.92*blink);
  if(e>duration&&move!=='idle')move='idle';
  const a=e;const sin=Math.sin,cos=Math.cos,abs=Math.abs;
  const dance=move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
