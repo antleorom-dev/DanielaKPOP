@@ -15,6 +15,7 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", default="public/assets/characters/daniela-rigged.glb")
 parser.add_argument("--blend-output", default="build/character/daniela-source.blend")
+parser.add_argument("--preview-output", default=None, help="Optional PNG render for side-by-side aesthetic review")
 parser.add_argument("--variant", choices=("legacy", "original-inspired"), default="legacy", help="Keep legacy output unchanged unless explicitly requested")
 args = parser.parse_args(argv)
 os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
@@ -303,6 +304,35 @@ if "export_animation_mode" in export_properties:
     kwargs["export_animation_mode"] = "NLA_TRACKS"
 bpy.ops.export_scene.gltf(**kwargs)
 assert os.path.getsize(args.output) > 4000, "GLB unexpectedly small"
+# A lightweight review render: cameras and lights are added *after* GLB export.
+# This PNG is not part of the playable character or production deployment.
+if args.preview_output:
+    os.makedirs(os.path.dirname(os.path.abspath(args.preview_output)), exist_ok=True)
+    from mathutils import Vector
+    bpy.ops.object.camera_add(location=(5.2, 8.8, 4.15))
+    camera = bpy.context.object
+    direction = Vector((0, 0, 1.92)) - camera.location
+    camera.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
+    camera.data.type = "ORTHO"
+    camera.data.ortho_scale = 4.6
+    scene.camera = camera
+    bpy.ops.object.light_add(type="AREA", location=(-3, 5, 7))
+    bpy.context.object.data.energy = 650
+    bpy.context.object.data.shape = "DISK"
+    bpy.context.object.data.size = 5
+    bpy.ops.object.light_add(type="AREA", location=(3, 2, 5))
+    bpy.context.object.data.energy = 350
+    bpy.context.object.data.size = 4
+    scene.render.engine = "BLENDER_EEVEE"
+    scene.render.resolution_x = 720
+    scene.render.resolution_y = 900
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.filepath = os.path.abspath(args.preview_output)
+    scene.camera.data.lens = 42
+    bpy.ops.render.render(write_still=True)
+    print("DANIELA PREVIEW:", args.preview_output)
+
 print("DANIELA VARIANT:", args.variant)
 print("DANIELA GENERATED:",args.output,"bytes",os.path.getsize(args.output))
 print("DANIELA CLIPS:",", ".join(n for n,_ in names))
