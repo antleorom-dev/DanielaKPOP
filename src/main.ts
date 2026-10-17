@@ -14,7 +14,7 @@ let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};const mins=Math.min(240,Math.max(0,(Date.now()-(old.lastSaved||Date.now()))/60000));state.hunger=Math.max(0,state.hunger-mins*.13);state.energy=Math.max(0,state.energy-mins*.08);state.hygiene=Math.max(0,state.hygiene-mins*.05);state.happiness=Math.max(0,state.happiness-mins*.06);}}catch{}
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
-let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let soundEnabled=true;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let liveTimer=0;let needReminderTimer=0;let soundEnabled=true;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
@@ -24,7 +24,12 @@ act('🏐','Voleibol','¡Golpea la pelota!',['#ffcf82','#ffa76b'],'volley',{happ
 kitchen:{title:'Cocina dulce',kicker:'✦ SWEET LITTLE CAFÉ ✦',sub:'¡El menú favorito de Daniela!',accent:'#ffc4a8',actions:[
 act('🍓','Fresas','10 monedas',['#ff9fb4','#f77d8c'],'eat',{hunger:22,happiness:4},-10,9,'¡Ñam! Fresas deliciosas 🍓'),
 act('🥤','Refresco','15 monedas',['#d1acf4','#a47de0'],'drink',{hunger:14,happiness:10},-15,13,'¡Qué refrescante! 🥤'),
-act('🧁','Cupcake','20 monedas',['#ffc891','#fa9db4'],'eat',{hunger:26,happiness:12},-20,17,'¡Un cupcake mágico! 🧁')]},
+act('🧁','Cupcake','20 monedas',['#ffc891','#fa9db4'],'eat',{hunger:26,happiness:12},-20,17,'¡Un cupcake mágico! 🧁'),
+act('🍕','Pizza','25 monedas',['#ffc26f','#f28b68'],'eat',{hunger:34,happiness:9},-25,19,'¡Pizza calentita! 🍕'),
+act('🍜','Ramen','30 monedas',['#ffd58b','#e79a71'],'eat',{hunger:38,happiness:8},-30,22,'¡Ramen delicioso! 🍜'),
+act('🍙','Onigiri','18 monedas',['#c8e6d0','#86c7a0'],'eat',{hunger:25,happiness:5},-18,14,'¡Onigiri de idol! 🍙'),
+act('🍦','Helado','16 monedas',['#bfe5ff','#e3b8f4'],'eat',{hunger:16,happiness:15},-16,15,'¡Helado súper kawaii! 🍦'),
+act('🥞','Pancakes','28 monedas',['#ffd29c','#ee9db8'],'eat',{hunger:32,happiness:13},-28,20,'¡Pancakes con fresas! 🥞')]},
 bathroom:{title:'Baño burbuja',kicker:'✦ GLOW UP TIME ✦',sub:'Brilla por dentro y por fuera',accent:'#a8e6eb',actions:[
 act('🧽','Esponja','Arrastra hasta Daniela',['#99dcef','#77bdea'],'bath',{},0,2,'¡Espuma! 🫧'),
 act('🚿','Agua','Aclarar las burbujas',['#e4bbff','#b69bee'],'bath',{},0,2,'¡Agüita fresca! 🚿'),
@@ -178,15 +183,53 @@ function touchDaniela(x:number,y:number,headTap:boolean){const now=performance.n
 
 function sound(notes:number[]=[523,659,784]){if(!soundEnabled)return;try{const ctx=new AudioContext();notes.forEach((hz,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),time=ctx.currentTime+i*.095;osc.frequency.value=hz;gain.gain.setValueAtTime(.0001,time);gain.gain.exponentialRampToValueAtTime(.045,time+.015);gain.gain.exponentialRampToValueAtTime(.0001,time+.23);osc.connect(gain);gain.connect(ctx.destination);osc.start(time);osc.stop(time+.24);});setTimeout(()=>void ctx.close(),900);}catch{}}
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
+const liveMessages=['¡Daniela te amooo! 💜','ESA COREO 🔥','queen!! 👑','qué monaaa 😭💕','otra canción porfa 🎤','SLAYYY ✨','el outfit 💖','🔥🔥🔥'];
+function studioBurst(kind:'dance'|'sing'){
+ const live=$('#studio-live');live.classList.add('visible');live.setAttribute('aria-hidden','false');
+ const reactions=$('#live-reactions'),comments=$('#live-comments');
+ const count=kind==='sing'?16:22;
+ for(let i=0;i<count;i++)setTimeout(()=>{
+  const r=document.createElement('span');r.className='live-reaction';r.textContent=['♥','💜','🔥','✨','😍','👏'][Math.floor(Math.random()*6)];
+  r.style.setProperty('--rx',(8+Math.random()*82)+'%');r.style.setProperty('--drift',(2.1+Math.random()*1.8)+'s');reactions.append(r);
+  setTimeout(()=>r.remove(),4200);
+ },i*105);
+ for(let i=0;i<4;i++)setTimeout(()=>{
+  const c=document.createElement('div');c.className='live-comment';c.textContent=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: '][i]+liveMessages[Math.floor(Math.random()*liveMessages.length)];
+  comments.append(c);while(comments.children.length>4)comments.firstElementChild?.remove();
+ },i*480);
+ const likes=$('#live-likes'),cc=$('#live-comment-count'),viewers=$('#live-viewers');
+ const add=kind==='sing'?Math.floor(180+Math.random()*220):Math.floor(260+Math.random()*340);
+ likes.textContent=String(Number(likes.textContent||0)+add);
+ cc.textContent=String(Number(cc.textContent||0)+4);
+ viewers.textContent=(1.2+Math.random()*.9).toFixed(1)+'K';
+ clearTimeout(liveTimer);liveTimer=window.setTimeout(()=>{live.classList.remove('visible');live.setAttribute('aria-hidden','true');},6200);
+}
+function updateNeedAlerts(announce=false){
+ const alerts:[Need,string,string][]=[
+  ['hunger','🍓','Daniela tiene hambre'],
+  ['energy','💤','Daniela está cansada'],
+  ['hygiene','🫧','Daniela necesita un baño'],
+  ['happiness','💔','Daniela necesita cariño']
+ ];
+ const active=alerts.filter(([need])=>state[need]<45).sort((a,b)=>state[a[0]]-state[b[0]]);
+ const box=$('#need-alerts');box.replaceChildren();
+ for(const [need,emoji,label] of active){
+  const item=document.createElement('div');item.className='need-alert '+(state[need]<22?'critical':'');
+  item.innerHTML='<span>'+emoji+'</span><b>'+label+'</b><small>'+num(state[need])+'%</small>';box.append(item);
+ }
+ box.classList.toggle('visible',active.length>0);
+ if(announce&&active.length){clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>toast(active[0][2]+' '+active[0][1]),350);}
+}
 function perform(i:number){if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
 if(room==='stage'&&state.energy<10){toast('¡Daniela está agotada! Llévala a descansar 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
 fashion();for(const [need,delta] of Object.entries(a.effect) as [Need,number][])state[need]=num(state[need]+delta);
 state.coins=Math.max(0,state.coins+a.coins);gainXP(a.xp);animate(a.move);
+if(room==='stage')studioBurst(a.move==='sing'?'sing':'dance');
 const outfitNames=['Fresa pop','Lavender dream','Mint candy','Peach sparkle'],hairNames=['Chocolate','Strawberry','Lavender','Honey'];
 toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':a.message);
-reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();save();play?.afterAction(room,i);}
+reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
@@ -203,7 +246,7 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
-showRoom('bedroom');fashion();render();
+showRoom('bedroom');fashion();render();updateNeedAlerts();
 engine.runRenderLoop(()=>{
  const now=performance.now(),t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
@@ -299,5 +342,5 @@ engine.runRenderLoop(()=>{
  scene.render();
 });
 addEventListener('resize',()=>engine.resize());
-setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.16);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();save();},60000);
+setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.16);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();updateNeedAlerts(true);save();},60000);
 addEventListener('pagehide',save);
