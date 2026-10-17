@@ -12,7 +12,7 @@ type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move
 const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0};
 let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};const now=Date.now(),mins=Math.min(240,Math.max(0,(now-(old.lastSaved||now))/60000));state.hunger=Math.max(0,state.hunger-mins*.13);state.energy=Math.max(0,state.energy-mins*.08);state.hygiene=Math.max(0,state.hygiene-mins*.05);state.happiness=Math.max(0,state.happiness-mins*.06);
- if(state.lastConcertAt>0){const quietHours=Math.max(0,(now-state.lastConcertAt)/3600000-18);if(state.followers>0){const loss=Math.min(.35,quietHours*.0018);state.followers=Math.max(0,Math.floor(state.followers*(1-loss)));}state.popularity=num(state.popularity-Math.floor(quietHours/8));}}}catch{}
+ if(state.lastConcertAt>0){const quietHours=Math.max(0,(now-state.lastConcertAt)/3600000-18);if(state.followers>0){const loss=Math.min(.35,quietHours*.0018);state.followers=Math.max(0,Math.floor(state.followers*(1-loss)));}state.popularity=Math.round(Math.max(0,Math.min(100,state.popularity-Math.floor(quietHours/8))));}}}catch{}
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
