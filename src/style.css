@@ -141,3 +141,65 @@
 }
 @media(max-width:390px){.fan-count>span{display:none}.fan-count{padding:5px 7px}.fan-count em{display:none}}
 @media(prefers-reduced-motion:reduce){.studio-live.visible .live-badge{animation:none}}
+
+
+/* v0.9 — career dashboard: the three quiet top zones become meaningful progression */
+.career-topbar{
+ top:max(7px,env(safe-area-inset-top));left:4.3%;right:6.4%;padding:0;display:block;z-index:7;
+ pointer-events:none;
+}
+.career-hud{
+ width:100%;display:grid;grid-template-columns:1.05fr .92fr .9fr;gap:clamp(18px,3vw,38px);
+ align-items:stretch;pointer-events:none;
+}
+.career-card{
+ position:relative;height:60px;min-width:0;display:flex;align-items:center;gap:10px;
+ padding:7px 13px 7px 10px;overflow:hidden;pointer-events:auto;
+ border:2px solid #ffffffd9;border-radius:19px;
+ background:linear-gradient(135deg,#fffdf0d9,#fff8ffe3);
+ box-shadow:0 7px 24px #704b8121, inset 0 1px 0 #fff;
+ backdrop-filter:blur(14px);color:#744f91;
+}
+.career-card::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#f3a7d3,#ad91ed)}
+.career-icon{
+ flex:0 0 37px;width:37px;height:37px;display:grid;place-items:center;border-radius:13px;
+ background:linear-gradient(145deg,#f9c6e4,#c6acf5);box-shadow:inset 0 1px #fff9;
+ font-size:19px;
+}
+.money-card .career-icon{background:linear-gradient(145deg,#ffe9a2,#ffbd73);color:#fff}
+.popularity-card .career-icon{background:linear-gradient(145deg,#ffd0a2,#f48ebc)}
+.career-copy{min-width:0;display:flex;flex-direction:column;line-height:1}
+.career-copy small{font-size:8px;font-weight:1000;letter-spacing:1.05px;color:#aa79a5;white-space:nowrap}
+.career-copy strong{margin-top:3px;font-size:20px;font-weight:1000;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:#69468b}
+.career-copy strong sup{font-size:10px;color:#b17cb2}
+.career-copy em{height:10px;margin-top:2px;font-size:8px;font-weight:1000;font-style:normal;color:#e56aa8;white-space:nowrap}
+.career-spark{margin-left:auto;font-size:18px;color:#d98ac4;transform:rotate(-8deg)}
+.popularity-card{padding-bottom:13px}
+.popularity-track{position:absolute;left:10px;right:10px;bottom:6px;height:4px;border-radius:6px;background:#eadff0;overflow:hidden}
+.popularity-track i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#ff9ac9,#a885ed);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.career-card-actions{margin-left:auto;display:flex;gap:5px}
+.career-mini-button{
+ width:27px;height:27px;display:grid;place-items:center;border:1.5px solid #fff;border-radius:10px;
+ background:#f4b4d9;color:#fff;font-size:16px;font-weight:900;box-shadow:0 3px 9px #aa70962e;
+ transition:transform .18s,filter .18s;
+}
+.career-mini-button:hover{transform:translateY(-2px);filter:brightness(1.04)}
+.career-updated{animation:career-pop .72s cubic-bezier(.2,.85,.25,1)}
+@keyframes career-pop{0%{transform:scale(1)}35%{transform:scale(1.035);box-shadow:0 9px 30px #e079b14f}100%{transform:scale(1)}}
+@media(max-width:680px){
+ .career-topbar{top:max(5px,env(safe-area-inset-top));left:7px;right:7px}
+ .career-hud{gap:5px;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .career-card{height:51px;padding:5px 7px;gap:5px;border-radius:14px}
+ .career-icon{flex-basis:27px;width:27px;height:27px;border-radius:9px;font-size:13px}
+ .career-copy small{font-size:6px;letter-spacing:.35px;overflow:hidden;text-overflow:ellipsis}
+ .career-copy strong{font-size:14px;margin-top:2px}.career-copy em{font-size:6px;height:7px;overflow:hidden;text-overflow:ellipsis}
+ .career-spark{display:none}.popularity-card{padding-bottom:10px}.popularity-track{left:7px;right:7px;bottom:4px;height:3px}
+ .career-card-actions{gap:2px}.career-mini-button{width:21px;height:21px;border-radius:7px;font-size:12px}
+ .hud-left{top:65px}.care-panel{top:116px}
+}
+@media(max-width:420px){
+ .career-icon{display:none}.career-card{padding-left:7px}.career-copy strong{font-size:13px}
+ .money-card .career-copy em,.followers-card .career-copy em{display:none}.career-card-actions{position:absolute;right:4px;bottom:4px}
+ .money-card .career-copy{padding-right:23px}.money-card .career-mini-button:first-child{display:none}
+}
+@media(prefers-reduced-motion:reduce){.career-updated{animation:none}.popularity-track i,.career-mini-button{transition:none}}
