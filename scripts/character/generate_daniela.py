@@ -121,6 +121,32 @@ orb("Hairbow jewel", (.70, .30, 3.60), (.12, .11, .12), gold, "Head")
 orb("Hairbow little ribbon", (.61, .11, 3.40), (.11, .14, .21), trim, "Head")
 orb("Collar charm", (0, .555, 1.52), (.11, .10, .12), gold, "Torso")
 
+# Second-pass details belong ONLY to the optional comparison variant.
+# They are skinned to existing bones, so all 16 clips keep working.
+if original_inspired:
+    for sign, label in [(-1, "L"), (1, "R")]:
+        # Tiny eyeliner/lashes sit just above the eye without obscuring glints.
+        orb(label + " upper eyeliner", (sign*.34, .83, 2.805), (.235, .045, .038), eyes, "Head")
+        orb(label + " outer eyelash", (sign*.55, .824, 2.81), (.105, .05, .043), eyes, "Head")
+        orb(label + " cheek glow", (sign*.59, .728, 2.34), (.17, .042, .073), blush, "Head")
+        orb(label + " cheek highlight", (sign*.61, .764, 2.39), (.045, .027, .029), white, "Head")
+        # Each ponytail detail follows the matching animated hair bone.
+        orb(label + " flowing curl", (sign*1.17, .12, 2.16), (.19, .21, .32), hairshine, label + "Hair")
+        orb(label + " ribbon loop", (sign*.94, .17, 2.99), (.21, .105, .13), dress, "Head")
+        orb(label + " ribbon knot", (sign*.89, .28, 2.99), (.09, .075, .085), gold, "Head")
+        orb(label + " sneaker accent", (sign*.33, .525, .235), (.17, .06, .06), trim, label + "Leg")
+    # Delicate scalloped hem and front bow give the dress a clearer silhouette.
+    for i in range(12):
+        a = math.tau*i/12
+        orb("Pearl skirt hem %02d" % i, (.68*math.cos(a), .51*math.sin(a), .51),
+            (.145, .13, .092), trim, "Torso")
+    orb("Waist bow left", (-.20, .614, 1.22), (.22, .07, .12), trim, "Torso")
+    orb("Waist bow right", (.20, .614, 1.22), (.22, .07, .12), trim, "Torso")
+    orb("Waist bow jewel", (0, .69, 1.22), (.105, .085, .105), gold, "Torso")
+    orb("Fringe shine", (-.31, .752, 3.235), (.30, .055, .06), hairshine, "Head")
+    orb("Golden hair clip", (-.56, .74, 3.15), (.10, .07, .095), gold, "Head")
+
+
 # Edit an armature explicitly instead of trusting Blender's automatic weights.
 bpy.ops.object.armature_add(enter_editmode=True, location=(0, 0, 0))
 rig = bpy.context.object
