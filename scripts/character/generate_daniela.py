@@ -15,6 +15,7 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", default="public/assets/characters/daniela-rigged.glb")
 parser.add_argument("--blend-output", default="build/character/daniela-source.blend")
+parser.add_argument("--variant", choices=("legacy", "original-inspired"), default="legacy", help="Keep legacy output unchanged unless explicitly requested")
 args = parser.parse_args(argv)
 os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
 os.makedirs(os.path.dirname(os.path.abspath(args.blend_output)), exist_ok=True)
@@ -49,6 +50,19 @@ tongue = material("Candy smile", (.78, .34, .51))
 rootmat = material("Socks", (.91, .83, .96))
 mesh_parts = []
 
+# Visual experiment only: match the palette and face proportions of the Babylon
+# original. The existing legacy export stays the default for production.
+original_inspired = args.variant == "original-inspired"
+if original_inspired:
+    skin.diffuse_color = (1.0, .89, .80, 1)
+    hair.diffuse_color = (.408, .290, .475, 1)
+    hairshine.diffuse_color = (.49, .35, .56, 1)
+    eyes.diffuse_color = (.275, .188, .353, 1)
+    dress.diffuse_color = (.957, .612, .796, 1)
+    trim.diffuse_color = (1.0, .969, .933, 1)
+    for mat, color in ((skin,(1.,.89,.80)), (hair,(.408,.290,.475)), (hairshine,(.49,.35,.56)), (eyes,(.275,.188,.353)), (dress,(.957,.612,.796)), (trim,(1.,.969,.933))):
+        mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*color, 1.)
+
 # Local Blender axes: +Y is the front of the character. glTF export converts to -Z front.
 def sphere(label, position, radius, mat, bone, segments=16):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=10, location=position)
@@ -82,7 +96,7 @@ for sign, label in [(-1, "L"), (1, "R")]:
     orb(label + " hand", (sign * .94, .09, 1.06), (.22, .22, .23), skin, label + "Arm")
 
 # Oversized and unmistakably cute face.
-orb("Round face", (0, .01, 2.61), (.85, .74, .87), skin, "Head")
+orb("Round face", (0, .01, 2.61), (.91, .73, .89) if original_inspired else (.85, .74, .87), skin, "Head")
 orb("Purple hair cap", (0, -.07, 2.93), (.94, .80, .75), hair, "Head")
 orb("Side-swept fringe", (-.06, .53, 3.20), (.87, .36, .29), hairshine, "Head")
 for i, x in enumerate((-.63, -.35, -.03, .29, .58)):
@@ -90,8 +104,8 @@ for i, x in enumerate((-.63, -.35, -.03, .29, .58)):
         (.25, .20, .25), hair if i%2 else hairshine, "Head")
 for sign, label in [(-1, "L"), (1, "R")]:
     orb(label + " cheek blush", (sign*.56, .663, 2.36), (.25, .075, .115), blush, "Head")
-    orb(label + " eye", (sign*.34, .743, 2.57), (.188, .085, .23), eyes, "Head")
-    orb(label + " iris glint", (sign*.34-.065, .823, 2.66), (.072, .044, .087), white, "Head")
+    orb(label + " eye", (sign*.34, .743, 2.57), (.225, .09, .275) if original_inspired else (.188, .085, .23), eyes, "Head")
+    orb(label + " iris glint", (sign*.34-.065, .823, 2.66), (.082, .044, .097) if original_inspired else (.072, .044, .087), white, "Head")
     orb(label + " eye little glint", (sign*.34+.052, .828, 2.49), (.04, .035, .044), white, "Head")
     orb(label + " eyebrow", (sign*.34, .70, 2.87), (.17, .095, .035), hair, "Head")
     orb(label + " ponytail", (sign*1.06, -.14, 2.53), (.39, .48, .62), hair, label + "Hair")
@@ -99,7 +113,7 @@ for sign, label in [(-1, "L"), (1, "R")]:
     orb(label + " hair tie", (sign*.90, .07, 2.96), (.19, .18, .19), dress, "Head")
 
 orb("Nose", (0, .79, 2.45), (.055, .05, .065), blush, "Head")
-orb("Mouth", (0, .77, 2.29), (.125, .06, .068), tongue, "Head")
+orb("Mouth", (0, .77, 2.29), (.115, .06, .052) if original_inspired else (.125, .06, .068), tongue, "Head")
 orb("Hairbow left loop", (.49, .13, 3.60), (.31, .19, .18), dress, "Head")
 orb("Hairbow right loop", (.91, .13, 3.60), (.30, .20, .18), dress, "Head")
 orb("Hairbow jewel", (.70, .30, 3.60), (.12, .11, .12), gold, "Head")
@@ -289,5 +303,6 @@ if "export_animation_mode" in export_properties:
     kwargs["export_animation_mode"] = "NLA_TRACKS"
 bpy.ops.export_scene.gltf(**kwargs)
 assert os.path.getsize(args.output) > 4000, "GLB unexpectedly small"
+print("DANIELA VARIANT:", args.variant)
 print("DANIELA GENERATED:",args.output,"bytes",os.path.getsize(args.output))
 print("DANIELA CLIPS:",", ".join(n for n,_ in names))
