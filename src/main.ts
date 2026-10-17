@@ -1,4 +1,5 @@
-import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh} from '@babylonjs/core';
+import '@babylonjs/loaders/glTF';
+import {SceneLoader,AnimationGroup,Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
@@ -196,9 +197,74 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
 showRoom('bedroom');fashion();render();
+// Opt-in art-direction A/B. The original model and its game logic remain the default.
+const comparison=new URLSearchParams(location.search);
+const comparing=comparison.has('compare');
+const blenderRequested=comparing&&comparison.get('daniela')==='blender';
+let blenderClips:AnimationGroup[]=[];
+let blenderLastMove:Move|null=null;
+const blenderClipNames:Record<Move,string>={
+ idle:'Idle',wave:'Wave',dance:'DancePop',sleep:'Sleep',
+ eat:'Eat',drink:'Drink',spin:'Celebrate',bath:'Bath',jump:'Jump',
+ giggle:'Giggle',laugh:'Laugh',surprised:'Giggle',volley:'Volley',
+ sing:'Sing',dance2:'DancePop',dance3:'DanceCute',
+ dance4:'DanceHipHop',dance5:'DanceDisco'
+};
+function playComparisonAnimation(){
+ if(!blenderClips.length||move===blenderLastMove)return;
+ blenderLastMove=move;
+ const target=blenderClipNames[move];
+ const clip=blenderClips.find(group=>group.name===target)||blenderClips[0];
+ for(const animation of blenderClips)animation.stop();
+ clip.start(true,1,clip.from,clip.to,false);
+}
+if(comparing){
+ const picker=document.createElement('nav');
+ picker.setAttribute('aria-label','Comparar diseño de Daniela');
+ picker.style.cssText='position:fixed;z-index:1000;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:9px;background:rgba(255,245,253,.96);border:2px solid #c695df;border-radius:19px;box-shadow:0 8px 32px #653b7244;max-width:calc(100vw - 20px);font:600 13px system-ui;';
+ for(const [value,label] of [['original','💜 Original'],['blender','✨ Blender prueba']] as const){
+  const button=document.createElement('button');
+  button.type='button';button.textContent=label;
+  const selected=(value==='blender')===blenderRequested;
+  button.style.cssText='border:0;border-radius:12px;padding:11px 13px;cursor:pointer;white-space:nowrap;background:'+(selected?'#815aa4':'#f1dff5')+';color:'+(selected?'white':'#573b65')+';font:inherit;';
+  button.setAttribute('aria-pressed',String(selected));
+  button.addEventListener('click',()=>{
+   const url=new URL(location.href);
+   if(value==='blender')url.searchParams.set('daniela','blender');
+   else url.searchParams.delete('daniela');
+   location.assign(url.toString());
+  });
+  picker.appendChild(button);
+ }
+ document.body.appendChild(picker);
+ if(blenderRequested){
+  const loading=document.createElement('div');
+  loading.textContent='Cargando Daniela Blender de prueba…';
+  loading.style.cssText='position:fixed;z-index:1000;bottom:calc(95px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:12px;background:#fff5fd;color:#573b65;font:600 12px system-ui;box-shadow:0 5px 14px #653b7233;white-space:nowrap;max-width:95vw;';
+  document.body.appendChild(loading);
+  void SceneLoader.ImportMeshAsync('',import.meta.env.BASE_URL+'assets/characters/','daniela-original-inspired.glb',scene).then(result=>{
+   const blenderRoot=new TransformNode('Daniela Blender A/B root',scene);
+   blenderRoot.position.copyFrom(idol.position);
+   for(const node of [...result.meshes,...result.transformNodes]){
+    if(!node.parent)node.parent=blenderRoot;
+   }
+   for(const mesh of result.meshes)mesh.isPickable=false;
+   blenderClips=result.animationGroups;
+   for(const group of blenderClips)group.stop();
+   body.setEnabled(false);
+   shadow.setEnabled(false);
+   playComparisonAnimation();
+   loading.remove();
+  }).catch(error=>{
+   console.error('Daniela Blender A/B failed:',error);
+   loading.textContent='No se pudo cargar Blender; se mantiene Daniela original.';
+  });
+ }
+}
 engine.runRenderLoop(()=>{
  const now=performance.now(),t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
+ playComparisonAnimation();
  const a=e;const sin=Math.sin,cos=Math.cos,abs=Math.abs;
  const dance=move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
  const fast=move==='dance2'||move==='dance4';
