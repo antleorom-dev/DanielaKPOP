@@ -32,6 +32,17 @@ jobs:
           python3 scripts/character/validate_glb.py \
             build/character/daniela-rigged.glb \
             --manifest build/character/daniela-manifest.json
+      - name: Generate original-inspired visual experiment (separate from production)
+        run: |
+          blender --background --factory-startup --python-exit-code 1 --python scripts/character/generate_daniela.py -- \\
+            --variant original-inspired \\
+            --output build/character/daniela-original-inspired.glb \\
+            --blend-output build/character/daniela-original-inspired.blend
+      - name: Validate original-inspired GLB and animation clips
+        run: |
+          python3 scripts/character/validate_glb.py \\
+            build/character/daniela-original-inspired.glb \\
+            --manifest build/character/daniela-original-inspired-manifest.json
       - uses: actions/upload-artifact@v4
         with:
           name: DanielaKPOP-rigged-3D-${{ github.run_number }}
