@@ -290,11 +290,11 @@ function tickSleep(now:number){
  if(sleepPhase==='awake')return;
  const dt=Math.min(.07,Math.max(0,(now-sleepLast)/1000));sleepLast=now;
  if(sleepPhase==='walking'){
-  const t=smooth((now-sleepClock)/3500);
-  idol.position.set(3*t,1.05*t,-1.33+3.83*t);idol.rotation.x=Math.PI*.5*t;
-  idol.scaling.setAll(1-.4*t);shadow.visibility=.27*(1-t);
-  camera.target.set(1.6*t,1.8-.12*t,-.35+2.15*t);
-  if(t>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
+  const walk=smooth((now-sleepClock)/2400),lie=smooth((now-sleepClock-2400)/1400);
+  idol.position.set(3*walk,1.05*lie,-1.33+3.83*walk);idol.rotation.x=Math.PI*.5*lie;
+  idol.scaling.setAll(1-.4*lie);shadow.visibility=.27*(1-lie);
+  camera.target.set(1.6*walk,1.8-.12*lie,-.35+2.15*walk);
+  if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
  }else if(sleepPhase==='resting'){
   state.energy=Math.min(100,state.energy+dt*1.25);
   if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 Descansando… energía '+num(state.energy)+'%';render();}
@@ -303,11 +303,11 @@ function tickSleep(now:number){
    state.hunger=num(state.hunger-3);gainXP(11);save();toast('¡Daniela ha recuperado toda su energía! 🌞');reactionBubble('¡Qué bien he dormido! 💗',false,2600);
   }
  }else{
-  const t=smooth((now-sleepClock)/2200),r=1-t;
-  idol.position.set(3*r,1.05*r,-1.33+3.83*r);idol.rotation.x=Math.PI*.5*r;
-  idol.scaling.setAll(1-.4*r);shadow.visibility=.27*t;
-  camera.target.set(1.6*r,1.8-.12*r,-.35+2.15*r);
-  if(t>=1){stopSleep();$('#scene-desc').textContent=rooms.bedroom.sub;render();}
+  const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1700),r=1-walk;
+  idol.position.set(3*r,1.05*(1-stand),-1.33+3.83*r);idol.rotation.x=Math.PI*.5*(1-stand);
+  idol.scaling.setAll(1-.4*(1-stand));shadow.visibility=.27*stand;
+  camera.target.set(1.6*r,1.8-.12*(1-stand),-.35+2.15*r);
+  if(walk>=1){stopSleep();$('#scene-desc').textContent=rooms.bedroom.sub;render();}
  }
 }
 function save(){state.lastSaved=Date.now();try{localStorage.setItem('danielakpop-v2',JSON.stringify(state));}catch{}}
@@ -497,7 +497,7 @@ engine.runRenderLoop(()=>{
  const b=sin(a*beat),step=sin(a*beat*.5);
  const popBeat=sin(a*8.4),cuteBeat=sin(a*5.2),hipBeat=sin(a*10.8),discoBeat=sin(a*6.2);
  const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
- const isEating=move==='eat'||move==='drink';
+ const isEating=move==='eat'||move==='drink';const walkingToBed=(sleepPhase==='walking'&&now-sleepClock<2400)||(sleepPhase==='waking'&&now-sleepClock>900);
  const isVolley=move==='volley';
  const singing=move==='sing'&&room==='stage';
  microphone.setEnabled(singing);
@@ -507,15 +507,15 @@ engine.runRenderLoop(()=>{
  body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
   isVolley?abs(sin(a*13))*.22:move==='jump'?abs(sin(a*5))*.32:
   move==='laugh'?abs(sin(a*13))*.09:move==='giggle'?abs(sin(a*8))*.05:
-  move==='sleep'?-.23:sin(t*1.75)*.035+sin(t*.63)*.012;
+  move==='sleep'?-.23:walkingToBed?abs(sin(t*9))*.07:sin(t*1.75)*.035+sin(t*.63)*.012;
  body.rotation.x=dance?move==='dance4'?.14+sin(a*beat)*.13:move==='dance5'?sin(a*3)*.08:sin(a*beat)*.05:
   isVolley?-.16*sin(a*9):0;
  body.rotation.y=move==='spin'?a*6:move==='dance2'?(popPhrase===3?sin(a*7)*.48:sin(a*3.8)*.16):move==='dance3'?sin(a*2.1)*.22:move==='dance4'?(hipPhrase===1?sin(a*8)*.34:sin(a*4.8)*.18):move==='dance5'?sin(a*2.4)*.58:move==='dance'?sin(a*4)*.18:sin(t*.8)*.065;
  body.rotation.z=move==='sleep'?.12:move==='dance4'?sin(a*beat/2)*.16:
   move==='dance3'?sin(a*4)*.11:dance?sin(a*beat)*.075:
   move==='laugh'?sin(a*14)*.09:move==='giggle'?sin(a*9)*.045:sin(t*1.2)*.018;
- legs[0].rotation.x=move==='dance2'?popBeat*.42:move==='dance3'?cuteBeat*.22:move==='dance4'?hipBeat*.48:move==='dance5'?discoBeat*.28:dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):0;
- legs[1].rotation.x=move==='dance2'?-popBeat*.42:move==='dance3'?-cuteBeat*.22:move==='dance4'?-hipBeat*.48:move==='dance5'?-discoBeat*.28:dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):0;
+ legs[0].rotation.x=move==='dance2'?popBeat*.42:move==='dance3'?cuteBeat*.22:move==='dance4'?hipBeat*.48:move==='dance5'?discoBeat*.28:dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):walkingToBed?sin(t*9)*.45:0;
+ legs[1].rotation.x=move==='dance2'?-popBeat*.42:move==='dance3'?-cuteBeat*.22:move==='dance4'?-hipBeat*.48:move==='dance5'?-discoBeat*.28:dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):walkingToBed?-sin(t*9)*.45:0;
  legs[0].rotation.z=dance?(move==='dance5'?.12+step*.13:step*.1):0;
  legs[1].rotation.z=dance?(move==='dance5'?-.12-step*.13:-step*.1):0;
  // A K-pop routine should not share the same generic arm animation.
