@@ -278,7 +278,9 @@ engine.runRenderLoop(()=>{
  const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
  const isEating=move==='eat'||move==='drink';
  const isVolley=move==='volley';
- microphone.setEnabled(move==='sing'&&room==='stage');
+ const singing=move==='sing'&&room==='stage';
+ microphone.setEnabled(singing);
+ if(singing){const micIn=Math.min(1,e/.34);microphone.scaling.setAll(.15+.85*micIn);}
  // Each choreography uses its own weight shift, bounce, turns, arms and steps.
  body.position.x=dance?move==='dance2'?sin(a*4.2)*.19+(popPhrase===2?.10:0):move==='dance3'?sin(a*2.6)*.15:move==='dance4'?sin(a*5.4)*.22:move==='dance5'?sin(a*3.1)*.25:sin(a*beat*.5)*.12:0;
  body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
@@ -291,8 +293,8 @@ engine.runRenderLoop(()=>{
  body.rotation.z=move==='sleep'?.12:move==='dance4'?sin(a*beat/2)*.16:
   move==='dance3'?sin(a*4)*.11:dance?sin(a*beat)*.075:
   move==='laugh'?sin(a*14)*.09:move==='giggle'?sin(a*9)*.045:sin(t*1.2)*.018;
- legs[0].rotation.x=dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):0;
- legs[1].rotation.x=dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):0;
+ legs[0].rotation.x=move==='dance2'?popBeat*.42:move==='dance3'?cuteBeat*.22:move==='dance4'?hipBeat*.48:move==='dance5'?discoBeat*.28:dance?sin(a*beat)*.35:isVolley?-.22*sin(a*12):0;
+ legs[1].rotation.x=move==='dance2'?-popBeat*.42:move==='dance3'?-cuteBeat*.22:move==='dance4'?-hipBeat*.48:move==='dance5'?-discoBeat*.28:dance?-sin(a*beat)*.35:isVolley?.22*sin(a*12):0;
  legs[0].rotation.z=dance?(move==='dance5'?.12+step*.13:step*.1):0;
  legs[1].rotation.z=dance?(move==='dance5'?-.12-step*.13:-step*.1):0;
  // A K-pop routine should not share the same generic arm animation.
@@ -305,7 +307,7 @@ engine.runRenderLoop(()=>{
  else if(move==='dance3'){if(cutePhrase===0){left=-.72+cuteBeat*.22;right=.72-cuteBeat*.22;leftX=.48;rightX=-.48;}else if(cutePhrase===1){left=-1.5;right=1.5;leftX=.18;rightX=-.18;}else if(cutePhrase===2){left=-.22+abs(cuteBeat)*.48;right=.22-abs(cuteBeat)*.48;leftX=.58;rightX=-.58;}else{left=-1.02+cuteBeat*.25;right=1.02-cuteBeat*.25;leftX=.35;rightX=-.35;}}
  else if(move==='dance4'){if(hipPhrase===0){left=-.25+hipBeat*.9;right=.25+cos(a*10.8)*.9;leftX=-.55;rightX=.55;}else if(hipPhrase===1){left=-1.7+hipBeat*.18;right=-.55;leftX=-.22;rightX=.5;}else if(hipPhrase===2){left=.55;right=1.7-hipBeat*.18;leftX=-.5;rightX=.22;}else{left=-.65+hipBeat*.55;right=.65-hipBeat*.55;leftX=-.62;rightX=.62;}}
  else if(move==='dance5'){if(discoPhrase===0){left=-2.2;right=.35+discoBeat*.18;}else if(discoPhrase===1){left=-.35;right=2.2;}else if(discoPhrase===2){left=-1.25+discoBeat*.38;right=1.25-discoBeat*.38;}else{left=-2.05+abs(discoBeat)*.55;right=2.05-abs(discoBeat)*.55;}leftX=.17;rightX=-.17;}
- else if(move==='sing'){left=-.34+sin(a*3)*.22;right=-1.7+sin(a*6)*.1;rightX=-.19;}
+ else if(move==='sing'){const micLift=Math.min(1,a/.46);left=-.34+sin(a*3)*.22;right=-.08-1.62*micLift+sin(a*6)*.1;rightX=-.19*micLift;}
  else if(isVolley){left=-1.72+sin(a*11)*.32;right=1.72-sin(a*11)*.32;leftX=-.16;rightX=-.16;}
  else if(move==='laugh'){left=-1.05+sin(a*13)*.19;right=1.05-sin(a*13)*.19;}
  else if(move==='giggle'){left=-.5+sin(a*9)*.15;right=.5-sin(a*9)*.15;}
@@ -322,11 +324,13 @@ engine.runRenderLoop(()=>{
  arms[1].rotation.z=isEating?.08-2.44*bringToMouth+(a>1&&a<2.5?sin(a*12)*.045:0):right;
  arms[1].rotation.x=isEating?-.15*bringToMouth:rightX;
  head.rotation.z=move==='laugh'?sin(a*11)*.15:move==='giggle'?sin(a*9)*.08:
+  move==='dance2'?sin(a*4.2)*.16:move==='dance3'?sin(a*2.6)*.11:move==='dance4'?sin(a*6.1)*.14:move==='dance5'?sin(a*3.1)*.18:
   dance?sin(a*beat*.62)*.13:isVolley?sin(a*14)*.12:
   move==='sleep'?.14:sin(t*.82)*.034+sin(t*.31)*.012;
  head.rotation.x=move==='laugh'?-.07+sin(a*8)*.06:move==='giggle'?-.03:
   move==='sing'?sin(a*10)*.085:move==='drink'?-.09+sin(a*6)*.043:
-  move==='eat'?sin(a*12)*.065:move==='sleep'?.15:dance?sin(a*beat)*.07:0;
+  move==='eat'?sin(a*12)*.065:move==='sleep'?.15:
+  move==='dance2'?sin(a*8.4)*.075:move==='dance3'?-.035+abs(cuteBeat)*.05:move==='dance4'?sin(a*10.8)*.055:move==='dance5'?-.04+sin(a*6.2)*.045:dance?sin(a*beat)*.07:0;
  const giggling=move==='laugh'||move==='giggle';
  // Daniela occasionally looks around instead of staring rigidly at the camera.
  // The target eases between tiny offsets, preserving her original eye design.
