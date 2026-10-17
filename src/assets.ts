@@ -13,7 +13,6 @@ export const FURNITURE_CATALOG:CatalogEntry[]=[
  {name:'Carpet_Round',label:'Alfombra',emoji:'🟣',height:.055,rooms:all},
  {name:'Bookshelf',label:'Estantería',emoji:'📚',height:2.65,rooms:all},
  {name:'Curtains_Double',label:'Cortinas',emoji:'🪟',height:2.8,rooms:['bedroom','closet']},
- {name:'NightStand_1',label:'Mesita',emoji:'🪑',height:1.0,rooms:['bedroom']},
  {name:'Houseplant_1',label:'Planta',emoji:'🌿',height:1.65,rooms:all},
  {name:'Houseplant_5',label:'Maceta',emoji:'🪴',height:1.15,rooms:all},
  {name:'Light_Floor1',label:'Lámpara',emoji:'💡',height:1.95,rooms:all},
@@ -48,7 +47,7 @@ const furniture=new Map<string,Furniture>();
 const existsCache=new Map<string,boolean>();
 const materialCache=new Map<string,StandardMaterial>();
 export const LAYOUT_KEY='danielakpop-scene-layout-v1';
-type Layout={version:number;transforms:Record<string,Position>;added:{id:string;name:string;room:Room;position:Position}[];hidden:string[]};
+type Layout={version:number;transforms:Record<string,Position>;added:{id:string;name:string;room:Room;position:Position}[];hidden:string[];lighting?:number};
 export function readLayout():Layout{
  try{
   const v=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null');
