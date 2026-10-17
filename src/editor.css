@@ -1,0 +1,67 @@
+/* Local-only decorator. Game players never see this panel. */
+body.editor-active .bottom-area,
+body.editor-active .care-panel,
+body.editor-active .hud-left,
+body.editor-active .scene-title,
+body.editor-active .character-tag,
+body.editor-active .tutorial,
+body.editor-active #activity-tools,
+body.editor-active .camera-button{display:none!important}
+body.editor-active .topbar{padding-top:max(10px,env(safe-area-inset-top))}
+body.editor-active .top-actions{display:none}
+body.editor-active #game{cursor:grab}
+#scene-editor{
+ position:absolute;bottom:max(9px,env(safe-area-inset-bottom));left:50%;z-index:22;
+ transform:translateX(-50%);width:min(850px,calc(100% - 20px));
+ border:2px solid #fff;background:#fffbfff2;backdrop-filter:blur(20px);
+ border-radius:23px;box-shadow:0 18px 60px #68397755;
+ padding:13px 15px 11px;display:flex;flex-direction:column;gap:8px;
+ max-height:min(392px,56dvh);overflow-y:auto;overscroll-behavior:contain
+}
+#scene-editor button,#scene-editor a{
+ font-family:inherit;font-weight:900;font-size:12px;border-radius:12px;
+ padding:9px 11px;white-space:nowrap;transition:transform .12s,background .15s;
+ cursor:pointer;touch-action:manipulation;user-select:none
+}
+#scene-editor button:active{transform:scale(.94)}
+#scene-editor button:disabled{opacity:.36;cursor:default}
+.editor-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.editor-head div{display:flex;flex-direction:column;gap:1px}
+.editor-head small{font-size:8px;letter-spacing:2px;color:#ca8ec5;font-weight:900}
+.editor-head strong{font-family:'Baloo 2',sans-serif;line-height:1.1;font-size:19px;color:#724b96}
+#scene-editor .editor-exit{background:linear-gradient(125deg,#f3a2d1,#b29bee);color:white;text-decoration:none;border:1px solid #fff}
+.editor-room-tabs,.editor-catalog,.editor-object-tools,.editor-foot{
+ display:flex;align-items:center;gap:7px;overflow-x:auto;
+ scrollbar-width:thin;scrollbar-color:#eebbe1 transparent;
+ padding:2px 1px 5px;min-width:0;flex-shrink:0
+}
+.editor-room-tabs button{color:#986d9e;background:#f7e8f6;border:1px solid #e9c8e5}
+.editor-room-tabs button.active{background:#caa7ed;color:#fff;border-color:#b48adf}
+.editor-shelf-head{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#8658a1;font-size:12px}
+.editor-shelf-head span{font-size:10px;color:#b88fae;font-weight:700}
+.editor-catalog-item{
+ flex:0 0 98px;min-width:98px;min-height:70px;
+ background:linear-gradient(155deg,#fff,#f5def2);border:1px solid #efcde8;
+ color:#75558e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px
+}
+.editor-catalog-item span{font-size:24px}
+.editor-catalog-item strong{font-size:11px;font-weight:900}
+.editor-object-title{display:flex;justify-content:space-between;gap:6px;align-items:center;color:#7955a2;font-size:12px}
+.editor-object-title span{color:#ad87a9;font-size:10px;white-space:nowrap}
+.editor-object-tools button{background:#e9e1fc;color:#7455a2;border:1px solid #e0cafa}
+.editor-object-tools .editor-danger{background:#ffe4e8;color:#b86a80}
+.editor-foot button{background:#e7b6dc;color:#fff}
+.editor-foot button.editor-secondary{background:#f5e4f1;color:#8e6fa1}
+.editor-help{font-size:10px;color:#aa8caf;margin:0;line-height:1.35}
+body.editor-active #toast{bottom:min(410px,58dvh);z-index:29;font-size:12px;white-space:normal}
+@media(max-width:680px){
+ #scene-editor{padding:9px 10px;gap:6px;border-radius:19px;max-height:min(352px,54dvh)}
+ .editor-head strong{font-size:17px}
+ .editor-catalog-item{flex-basis:86px;min-width:86px;min-height:63px}
+ .editor-catalog-item span{font-size:21px}
+ #scene-editor button,#scene-editor a{font-size:11px;padding:8px 9px}
+ .editor-room-tabs{gap:5px}
+ .editor-object-tools{gap:5px}
+ .editor-help{font-size:9px}
+}
+@media(max-height:680px){#scene-editor{max-height:54dvh}.editor-help{display:none}}
