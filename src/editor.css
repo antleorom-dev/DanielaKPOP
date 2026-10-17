@@ -65,3 +65,10 @@ body.editor-active #toast{bottom:min(410px,58dvh);z-index:29;font-size:12px;whit
  .editor-help{font-size:9px}
 }
 @media(max-height:680px){#scene-editor{max-height:54dvh}.editor-help{display:none}}
+
+.editor-light-row{
+ display:flex;align-items:center;gap:8px;color:#8560a0;font-size:11px;font-weight:900;
+ background:#f8eaf8;border-radius:13px;padding:5px 10px
+}
+.editor-light-row input{flex:1;accent-color:#b882e4;min-width:65px;height:20px;touch-action:auto}
+.editor-light-row strong{font-size:11px;color:#8964a5;min-width:36px;text-align:right}
