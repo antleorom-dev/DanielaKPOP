@@ -28,6 +28,24 @@ jobs:
           test -f public/assets/studio-song.mp3 || { echo "ERROR: falta studio-song.mp3 en el paquete"; exit 1; }
           test -f public/assets/interior/Bed_King.glb || { echo "ERROR: falta Bed_King.glb en el paquete"; exit 1; }
           echo "Recursos de música y mobiliario listos para el despliegue."
+      - name: Generate animated Daniela with free Blender (cloud-only)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender python3-numpy
+          mkdir -p public/assets/characters build/character
+          blender --background --factory-startup --python-exit-code 1 \\
+            --python scripts/character/generate_daniela.py -- \\
+            --output public/assets/characters/daniela-rigged.glb \\
+            --blend-output build/character/daniela-source.blend
+          python3 scripts/character/validate_glb.py \\
+            public/assets/characters/daniela-rigged.glb \\
+            --manifest public/assets/characters/daniela-manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DanielaKPOP-Blender-editable-source
+          path: build/character/daniela-source.blend
+          retention-days: 14
+          if-no-files-found: error
       - run: npm install
       - run: npm run build -- --base=/DanielaKPOP/
       - uses: actions/configure-pages@v5
