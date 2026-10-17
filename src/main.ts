@@ -3,6 +3,7 @@ import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
 import {setupSceneEditor} from './editor';
+import {readLayout} from './assets';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
@@ -50,6 +51,11 @@ const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensi
 const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.47;
 const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=1.35;rim.diffuse=new Color3(1,.45,.76);rim.range=12;
 new GlowLayer('fairytale glow',scene).intensity=.15;
+function setSceneLighting(factor:number){
+ const f=Math.max(.45,Math.min(1.55,factor));
+ amb.intensity=.83*f;sun.intensity=.47*f;rim.intensity=1.35*f;
+}
+setSceneLighting((readLayout().lighting??70)/70);
 function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e);return m;}
 const skin=mat('peach','#ffe3cb'),blush=mat('blush','#f7a9b8'),dark=mat('eyes','#46305a'),white=mat('white','#fff9ff'),trim=mat('cream','#fff7ee'),gold=mat('gold','#ffd277','#65401c'),pink=mat('shiny pink','#ffc5ed','#603b58');
 const hairColors=['#684a79','#d889a8','#a59acc','#c19c75'].map((s,i)=>mat('hair'+i,s));
@@ -188,7 +194,7 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  changeHygiene:(amount)=>{state.hygiene=num(state.hygiene+amount);state.happiness=num(state.happiness+1);render();save();},
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
-editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast});
+editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
 showRoom('bedroom');fashion();render();
 engine.runRenderLoop(()=>{
  const now=performance.now(),t=now/1000,e=(now-started)/1000;
