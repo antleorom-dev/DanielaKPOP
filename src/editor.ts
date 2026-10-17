@@ -2,7 +2,7 @@ import {ArcRotateCamera,Matrix,Scene,TransformNode,Vector3} from '@babylonjs/cor
 import {Room,Furniture,getCatalog,getFurniture,readLayout,writeLayout,addFurniture,hideFurniture,installRoomAssets} from './assets';
 import './editor.css';
 
-type Options={scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;groups:Record<Room,TransformNode>;getRoom:()=>Room;showRoom:(room:Room)=>void;notify:(msg:string)=>void};
+type Options={scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;groups:Record<Room,TransformNode>;getRoom:()=>Room;showRoom:(room:Room)=>void;notify:(msg:string)=>void;setLighting:(factor:number)=>void};
 const roomList:{room:Room;label:string}[]=[
  {room:'bedroom',label:'🏠 Casa'},{room:'kitchen',label:'🍓 Cocina'},
  {room:'bathroom',label:'🫧 Baño'},{room:'stage',label:'🎤 Estudio'},{room:'closet',label:'🎀 Moda'}
@@ -24,6 +24,7 @@ export function setupSceneEditor(c:Options){
  '<button id="editor-rotate-left" type="button">↶ Girar</button><button id="editor-rotate-right" type="button">↷ Girar</button>',
  '<button id="editor-scale-down" type="button">− Tamaño</button><button id="editor-scale-up" type="button">＋ Tamaño</button>',
  '<button id="editor-delete" type="button" class="editor-danger">🗑 Quitar</button></div>',
+ '<label class="editor-light-row"><span>☀️ Luz</span><input id="editor-light" type="range" min="35" max="110" step="5"><strong id="editor-light-value">70%</strong></label>',
  '<div class="editor-foot"><button id="editor-export" type="button">⬇ Exportar diseño</button>',
  '<button id="editor-import" type="button">⬆ Importar</button>',
  '<button id="editor-reset" type="button" class="editor-secondary">↺ Restaurar sala</button>',
@@ -74,7 +75,7 @@ export function setupSceneEditor(c:Options){
  async function addItem(name:string){
   const room=activeRoom;
   const id='custom:'+Date.now().toString(36)+':'+Math.floor(Math.random()*1e6).toString(36);
-  const position={x:0,z:1.7};
+  const position={x:2,z:0};
   const item=await addFurniture(c.scene,c.groups[room],room,name,id,position);
   if(!item){c.notify('No está disponible ese modelo 3D');return;}
   const data=readLayout();data.added.push({id,name,room,position});writeLayout(data);
@@ -128,6 +129,17 @@ export function setupSceneEditor(c:Options){
   const size=clamp(selected.root.scaling.x*scale,.35,2.5);
   selected.root.scaling.setAll(size);save();refreshSelection();
  }
+ const light=el('editor-light') as HTMLInputElement;
+ const initialLight=readLayout().lighting??70;
+ light.value=String(initialLight);
+ function applyLight(){
+  const value=clamp(Number(light.value)||70,35,110);
+  c.setLighting(value/70);
+  el('editor-light-value').textContent=value+'%';
+  const data=readLayout();data.lighting=value;writeLayout(data);
+ }
+ light.addEventListener('input',applyLight);
+ applyLight();
  el('editor-rotate-left').addEventListener('click',()=>adjust(-Math.PI/8,1));
  el('editor-rotate-right').addEventListener('click',()=>adjust(Math.PI/8,1));
  el('editor-scale-down').addEventListener('click',()=>adjust(0,.85));
