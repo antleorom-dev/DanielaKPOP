@@ -1,5 +1,4 @@
-import '@babylonjs/loaders/glTF';
-import {SceneLoader,AnimationGroup,PBRMaterial,Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh} from '@babylonjs/core';
+import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
@@ -135,10 +134,12 @@ const eyelids:Mesh[]=[];
 const eyeGlints:Mesh[]=[];
 const twinTails:Mesh[]=[];
 const eyeMeshes:Mesh[]=[];
+const eyeBaseX:number[]=[];
+const eyeBaseY:number[]=[];
 for(const s of [-1,1]){hair('side hair',.53,s*.78,-.25,-.08).scaling.set(.62,1.9,.85);
  const tail=hair('twin tail',.9,s*1.04,-.21,.2);tail.scaling.set(.7,1.18,.7);twinTails.push(tail);
 ball('hair tie',.27,s*.87,.15,.02,pink,head);
-const eye=ball('big eye',.33,s*.33,-.08,-.755,dark,head);eye.scaling.set(.8,1.1,.25);eyeMeshes.push(eye);
+const eye=ball('big eye',.33,s*.33,-.08,-.755,dark,head);eye.scaling.set(.8,1.1,.25);eyeMeshes.push(eye);eyeBaseX.push(eye.position.x);eyeBaseY.push(eye.position.y);
 const lid=ball('soft eyelid',.35,s*.33,-.08,-.784,skin,head);lid.scaling.set(.83,.025,.25);lid.visibility=0;eyelids.push(lid);
 const glint=ball('eye light',.11,s*.33-.055,-.005,-.823,white,head);glint.scaling.z=.35;eyeGlints.push(glint);
  eyeGlints.push(ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head));
@@ -150,18 +151,7 @@ ball('cheek',.3,s*.62,-.31,-.68,blush,head).scaling.set(.85,.35,.2);
 const mouth=ball('smile',.18,0,-.41,-.79,mat('smile pink','#b95e89'),head);mouth.scaling.set(1,.42,.27);const laughingMouth=ball('laughing mouth',.22,0,-.41,-.8,dark,head);laughingMouth.scaling.set(.88,.72,.32);laughingMouth.setEnabled(false);ball('nose',.09,0,-.25,-.817,blush,head).scaling.set(.66,.6,.3);
 const bow=new TransformNode('hair bow',scene);bow.parent=head;bow.position.set(.57,.91,-.22);
 ball('bow left',.43,-.21,0,0,pink,bow).scaling.set(1,.6,.45);ball('bow right',.43,.21,0,0,pink,bow).scaling.set(1,.6,.45);ball('bow knot',.21,0,0,-.12,gold,bow);star(-.12,.95,-.6,.18,gold,head);
-function fashion(){
- dress.material=dressColors[state.outfit%4];
- sleeves.forEach(s=>s.material=dressColors[state.outfit%4]);
- hairParts.forEach(s=>s.material=hairColors[state.hair%4]);
- // Blender exports a single skinned mesh with named PBR material slots.
- // Keep its closet colors in sync without changing the original model.
- for(const material of scene.materials){
-  if(!(material instanceof PBRMaterial))continue;
-  if(material.name.includes('Strawberry pink dress'))material.albedoColor.copyFrom(dressColors[state.outfit%4].diffuseColor);
-  if(material.name.includes('Deep lavender purple hair'))material.albedoColor.copyFrom(hairColors[state.hair%4].diffuseColor);
- }
-}
+function fashion(){dress.material=dressColors[state.outfit%4];sleeves.forEach(s=>s.material=dressColors[state.outfit%4]);hairParts.forEach(s=>s.material=hairColors[state.hair%4]);}
 function save(){state.lastSaved=Date.now();try{localStorage.setItem('danielakpop-v2',JSON.stringify(state));}catch{}}
 function render(){for(const n of ['hunger','happiness','energy','hygiene'] as Need[]){$('#'+n+'-value').textContent=num(state[n])+'%';$('#'+n+'-meter').style.width=num(state[n])+'%';}
 $('#coins').textContent=String(state.coins);$('#level').textContent=String(state.level);$('#xp').textContent=String(state.xp);$('#xp-target').textContent=String(state.level*100);$('#xp-bar').style.width=state.xp/(state.level*100)*100+'%';
@@ -199,7 +189,7 @@ toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&
 reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
-canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&(hit.pickedMesh.isDescendantOf(body)||hit.pickedMesh===blenderCharacterMesh)){const isHead=hit.pickedMesh===blenderCharacterMesh?(hit.pickedPoint?.y??0)>2:hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
+canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
@@ -214,127 +204,9 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
 showRoom('bedroom');fashion();render();
-// Safe in-game art-direction comparison: lazy-load Blender, preserve the current
-// room and saved progress, and always keep the procedural original available.
-const comparison=new URLSearchParams(location.search);
-const comparing=comparison.has('compare');
-const initialBlender=comparing&&comparison.get('daniela')==='blender';
-let blenderClips:AnimationGroup[]=[];
-let blenderLastMove:Move|null=null;
-let blenderRoot:TransformNode|null=null;
-let blenderCharacterMesh:Mesh|null=null;
-let blenderLoading:Promise<void>|null=null;
-let blenderSelected=false;
-const blenderClipNames:Record<Move,string>={
- idle:'Idle',wave:'Wave',dance:'DancePop',sleep:'Sleep',
- eat:'Eat',drink:'Drink',spin:'Celebrate',bath:'Bath',jump:'Jump',
- giggle:'Giggle',laugh:'Laugh',surprised:'Giggle',volley:'Volley',
- sing:'Sing',dance2:'DancePop',dance3:'DanceCute',
- dance4:'DanceHipHop',dance5:'DanceDisco'
-};
-function playComparisonAnimation(){
- if(!blenderSelected||!blenderClips.length||move===blenderLastMove)return;
- blenderLastMove=move;
- const clip=blenderClips.find(group=>group.name===blenderClipNames[move])||blenderClips[0];
- for(const animation of blenderClips)animation.stop();
- clip.start(true,1,clip.from,clip.to,false);
-}
-if(comparing){
- const picker=document.createElement('nav');
- picker.className='daniela-compare-picker';
- picker.setAttribute('aria-label','Comparar diseños de Daniela');
- const loading=document.createElement('div');
- loading.className='daniela-compare-loading';
- loading.setAttribute('role','status');
- loading.setAttribute('aria-live','polite');
- loading.hidden=true;
- const buttons=new Map<'original'|'blender',HTMLButtonElement>();
- for(const [value,label] of [['original','💜 Original'],['blender','✨ Blender 3D']] as const){
-  const button=document.createElement('button');
-  button.type='button';button.textContent=label;button.className='daniela-compare-button';
-  button.addEventListener('click',()=>void selectVariant(value));
-  buttons.set(value,button);picker.appendChild(button);
- }
- function updatePicker(){
-  for(const [value,button] of buttons){
-   const selected=(value==='blender')===blenderSelected;
-   button.classList.toggle('selected',selected);
-   button.setAttribute('aria-pressed',String(selected));
-  }
- }
- function updateURL(value:'original'|'blender'){
-  const url=new URL(location.href);
-  if(value==='blender')url.searchParams.set('daniela','blender');
-  else url.searchParams.delete('daniela');
-  history.replaceState(history.state,'',url);
- }
- async function loadBlender(){
-  if(blenderRoot)return;
-  if(blenderLoading)return blenderLoading;
-  loading.textContent='Preparando a Daniela 3D…';
-  loading.hidden=false;
-  blenderLoading=(async()=>{
-   const result=await SceneLoader.ImportMeshAsync('',import.meta.env.BASE_URL+'assets/characters/','daniela-original-inspired.glb',scene);
-   const root=new TransformNode('Daniela Blender A/B root',scene);
-   root.position.copyFrom(idol.position);
-   for(const node of [...result.meshes,...result.transformNodes]){
-    if(!node.parent)node.parent=root;
-   }
-   for(const mesh of result.meshes){
-    if(mesh instanceof Mesh&&mesh.getTotalVertices()>0){
-     mesh.isPickable=true;
-     if(!blenderCharacterMesh)blenderCharacterMesh=mesh;
-    }
-   }
-   if(!blenderCharacterMesh||!result.animationGroups.length){
-    root.dispose(false,true);
-    throw new Error('El modelo Blender no contiene geometría o animaciones');
-   }
-   blenderRoot=root;
-   blenderClips=result.animationGroups;
-   for(const group of blenderClips)group.stop();
-   blenderRoot.setEnabled(false);
-   fashion();
-  })().finally(()=>{blenderLoading=null;loading.hidden=true;});
-  return blenderLoading;
- }
- async function selectVariant(value:'original'|'blender'){
-  if(value==='original'){
-   blenderSelected=false;
-   blenderRoot?.setEnabled(false);
-   blenderClips.forEach(group=>group.stop());
-   blenderLastMove=null;
-   body.setEnabled(true);
-   updateURL('original');updatePicker();
-   return;
-  }
-  for(const button of buttons.values())button.disabled=true;
-  try{
-   await loadBlender();
-   if(!blenderRoot)throw new Error('Modelo no disponible');
-   body.setEnabled(false);
-   blenderRoot.setEnabled(true);
-   blenderSelected=true;
-   blenderLastMove=null;
-   playComparisonAnimation();
-   updateURL('blender');updatePicker();
-  }catch(error){
-   console.error('Daniela Blender A/B failed:',error);
-   blenderSelected=false;body.setEnabled(true);
-   loading.textContent='No se pudo cargar Blender. Daniela original sigue disponible.';
-   loading.hidden=false;updatePicker();
-  }finally{
-   for(const button of buttons.values())button.disabled=false;
-  }
- }
- document.body.append(picker,loading);
- updatePicker();
- if(initialBlender)void selectVariant('blender');
-}
 engine.runRenderLoop(()=>{
  const now=performance.now(),t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
- playComparisonAnimation();
  const a=e;const sin=Math.sin,cos=Math.cos,abs=Math.abs;
  const dance=move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
  const fast=move==='dance2'||move==='dance4';
@@ -348,7 +220,7 @@ engine.runRenderLoop(()=>{
  body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
   isVolley?abs(sin(a*13))*.22:move==='jump'?abs(sin(a*5))*.32:
   move==='laugh'?abs(sin(a*13))*.09:move==='giggle'?abs(sin(a*8))*.05:
-  move==='sleep'?-.23:sin(t*2.1)*.046;
+  move==='sleep'?-.23:sin(t*1.75)*.035+sin(t*.63)*.012;
  body.rotation.x=dance?move==='dance4'?.14+sin(a*beat)*.13:move==='dance5'?sin(a*3)*.08:sin(a*beat)*.05:
   isVolley?-.16*sin(a*9):0;
  body.rotation.y=move==='spin'?a*6:move==='dance5'?sin(a*2.4)*.46:
@@ -374,6 +246,11 @@ engine.runRenderLoop(()=>{
  else if(isVolley){left=-1.72+sin(a*11)*.32;right=1.72-sin(a*11)*.32;leftX=-.16;rightX=-.16;}
  else if(move==='laugh'){left=-1.05+sin(a*13)*.19;right=1.05-sin(a*13)*.19;}
  else if(move==='giggle'){left=-.5+sin(a*9)*.15;right=.5-sin(a*9)*.15;}
+ if(move==='idle'){
+  left=.08+sin(t*1.15)*.035;
+  right=-.08-sin(t*1.15+.7)*.035;
+  leftX=sin(t*.72)*.025;rightX=-sin(t*.72+.9)*.025;
+ }
  const gripUp=Math.max(0,Math.min(1,(a-.12)/.69));
  const gripDown=Math.max(0,Math.min(1,(a-2.5)/.57));
  const bringToMouth=gripUp*(1-gripDown);
@@ -383,11 +260,20 @@ engine.runRenderLoop(()=>{
  arms[1].rotation.x=isEating?-.15*bringToMouth:rightX;
  head.rotation.z=move==='laugh'?sin(a*11)*.15:move==='giggle'?sin(a*9)*.08:
   dance?sin(a*beat*.62)*.13:isVolley?sin(a*14)*.12:
-  move==='sleep'?.14:sin(t*1.1)*.046;
+  move==='sleep'?.14:sin(t*.82)*.034+sin(t*.31)*.012;
  head.rotation.x=move==='laugh'?-.07+sin(a*8)*.06:move==='giggle'?-.03:
   move==='sing'?sin(a*10)*.085:move==='drink'?-.09+sin(a*6)*.043:
   move==='eat'?sin(a*12)*.065:move==='sleep'?.15:dance?sin(a*beat)*.07:0;
  const giggling=move==='laugh'||move==='giggle';
+ // Daniela occasionally looks around instead of staring rigidly at the camera.
+ // The target eases between tiny offsets, preserving her original eye design.
+ const lookCycle=t%9.6;
+ const lookX=lookCycle<2.2?0:lookCycle<4.4?.035:lookCycle<6.1?-.025:lookCycle<7.5?.018:0;
+ const lookY=lookCycle>5.4&&lookCycle<7.1?.018:0;
+ eyeMeshes.forEach((eye,i)=>{
+  eye.position.x+=(eyeBaseX[i]+lookX-eye.position.x)*.055;
+  eye.position.y+=(eyeBaseY[i]+lookY-eye.position.y)*.055;
+ });
  // Soft eyelids and a short double-blink break up the mechanical 4-second loop.
  const phase=t%6.4;
  const blink=Math.max(0,1-Math.abs(phase-2.7)/.12,1-Math.abs(phase-2.94)/.09,1-Math.abs(phase-5.87)/.12);
@@ -406,7 +292,8 @@ engine.runRenderLoop(()=>{
  laughingMouth.scaling.y=move==='eat'?.34+abs(sin(a*13))*.43:
   move==='drink'?.23+abs(sin(a*7))*.19:move==='sing'?.75+sin(a*11)*.4:
   move==='laugh'?.9+sin(a*15)*.2:.6;
- bow.rotation.z=sin(t*2)*.08;
+ bow.rotation.z=sin(t*1.7)*.055+sin(t*.43)*.018;
+ bow.rotation.x=sin(t*1.1)*.025;
  orbs.forEach((o,i)=>o.scaling.setAll(1+sin(t*2+i*.7)*.18));
  play?.tick(now);
  scene.render();
