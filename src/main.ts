@@ -16,12 +16,12 @@ try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as Stat
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
-let concertActive=false,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let concertActive=false,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
 act('🧸','Mimos','+ felicidad',['#ffa6c9','#ef77b8'],'wave',{happiness:12},0,9,'¡Qué abrazo tan bonito! 💖'),
-act('💤','Dormir','+ energía',['#b7a5fb','#8b84ed'],'sleep',{energy:24,hunger:-4},0,11,'¡Una siesta reparadora! 🌙'),
+act('💤','Dormir','Hasta recuperar energía',['#b7a5fb','#8b84ed'],'sleep',{},0,11,'Dulces sueños, Daniela 🌙'),
 act('🏐','Voleibol','¡Golpea la pelota!',['#ffcf82','#ffa76b'],'volley',{happiness:14,energy:-6,hunger:-3},0,14,'¡Punto para Daniela! 🏐')]},
 kitchen:{title:'Cocina dulce',kicker:'✦ SWEET LITTLE CAFÉ ✦',sub:'¡El menú favorito de Daniela!',accent:'#ffc4a8',actions:[
 act('🍓','Fresas','10 monedas',['#ff9fb4','#f77d8c'],'eat',{hunger:22,happiness:4},-10,9,'¡Ñam! Fresas deliciosas 🍓'),
@@ -37,13 +37,13 @@ act('🧽','Esponja','Arrastra hasta Daniela',['#99dcef','#77bdea'],'bath',{},0,
 act('🚿','Agua','Aclarar las burbujas',['#e4bbff','#b69bee'],'bath',{},0,2,'¡Agüita fresca! 🚿'),
 act('🧴','Skincare','+ higiene',['#a3f1dc','#70c8bb'],'wave',{hygiene:14,happiness:4},0,8,'¡Sonrisa brillante! ✨')]},
 stage:{title:'Dance studio',kicker:'✦ DREAMS COME TRUE ✦',sub:'El escenario es todo tuyo',accent:'#c2a1fc',actions:[
-act('🎶','Bailar','+ 12 monedas',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-4,hunger:-5,hygiene:-3},12,18,'¡Dale al ritmo! 🎶'),
-act('🎤','Cantar','+ 18 monedas',['#ff9dc8','#e577ba'],'sing',{energy:-5,hunger:-4,happiness:8},18,23,'¡Qué voz de estrella! 🎤'),
-act('🪩','Dance pop','+ 15 monedas',['#aa9efb','#d7a4ff'],'dance2',{energy:-6,happiness:12},15,20,'¡Coreografía perfecta! 🪩'),
-act('💃','Dance cute','+ 15 monedas',['#f3a4bb','#ea80c2'],'dance3',{energy:-6,happiness:12},15,20,'¡Qué adorable! 💃'),
-act('🔥','Hip-hop','+ 20 monedas',['#db9ffd','#a47eec'],'dance4',{energy:-7,happiness:14},20,24,'¡Daniela domina el ritmo! 🔥'),
-act('🪩','Disco','+ 17 monedas',['#f6b889','#e78ac8'],'dance5',{energy:-6,happiness:11},17,22,'¡Pura energía disco! ✨'),
-act('🌟','Concierto','+ 35 monedas',['#ffd18c','#f6a36c'],'sing',{energy:-11,hunger:-10,happiness:20},35,40,'¡El público te adora! 🌟')]},
+act('🎶','Bailar','Ensayar · +2 ★',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-4,hunger:-5,hygiene:-3},2,18,'¡Dale al ritmo! 🎶'),
+act('🎤','Cantar','Ensayo · +3 ★',['#ff9dc8','#e577ba'],'sing',{energy:-5,hunger:-4,happiness:8},3,23,'¡Qué voz de estrella! 🎤'),
+act('🪩','Dance pop','Ensayo · +2 ★',['#aa9efb','#d7a4ff'],'dance2',{energy:-6,happiness:12},2,20,'¡Coreografía perfecta! 🪩'),
+act('💃','Dance cute','Ensayo · +2 ★',['#f3a4bb','#ea80c2'],'dance3',{energy:-6,happiness:12},2,20,'¡Qué adorable! 💃'),
+act('🔥','Hip-hop','Ensayo · +3 ★',['#db9ffd','#a47eec'],'dance4',{energy:-7,happiness:14},3,24,'¡Daniela domina el ritmo! 🔥'),
+act('🪩','Disco','Ensayo · +2 ★',['#f6b889','#e78ac8'],'dance5',{energy:-6,happiness:11},2,22,'¡Pura energía disco! ✨'),
+act('🌟','Concierto','Ingresos del LIVE',['#ffd18c','#f6a36c'],'sing',{energy:-11,hunger:-10,happiness:20},0,40,'¡El público te adora! 🌟')]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
@@ -266,8 +266,24 @@ function sfx(kind:Sfx){const ctx=audio();if(!ctx)return;
  osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+v.duration+.01);}
 }
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
-const liveMessages=['¡Daniela te amooo! 💜','ESA COREO 🔥','queen!! 👑','qué monaaa 😭💕','otra canción porfa 🎤','SLAYYY ✨','el outfit 💖','🔥🔥🔥','acabo de llegar y YA SOY FAN 😭','esa voz!!! 🎤💜'];
-const liveUsers=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: ','@purplewave: ','@danistars: '];
+const liveMessages=[
+ '¡Daniela te amooo! 💜','ESA COREO 🔥','queen!! 👑','qué monaaa 😭💕','otra canción porfa 🎤',
+ 'SLAYYY ✨','el outfit 💖','🔥🔥🔥','acabo de llegar y YA SOY FAN 😭','esa voz!!! 🎤💜',
+ '¡Los pasos van con el beat!','¿Cómo se llama esta canción? 🎶','Estoy viendo esto con mi hermana 🥹',
+ '¡Saluditos desde España! 🇪🇸','¡Hola desde México! 🇲🇽','La iluminación está preciosa ✨',
+ '¿Habrá un bis?','¡El peinado de hoy! 😍','Qué buena energía en el escenario','¿De dónde es el vestido?',
+ '¡Ya te sigo! 💜','¡Nueva fan por aquí!','Me salió en para ti y me quedé','La voz me pone la piel de gallina',
+ '¡Ese giro fue increíble!','¡Otra vez esa coreo, porfa!','¡Estoy aprendiendo el baile! 💃',
+ 'Se nota todo el ensayo','El ritmo me tiene atrapada','¡Mi parte favorita de la canción!',
+ '¡¡NO ME ESPERABA ESE PASO!!','¡VAMOS DANIELA!','¿Cuándo es el próximo directo?',
+ 'Esto merece millones de likes','Pongan el volumen a tope 🔊','¡La cámara captó el momento!',
+ '¡Qué adorable la sonrisa!','¡Necesito una playlist de Daniela!','¿Alguien más está bailando en casa?',
+ 'Los corazoncitos no paran 💕','¡La mejor noche!','¡Gracias por cantar para nosotros!',
+ 'Me encantan las luces lilas','¡El final de la coreo! 👏','¡Dale, que tú puedes!',
+ '¡La ropa combina con el escenario!','¿Se puede pedir otra canción?','¡Qué bonito ambiente!',
+ '¡Mi primera vez en este LIVE!','¡Ya tengo mi canción favorita!'
+];
+const liveUsers=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: ','@purplewave: ','@danistars: ','@moonberry: ','@luna_pop: ','@mintcloud: ','@sweetidol: ','@starry_night: ','@berrytea: ','@fan_rosa: ','@melodygirl: ','@neon_dream: ','@cloud9: ','@kawaii_dance: ','@peachy: ','@popcornfan: ','@dani_forever: '];
 function paintLiveStats(){
  $('#live-likes').textContent=liveLikes.toLocaleString('es-ES');$('#live-comment-count').textContent=liveComments.toLocaleString('es-ES');
  $('#live-viewers').textContent=liveViewers.toLocaleString('es-ES');$('#live-follower-gain').textContent=liveFollowerGain.toLocaleString('es-ES');
@@ -290,25 +306,27 @@ function socialBoost(kind:'dance'|'sing'|'concert'){
 }
 function startConcert(){
  if(concertActive){socialBoost('sing');return;}
- concertActive=true;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1.2;lastLiveTick=performance.now();
+ concertActive=true;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1.2;lastLiveTick=performance.now();concertStartedAt=lastLiveTick;livePerformanceSeconds=0;
  $('#live-comments').replaceChildren();$('#live-reactions').replaceChildren();const live=$('#studio-live');live.classList.add('visible');live.setAttribute('aria-hidden','false');
- paintLiveStats();socialBoost('concert');toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
+ paintLiveStats();toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
 }
 function endConcert(announce=true){
  if(!concertActive)return;
- concertActive=false;const gained=liveFollowerGain;
- const popGain=Math.max(0,Math.min(3,Math.floor((gained/180)+(liveViewers/1300)+(liveLikes/4200))));
- const concertPay=Math.max(5,Math.floor(liveLikes/28+liveViewers/95+gained*1.15));
+ concertActive=false;const eligible=performance.now()-concertStartedAt>=12000;
+ const gained=eligible?liveFollowerGain:0;
+ const popGain=eligible?Math.max(0,Math.min(3,Math.floor((gained/180)+(liveViewers/1300)+(liveLikes/4200)))):0;
+ const effort=Math.min(1,livePerformanceSeconds/35);
+ const concertPay=eligible?Math.max(12,Math.floor((liveLikes/14+liveViewers/55+gained*1.7)*(.3+.7*effort))):0;
  state.followers=Math.max(0,state.followers+gained);state.popularity=num(state.popularity+popGain);state.coins+=concertPay;state.lastConcertAt=Date.now();state.concerts++;
  $('#studio-live').classList.remove('visible');$('#studio-live').setAttribute('aria-hidden','true');$('#followers-live').textContent='';
  document.querySelectorAll('.career-card').forEach(card=>{card.classList.remove('career-updated');void (card as HTMLElement).offsetWidth;card.classList.add('career-updated');});
- if(announce){toast('¡Concierto terminado! +'+gained+' seguidores · +'+popGain+'% popularidad · +'+concertPay+' ★');reward('¡CARRERA +! ✨');}
+ if(announce){toast(eligible?'¡Concierto terminado! +'+gained+' seguidores · +'+popGain+'% popularidad · +'+concertPay+' ★':'¡Concierto muy corto! Actúa al menos 12 segundos para ganar fans y dinero 💜');if(eligible)reward('¡CARRERA +! ✨');}
  liveFollowerGain=0;render();save();
 }
 function socialTick(now:number){
  if(!concertActive||room!=='stage'||now-lastLiveTick<1500)return;lastLiveTick=now;
  const performing=move==='sing'||move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
- const singing=move==='sing',power=performing?(singing?2.15:2.45):.45;
+ const singing=move==='sing',power=performing?(singing?2.15:2.45):.45;if(performing)livePerformanceSeconds+=1.5;
  liveMomentum=Math.max(.75,Math.min(5.5,liveMomentum*.91+(performing?.36:-.05)));
  const scale=power*liveMomentum;
  liveViewers=Math.max(0,liveViewers+Math.floor((2+Math.random()*8)*scale)-(performing?0:Math.floor(Math.random()*4)));
