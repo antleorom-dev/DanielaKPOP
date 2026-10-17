@@ -63,3 +63,7 @@
 @media(prefers-reduced-motion:reduce){
  #activity-tools .music-switch.music-on{animation:none}
 }
+
+#drag-ghost.over-target{filter:drop-shadow(0 0 13px #fff) drop-shadow(0 0 20px #ff79c6);animation:ghost-target .28s ease-in-out infinite alternate}
+@keyframes ghost-target{to{transform:translate(-50%,-50%) scale(1.28) rotate(-7deg)}}
+@media(prefers-reduced-motion:reduce){#drag-ghost.over-target{animation:none;transform:translate(-50%,-50%) scale(1.12)}}
