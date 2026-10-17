@@ -50,14 +50,14 @@ act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
-engine.setHardwareScalingLevel(Math.max(1.25,devicePixelRatio/1.35));
+let renderScale=Math.max(1.25,devicePixelRatio/1.35);engine.setHardwareScalingLevel(renderScale);
 const scene=new Scene(engine);scene.skipPointerMovePicking=true;scene.clearColor=new Color4(.97,.81,.92,1);
 const camera=new ArcRotateCamera('camera',-Math.PI/2,1.23,9.25,new Vector3(0,1.8,-.35),scene);
 camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadiusLimit=12.5;camera.lowerBetaLimit=.85;camera.upperBetaLimit=1.48;camera.lowerAlphaLimit=-Math.PI/2-.48;camera.upperAlphaLimit=-Math.PI/2+.48;camera.wheelPrecision=48;camera.pinchPrecision=140;
 const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.83;amb.diffuse=new Color3(1,.92,1);
 const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.47;
 const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=1.35;rim.diffuse=new Color3(1,.45,.76);rim.range=12;
-new GlowLayer('fairytale glow',scene).intensity=.15;
+const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.15;
 function setSceneLighting(factor:number){
  const f=Math.max(.45,Math.min(1.55,factor));
  amb.intensity=.83*f;sun.intensity=.47*f;rim.intensity=1.35*f;
@@ -477,9 +477,18 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
 showRoom('bedroom');fashion();render();updateNeedAlerts();
+let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
  if(document.hidden)return;
- const now=performance.now();tickSleep(now);const t=now/1000,e=(now-started)/1000;
+ const now=performance.now();
+ // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
+ if(now-performanceCheckAt>7500){
+  performanceCheckAt=now;const fps=engine.getFps();
+  if(fps<39){slowSamples++;fastSamples=0;}else if(fps>55){fastSamples++;slowSamples=0;}else{slowSamples=0;fastSamples=0;}
+  if(slowSamples>=2){renderScale=Math.min(2.25,renderScale+.22);engine.setHardwareScalingLevel(renderScale);glow.isEnabled=false;slowSamples=0;}
+  if(fastSamples>=3){renderScale=Math.max(1.25,renderScale-.12);engine.setHardwareScalingLevel(renderScale);if(fps>57)glow.isEnabled=true;fastSamples=0;}
+ }
+ tickSleep(now);const t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
  const a=e;const sin=Math.sin,cos=Math.cos,abs=Math.abs;
  const dance=move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
