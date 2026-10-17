@@ -77,3 +77,27 @@
  .bottom-area .action-row .action-card,.bottom-area .action-row.has-five-actions .action-card{height:49px}
  .bottom-area .action-row{padding-bottom:7px}
 }
+
+
+/* Studio live: social-feed energy without covering Daniela or the action tray. */
+.studio-live{position:absolute;z-index:6;inset:88px 18px 185px;pointer-events:none;opacity:0;transition:opacity .25s}
+.studio-live.visible{opacity:1}
+.live-badge{position:absolute;right:0;top:0;padding:7px 10px;border-radius:10px;background:#e93465;color:#fff;font:900 11px/1 Nunito,sans-serif;letter-spacing:1px;box-shadow:0 5px 18px #a32d6550}
+.live-badge span{display:inline-block;width:7px;height:7px;border-radius:50%;background:white;margin-right:5px;animation:livePulse .9s infinite alternate}
+.live-stats{position:absolute;right:0;top:38px;padding:5px 9px;border-radius:9px;background:#2c1e3fa8;color:white;font-size:10px;backdrop-filter:blur(7px)}
+.live-stats b{font-size:12px}.live-stats small{opacity:.75}
+.live-actions{position:absolute;right:0;bottom:8px;display:grid;grid-template-columns:auto auto;gap:3px 7px;align-items:center;padding:9px 11px;border-radius:15px;background:#271934a8;color:white;backdrop-filter:blur(8px);font-size:15px}
+.live-actions span{font-size:22px}.live-actions b{font-size:11px}
+.live-reactions{position:absolute;inset:0;overflow:hidden}
+.live-reaction{position:absolute;left:var(--rx);bottom:0;font-size:clamp(19px,3vw,31px);animation:liveFloat var(--drift) ease-out forwards;filter:drop-shadow(0 3px 4px #4d1d4f55)}
+.live-comments{position:absolute;left:0;bottom:4px;width:min(265px,46vw);display:flex;flex-direction:column;gap:5px}
+.live-comment{padding:6px 9px;border-radius:11px;background:#24162f9c;color:#fff;font-size:10px;font-weight:800;backdrop-filter:blur(7px);animation:commentIn .28s ease-out}
+.need-alerts{position:absolute;z-index:7;top:91px;right:clamp(16px,4vw,48px);width:min(240px,36vw);display:flex;flex-direction:column;gap:7px;pointer-events:none;opacity:0;transform:translateX(12px);transition:.25s}
+.need-alerts.visible{opacity:1;transform:none}
+.need-alert{display:grid;grid-template-columns:27px 1fr auto;align-items:center;gap:7px;padding:8px 10px;border:2px solid #fff9;border-radius:14px;background:#fff7f2e8;box-shadow:0 7px 20px #784b7330;backdrop-filter:blur(10px);color:#754d69}
+.need-alert span{font-size:20px}.need-alert b{font-size:10px}.need-alert small{font-size:10px;font-weight:900}
+.need-alert.critical{background:#ffe4e7f2;animation:needPulse 1.2s ease-in-out infinite}
+@keyframes livePulse{to{opacity:.35}}@keyframes liveFloat{0%{transform:translateY(20px) scale(.5);opacity:0}15%{opacity:1}100%{transform:translateY(-60vh) translateX(25px) rotate(14deg) scale(1.2);opacity:0}}
+@keyframes commentIn{from{transform:translateX(-12px);opacity:0}}@keyframes needPulse{50%{transform:scale(1.025);box-shadow:0 7px 24px #e3658050}}
+@media(max-width:680px){.studio-live{inset:82px 10px 151px}.live-comments{width:46vw}.need-alerts{top:82px;right:10px;width:45vw}.need-alert{padding:6px 8px}.need-alert b{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.live-reaction,.live-comment,.need-alert.critical,.live-badge span{animation:none}}
