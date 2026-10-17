@@ -9,7 +9,7 @@ type Move='idle'|'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3'|
 type Dependencies={
  scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;
  idol:TransformNode;body:TransformNode;head:TransformNode;dress:Mesh;groups:Record<Room,TransformNode>;
- skin:StandardMaterial;arms:TransformNode[];
+ skin:StandardMaterial;arms:TransformNode[];isEditing:()=>boolean;
  getRoom:()=>Room;getHygiene:()=>number;changeHygiene:(amount:number)=>void;
  onVolleyHit:()=>void;
  perform:(index:number)=>void;animate:(name:Move,duration?:number)=>void;
@@ -68,7 +68,7 @@ export function createInteractions(c:Dependencies){
   strip.parent=volleyball;strip.rotation.set(i*Math.PI/3,i*Math.PI/5,0);strip.material=seams;
  }
  const volley=makeVolleyball({
-  scene:c.scene,canvas:c.canvas,camera:c.camera,ball:volleyball,isHome:()=>c.getRoom()==='bedroom',
+  scene:c.scene,canvas:c.canvas,camera:c.camera,ball:volleyball,isHome:()=>c.getRoom()==='bedroom'&&!c.isEditing(),
   animateHit:()=>{c.animate('volley',1.25);c.sound([480,670,940]);},
   onHit:(combo)=>{c.onVolleyHit();c.reward(combo>1?'🏐 COMBO ×'+combo:'🏐 ¡PUNTAZO!');c.toast(combo>1?'¡'+combo+' toques seguidos! 🏐':'¡Daniela te devuelve la pelota! 🏐');}
  });
@@ -175,7 +175,7 @@ export function createInteractions(c:Dependencies){
  function decorateActions(room:Room,row:HTMLElement){
   row.classList.toggle('has-five-actions',room==='stage');
   row.querySelectorAll<HTMLButtonElement>('button').forEach((button,i)=>{
-   button.dataset.dragged='0';button.style.touchAction='none';
+   button.dataset.dragged='0';button.style.touchAction='pan-x';
    let sourcePointer=-1,startX=0,startY=0,dragging=false;
    button.addEventListener('pointerdown',e=>{
     sourcePointer=e.pointerId;startX=e.clientX;startY=e.clientY;dragging=false;
@@ -184,7 +184,7 @@ export function createInteractions(c:Dependencies){
    });
    button.addEventListener('pointermove',e=>{
     if(sourcePointer!==e.pointerId)return;
-    if(!dragging&&Math.hypot(e.clientX-startX,e.clientY-startY)>12){
+    if(!dragging&&Math.abs(e.clientY-startY)>12&&Math.abs(e.clientY-startY)>Math.abs(e.clientX-startX)*.7){
      dragging=true;button.dataset.dragged='1';button.setPointerCapture(e.pointerId);ghost.classList.add('dragging');
     }
     if(dragging){
@@ -216,7 +216,7 @@ export function createInteractions(c:Dependencies){
  // Direct finger-painting after selecting sponge or shower.
  let brushPointer=-1;
  c.canvas.addEventListener('pointerdown',e=>{
-  if(c.getRoom()!=='bathroom'||!bath.getTool())return;
+  if(c.isEditing()||c.getRoom()!=='bathroom'||!bath.getTool())return;
   brushPointer=e.pointerId;
   bath.startAt(e.clientX,e.clientY);
   c.canvas.setPointerCapture(e.pointerId);
@@ -228,7 +228,7 @@ export function createInteractions(c:Dependencies){
  c.canvas.addEventListener('pointercancel',()=>{brushPointer=-1;bath.finish();});
  // Physical stereo meshes also respond to touches and clicks.
  c.canvas.addEventListener('pointerup',e=>{
-  if(c.getRoom()!=='stage')return;
+  if(c.isEditing()||c.getRoom()!=='stage')return;
   const r=c.canvas.getBoundingClientRect();
   const hit=c.scene.pick(e.clientX-r.left,e.clientY-r.top,m=>m.isDescendantOf(stereo));
   if(hit?.hit)void toggleStereo();
