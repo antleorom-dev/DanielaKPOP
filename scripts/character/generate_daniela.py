@@ -126,8 +126,8 @@ orb("Collar charm", (0, .555, 1.52), (.11, .10, .12), gold, "Torso")
 if original_inspired:
     for sign, label in [(-1, "L"), (1, "R")]:
         # Tiny eyeliner/lashes sit just above the eye without obscuring glints.
-        orb(label + " upper eyeliner", (sign*.34, .83, 2.805), (.235, .045, .038), eyes, "Head")
-        orb(label + " outer eyelash", (sign*.55, .824, 2.81), (.105, .05, .043), eyes, "Head")
+        orb(label + " upper eyeliner", (sign*.34, .795, 2.84), (.20, .035, .025), eyes, "Head")
+        orb(label + " outer eyelash", (sign*.54, .795, 2.83), (.08, .04, .033), eyes, "Head")
         orb(label + " cheek glow", (sign*.59, .728, 2.34), (.17, .042, .073), blush, "Head")
         orb(label + " cheek highlight", (sign*.61, .764, 2.39), (.045, .027, .029), white, "Head")
         # Each ponytail detail follows the matching animated hair bone.
@@ -138,8 +138,8 @@ if original_inspired:
     # Delicate scalloped hem and front bow give the dress a clearer silhouette.
     for i in range(12):
         a = math.tau*i/12
-        orb("Pearl skirt hem %02d" % i, (.68*math.cos(a), .51*math.sin(a), .51),
-            (.145, .13, .092), trim, "Torso")
+        orb("Pearl skirt hem %02d" % i, (.55*math.cos(a), .45*math.sin(a), .51),
+            (.115, .10, .07), trim, "Torso")
     orb("Waist bow left", (-.20, .614, 1.22), (.22, .07, .12), trim, "Torso")
     orb("Waist bow right", (.20, .614, 1.22), (.22, .07, .12), trim, "Torso")
     orb("Waist bow jewel", (0, .69, 1.22), (.105, .085, .105), gold, "Torso")
