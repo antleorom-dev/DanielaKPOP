@@ -391,7 +391,7 @@ const recentLiveComments:string[]=[];
 function liveReactionBurst(power=1){
  const reactions=$('#live-reactions'),comments=$('#live-comments'),count=Math.min(5,2+Math.round(power));
  for(let i=0;i<count;i++)setTimeout(()=>{if(!concertActive)return;const r=document.createElement('span');r.className='live-reaction';r.textContent=['♥','💜','🔥','✨','😍','👏'][Math.floor(Math.random()*6)];r.style.setProperty('--rx',(8+Math.random()*82)+'%');r.style.setProperty('--drift',(2.1+Math.random()*1.8)+'s');reactions.append(r);while(reactions.children.length>18)reactions.firstElementChild?.remove();setTimeout(()=>r.remove(),2600);},i*90);
- if(Math.random()<Math.min(.92,.32+power*.18)){const c=document.createElement('div');c.className='live-comment';c.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)]+liveMessages[Math.floor(Math.random()*liveMessages.length)];comments.append(c);while(comments.children.length>5)comments.firstElementChild?.remove();}
+ if(Math.random()<Math.min(.92,.32+power*.18)){const c=document.createElement('div');c.className='live-comment';const options=liveMessages.filter(m=>!recentLiveComments.includes(m));const message=options[Math.floor(Math.random()*options.length)]||liveMessages[0];recentLiveComments.push(message);if(recentLiveComments.length>10)recentLiveComments.shift();c.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)]+message;comments.append(c);while(comments.children.length>5)comments.firstElementChild?.remove();}
 }
 function socialBoost(kind:'dance'|'sing'|'concert'){
  if(!concertActive)return;
