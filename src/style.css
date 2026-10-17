@@ -101,3 +101,43 @@
 @keyframes commentIn{from{transform:translateX(-12px);opacity:0}}@keyframes needPulse{50%{transform:scale(1.025);box-shadow:0 7px 24px #e3658050}}
 @media(max-width:680px){.studio-live{inset:82px 10px 151px}.live-comments{width:46vw}.need-alerts{top:82px;right:10px;width:45vw}.need-alert{padding:6px 8px}.need-alert b{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.live-reaction,.live-comment,.need-alert.critical,.live-badge span{animation:none}}
+
+
+/* v0.8 — comic complaints + a real idol fandom loop */
+.character-tag.complaint{
+ max-width:min(235px,58vw);white-space:normal;text-align:center;
+ border-radius:22px 22px 22px 8px;padding:11px 15px;
+ background:#fffdf7f2;border:3px solid #fff;box-shadow:0 10px 28px #6d3e8040;
+ color:#80548f;font-size:13px;line-height:1.2;
+}
+.character-tag.complaint .status-dot{display:none}
+.character-tag.complaint::after{
+ content:'';position:absolute;left:18px;bottom:-12px;width:20px;height:20px;
+ background:#fffdf7;clip-path:polygon(0 0,100% 0,18% 100%);filter:drop-shadow(0 2px 0 #fff);
+}
+.fan-count{
+ display:flex;align-items:center;gap:7px;padding:6px 11px 6px 8px;min-width:116px;
+ background:#fffdf3e8;border:2px solid #fff;border-radius:18px;box-shadow:var(--shadow);
+ color:#795293;backdrop-filter:blur(12px);
+}
+.fan-count>span{display:grid;place-items:center;width:30px;height:30px;border-radius:11px;background:linear-gradient(145deg,#f3b1e1,#b99bf4);font-size:16px}
+.fan-count div{display:flex;flex-direction:column;line-height:1}
+.fan-count small{font-size:7px;letter-spacing:.8px;font-weight:1000;color:#b278a6}
+.fan-count b{font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums}
+.fan-count em{height:9px;margin-top:2px;font-size:8px;font-style:normal;font-weight:1000;color:#e5549d}
+.live-badge small{font-size:7px;opacity:.82;margin-left:4px}
+.live-stats{display:flex;flex-direction:column;gap:4px;min-width:105px}
+.live-stats>div:first-child{display:flex;gap:3px;align-items:baseline}
+.live-new-followers{font-size:9px;font-weight:1000;color:#ffd6f0}
+.live-new-followers b{font-size:10px}
+.live-tip{position:absolute;right:0;top:94px;max-width:150px;padding:6px 9px;border-radius:11px;background:#fff9;color:#754d91;font-size:9px;font-weight:900;backdrop-filter:blur(8px);box-shadow:0 4px 14px #5c36623d}
+.studio-live.visible .live-badge{animation:concertBadge 1.25s ease-in-out infinite alternate}
+@keyframes concertBadge{to{box-shadow:0 5px 24px #ff3d7c99;transform:scale(1.035)}}
+@media(max-width:680px){
+ .top-actions{gap:5px}.fan-count{min-width:0;padding:5px 7px}.fan-count>span{width:25px;height:25px;font-size:13px}
+ .fan-count small{display:none}.fan-count b{font-size:12px;margin-top:0}.fan-count em{font-size:7px;height:8px}
+ .currency{padding:4px 5px}.coin{width:25px;height:25px}.round-button{width:38px;height:38px}
+ .live-tip{display:none}.live-stats{top:36px}.character-tag.complaint{font-size:11px;max-width:52vw;padding:9px 12px}
+}
+@media(max-width:390px){.fan-count>span{display:none}.fan-count{padding:5px 7px}.fan-count em{display:none}}
+@media(prefers-reduced-motion:reduce){.studio-live.visible .live-badge{animation:none}}
