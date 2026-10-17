@@ -33,12 +33,12 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y blender python3-numpy
           mkdir -p public/assets/characters build/character
-          blender --background --factory-startup --python-exit-code 1 \\
-            --python scripts/character/generate_daniela.py -- \\
-            --output public/assets/characters/daniela-rigged.glb \\
+          blender --background --factory-startup --python-exit-code 1 \
+            --python scripts/character/generate_daniela.py -- \
+            --output public/assets/characters/daniela-rigged.glb \
             --blend-output build/character/daniela-source.blend
-          python3 scripts/character/validate_glb.py \\
-            public/assets/characters/daniela-rigged.glb \\
+          python3 scripts/character/validate_glb.py \
+            public/assets/characters/daniela-rigged.glb \
             --manifest public/assets/characters/daniela-manifest.json
       - uses: actions/upload-artifact@v4
         with:
