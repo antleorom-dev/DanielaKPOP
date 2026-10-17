@@ -40,6 +40,16 @@ jobs:
           python3 scripts/character/validate_glb.py \
             public/assets/characters/daniela-rigged.glb \
             --manifest public/assets/characters/daniela-manifest.json
+      - name: Generate opt-in original-inspired Daniela A/B model
+        run: |
+          blender --background --factory-startup --python-exit-code 1 \
+            --python scripts/character/generate_daniela.py -- \
+            --variant original-inspired \
+            --output public/assets/characters/daniela-original-inspired.glb \
+            --blend-output build/character/daniela-original-inspired.blend
+          python3 scripts/character/validate_glb.py \
+            public/assets/characters/daniela-original-inspired.glb \
+            --manifest public/assets/characters/daniela-original-inspired-manifest.json
       - uses: actions/upload-artifact@v4
         with:
           name: DanielaKPOP-Blender-editable-source
