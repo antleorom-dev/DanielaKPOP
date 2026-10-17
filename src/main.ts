@@ -125,6 +125,7 @@ cyl('closet round rug',3.25,3.25,.035,-.4,.025,2.45,dressColors[0],closet);
 for(let i=0;i<6;i++)lively(ball('closet sparkle bulb',.12,-2.1+i*.82,4.55,5.55,i%2?white:gold,closet),.0015,.05,i);
 box('shoe shelf',2.25,.12,.75,4.3,.42,2.65,white,closet);for(let i=0;i<4;i++){const shoe=ball('display shoe',.34,3.55+i*.48,.68,2.5,dressColors[i%4],closet);shoe.scaling.set(1.25,.42,.72);}
 // Lightweight extra decoration: five themed rooms, no texture downloads or new lights.
+const decorMeshStart=scene.meshes.length;
 const bookColors=[pink,lilac,mint,gold];
 box('bedside table',.82,.65,.72,4.8,.4,2.25,white,bed);
 box('bedside drawer',.7,.3,.05,4.8,.48,1.87,pink,bed);
@@ -178,6 +179,7 @@ for(const x of [-4.95,-2.65])for(const y of [1.25,2.05,2.85,3.65])ball('mirror b
 box('outfit inspiration frame',1.25,1.35,.12,1.1,3.85,5.88,gold,closet);
 box('outfit inspiration print',1.04,1.15,.13,1.1,3.85,5.77,pink,closet);
 star(1.1,3.9,5.68,.48,white,closet);
+for(const decoration of scene.meshes.slice(decorMeshStart))decoration.isPickable=false;
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
@@ -486,8 +488,8 @@ engine.runRenderLoop(()=>{
  if(now-performanceCheckAt>7500){
   performanceCheckAt=now;const fps=engine.getFps();
   if(fps<39){slowSamples++;fastSamples=0;}else if(fps>55){fastSamples++;slowSamples=0;}else{slowSamples=0;fastSamples=0;}
-  if(slowSamples>=2){renderScale=Math.min(2.25,renderScale+.22);engine.setHardwareScalingLevel(renderScale);glow.isEnabled=false;slowSamples=0;}
-  if(fastSamples>=3){renderScale=Math.max(1.25,renderScale-.12);engine.setHardwareScalingLevel(renderScale);if(fps>57)glow.isEnabled=true;fastSamples=0;}
+  if(slowSamples>=2){const next=Math.min(2.25,renderScale+.22);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}glow.isEnabled=false;slowSamples=0;}
+  if(fastSamples>=3){const next=Math.max(1.25,renderScale-.12);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}if(fps>57)glow.isEnabled=true;fastSamples=0;}
  }
  tickSleep(now);const t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
