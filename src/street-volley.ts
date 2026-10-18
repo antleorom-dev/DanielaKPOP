@@ -61,7 +61,7 @@ export function createStreetVolley3D(o:Options){
 
  function start(){
   if(active)return;
-  active=true;finished=false;root.setEnabled(true);ui.hidden=false;playerScore=0;cpuScore=0;rally=0;bestRally=0;moveDir=0;playerY=0;cpuY=0;playerVY=0;cpuVY=0;
+  active=true;finished=false;root.setEnabled(true);ui.hidden=false;document.body.classList.add('street-volley-playing');playerScore=0;cpuScore=0;rally=0;bestRally=0;moveDir=0;playerY=0;cpuY=0;playerVY=0;cpuVY=0;
   saved={alpha:o.camera.alpha,beta:o.camera.beta,radius:o.camera.radius,target:o.camera.target.clone(),pos:o.idol.position.clone(),rotation:o.idol.rotation.clone(),scale:o.idol.scaling.clone()};
   o.idol.position.set(-3.0,0,-.25);o.idol.rotation.set(0,0,0);o.idol.scaling.setAll(.82);
   cpu.position.set(3.0,0,-.25);
@@ -115,7 +115,7 @@ export function createStreetVolley3D(o:Options){
   if(volleyBall.position.y<=.3){point(volleyBall.position.x<0?'cpu':'player');}
  }
  function stop(){
-  if(!active)return;active=false;finished=false;root.setEnabled(false);ui.hidden=true;moveDir=0;
+  if(!active)return;active=false;finished=false;root.setEnabled(false);ui.hidden=true;document.body.classList.remove('street-volley-playing');moveDir=0;
   o.idol.position.copyFrom(saved.pos);o.idol.rotation.copyFrom(saved.rotation);o.idol.scaling.copyFrom(saved.scale);
   o.camera.alpha=saved.alpha;o.camera.beta=saved.beta;o.camera.radius=saved.radius;o.camera.target.copyFrom(saved.target);
  }
