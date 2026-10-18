@@ -59,8 +59,13 @@ export function createInteractions(c:Dependencies){
   const p=MeshBuilder.CreateCylinder('stereo speaker',{diameter:.41,height:.1,tessellation:24},c.scene);
   p.parent=stereo;p.position.set(3.1+s*.43,1.04,.61);p.rotation.x=Math.PI/2;p.material=skinPink;return p;
  });
- const audio=new Audio(import.meta.env.BASE_URL+'assets/studio-song.mp3');
- audio.loop=true;audio.volume=.65;audio.preload='auto';
+ const studioTracks=[
+  {label:'Daniela Original',src:import.meta.env.BASE_URL+'assets/studio-song.mp3'},
+  {label:'Dai Dai',src:import.meta.env.BASE_URL+'assets/Shakira_Burna_Boy_-_Dai_Dai.mp3'}
+ ];
+ const audio=new Audio();audio.loop=true;audio.volume=.65;audio.preload='auto';
+ let currentTrack=studioTracks[0];
+ function chooseTrack(){currentTrack=studioTracks[Math.floor(Math.random()*studioTracks.length)];audio.src=currentTrack.src;audio.currentTime=0;audio.load();}
  let musicPlaying=false,lastDance=0,danceIndex=0,concertStartedMusic=false;
  const volleyball=sphere('volleyball 3D',.58,-2.6,.35,-3.0,white,c.groups.bedroom);
  for(let i=0;i<3;i++){
@@ -140,7 +145,7 @@ export function createInteractions(c:Dependencies){
   // Called directly from the Concierto tap so mobile browsers permit audio playback.
   concertStartedMusic=true;
   try{
-   await audio.play();
+   chooseTrack();await audio.play();
    musicPlaying=true;lastDance=performance.now();danceIndex=0;sync();
   }catch{
    concertStartedMusic=false;musicPlaying=false;sync();
@@ -160,7 +165,7 @@ export function createInteractions(c:Dependencies){
   }
   concertStartedMusic=false;
   try{
-   await audio.play();musicPlaying=true;lastDance=performance.now();danceIndex=0;
+   chooseTrack();await audio.play();musicPlaying=true;lastDance=performance.now();danceIndex=0;
    c.animate('dance',3.5);c.toast('¡Que empiece la música! 🎶');
   }catch{musicPlaying=false;c.toast('No se puede reproducir la canción en este navegador');}
   sync();
