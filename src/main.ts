@@ -4,19 +4,21 @@ import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
 import {setupSceneEditor} from './editor';
 import {readLayout} from './assets';
-type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
+type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
-type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number};
+type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
-const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0};
+const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
 let state={...initial};
-try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};const now=Date.now(),mins=Math.min(240,Math.max(0,(now-(old.lastSaved||now))/60000));state.hunger=Math.max(0,state.hunger-mins*.13);state.energy=Math.max(0,state.energy-mins*.035);state.hygiene=Math.max(0,state.hygiene-mins*.05);state.happiness=Math.max(0,state.happiness-mins*.06);
+try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};
+ if(old.arenaMilestones===undefined){state.arenaMilestones=Math.floor(state.followers/1000);state.arenaTickets=state.arenaMilestones;}
+ const now=Date.now(),mins=Math.min(240,Math.max(0,(now-(old.lastSaved||now))/60000));state.hunger=Math.max(0,state.hunger-mins*.13);state.energy=Math.max(0,state.energy-mins*.015);state.hygiene=Math.max(0,state.hygiene-mins*.05);state.happiness=Math.max(0,state.happiness-mins*.06);
  if(state.lastConcertAt>0){const quietHours=Math.max(0,(now-state.lastConcertAt)/3600000-18);if(state.followers>0){const loss=Math.min(.48,quietHours*.003);state.followers=Math.max(0,Math.floor(state.followers*(1-loss)));}state.popularity=Math.round(Math.max(0,Math.min(100,state.popularity-Math.floor(quietHours/5))));}}}catch{}
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
-let concertActive=false,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let concertActive=false,liveKind:'tiktok'|'arena'|null=null,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
@@ -37,13 +39,20 @@ act('🧽','Esponja','Arrastra hasta Daniela',['#99dcef','#77bdea'],'bath',{},0,
 act('🚿','Agua','Aclarar las burbujas',['#e4bbff','#b69bee'],'bath',{},0,2,'¡Agüita fresca! 🚿'),
 act('🧴','Skincare','+ higiene',['#a3f1dc','#70c8bb'],'wave',{hygiene:14,happiness:4},0,8,'¡Sonrisa brillante! ✨')]},
 stage:{title:'Dance studio',kicker:'✦ DREAMS COME TRUE ✦',sub:'El escenario es todo tuyo',accent:'#c2a1fc',actions:[
-act('🎶','Bailar','Ensayar · +2 ★',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-4,hunger:-5,hygiene:-3},2,18,'¡Dale al ritmo! 🎶'),
-act('🎤','Cantar','Ensayo · +3 ★',['#ff9dc8','#e577ba'],'sing',{energy:-5,hunger:-4,happiness:8},3,23,'¡Qué voz de estrella! 🎤'),
-act('🪩','Dance pop','Ensayo · +2 ★',['#aa9efb','#d7a4ff'],'dance2',{energy:-6,happiness:12},2,20,'¡Coreografía perfecta! 🪩'),
-act('💃','Dance cute','Ensayo · +2 ★',['#f3a4bb','#ea80c2'],'dance3',{energy:-6,happiness:12},2,20,'¡Qué adorable! 💃'),
-act('🔥','Hip-hop','Ensayo · +3 ★',['#db9ffd','#a47eec'],'dance4',{energy:-7,happiness:14},3,24,'¡Daniela domina el ritmo! 🔥'),
-act('🪩','Disco','Ensayo · +2 ★',['#f6b889','#e78ac8'],'dance5',{energy:-6,happiness:11},2,22,'¡Pura energía disco! ✨'),
-act('🌟','Concierto','Ingresos del LIVE',['#ffd18c','#f6a36c'],'sing',{energy:-11,hunger:-10,happiness:20},0,40,'¡El público te adora! 🌟')]},
+act('🎶','Bailar','Ensayar · +2 ★',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-1,hunger:-3,hygiene:-2},2,18,'¡Dale al ritmo! 🎶'),
+act('🎤','Cantar','Ensayo · +3 ★',['#ff9dc8','#e577ba'],'sing',{energy:-1,hunger:-2,happiness:8},3,23,'¡Qué voz de estrella! 🎤'),
+act('🪩','Dance pop','Ensayo · +2 ★',['#aa9efb','#d7a4ff'],'dance2',{energy:-2,happiness:12},2,20,'¡Coreografía perfecta! 🪩'),
+act('💃','Dance cute','Ensayo · +2 ★',['#f3a4bb','#ea80c2'],'dance3',{energy:-2,happiness:12},2,20,'¡Qué adorable! 💃'),
+act('🔥','Hip-hop','Ensayo · +3 ★',['#db9ffd','#a47eec'],'dance4',{energy:-2,happiness:14},3,24,'¡Daniela domina el ritmo! 🔥'),
+act('🪩','Disco','Ensayo · +2 ★',['#f6b889','#e78ac8'],'dance5',{energy:-2,happiness:11},2,22,'¡Pura energía disco! ✨'),
+act('📱','Directo TikTok','Gana seguidores en vivo',['#ffd18c','#f6a36c'],'sing',{energy:-2,hunger:-2,happiness:12},0,20,'¡Estamos en directo! 📱')]},
+arena:{title:'Gran concierto',kicker:'✦ DANIELA WORLD TOUR ✦',sub:'Un gran escenario para una auténtica idol',accent:'#f39ccc',actions:[
+act('🎟️','Empezar concierto','1 entrada por cada 1.000 fans',['#ffc878','#f18cbd'],'wave',{happiness:10,energy:-3},0,28,'¡Comienza el espectáculo! 🎟️'),
+act('🎤','Cantar al público','Conquista a tus fans',['#ff9dc8','#e577ba'],'sing',{energy:-2,happiness:8},0,24,'¡El público canta contigo! 🎤'),
+act('🪩','K-pop especial','Coreografía de estadio',['#bdacff','#9c85e9'],'dance2',{energy:-2,happiness:9},0,22,'¡El estadio vibra! 🪩'),
+act('🔥','Hip-hop épico','¡Desata la energía!',['#f7a8b4','#b78bec'],'dance4',{energy:-2,happiness:10},0,24,'¡Todos saltan! 🔥'),
+act('✨','Final de estrella','Gran cierre del show',['#ffe4a6','#ff99ba'],'dance5',{energy:-2,happiness:13},0,26,'¡Un final inolvidable! ✨'),
+act('🏁','Terminar show','Guardar resultados',['#9ecfef','#b49cea'],'wave',{},0,8,'¡Hasta pronto, fans! 💜')]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
@@ -64,13 +73,13 @@ camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadius
 // Preserve crisp edges with the engine's native antialiasing (avoid FXAA blur).
 const sharpen=new SharpenPostProcess('subtle image clarity',1,camera);
 sharpen.edgeAmount=.035;sharpen.colorAmount=1;
-const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.68;amb.diffuse=new Color3(1,.95,1);
-const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.28;
-const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.26;rim.diffuse=new Color3(1,.65,.85);rim.range=8;
+const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.8;amb.diffuse=new Color3(1,.95,1);
+const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.34;
+const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.25;rim.diffuse=new Color3(1,.65,.85);rim.range=8;
 const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.01;glow.isEnabled=false;
 function setSceneLighting(factor:number){
  const f=Math.max(.6,Math.min(1.13,factor));
- amb.intensity=.68*f;sun.intensity=.28*f;rim.intensity=.26*f;
+ amb.intensity=.8*f;sun.intensity=.34*f;rim.intensity=.25*f;
 }
 setSceneLighting((readLayout().lighting??70)/70);
 function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e).scale(.13);return m;}
@@ -89,7 +98,7 @@ const tileMat=mat('very subtle tile','#eee4ef');for(let i=-6;i<=6;i++)for(let j=
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
 const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
 function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,baseY:mesh.position.y,speed,phase,amp});return mesh;}
-const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene)};
+const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene),arena:new TransformNode('arena',scene)};
 dressRooms(scene,groups);
 const bed=groups.bedroom;
 // Pillows belong at the NEAR (low-Z) end; Daniela's head rotates toward -Z.
@@ -317,9 +326,9 @@ function tickSleep(now:number){
   camera.target.set(1.6*walk,1.8-.12*lie,-.35+2.15*walk);
   if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
  }else if(sleepPhase==='resting'){
-  state.energy=Math.min(100,state.energy+dt*1.25);
+  state.energy=Math.min(100,state.energy+dt*2);
   if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 Descansando… energía '+num(state.energy)+'%';render();}
-  if(state.energy>=100&&now-sleepRestStart>9500){
+  if(state.energy>=100&&now-sleepRestStart>6500){
    sleepPhase='waking';sleepClock=now;move='idle';started=now;duration=2.5;
    state.hunger=num(state.hunger-3);gainXP(11);save();toast('¡Daniela ha recuperado toda su energía! 🌞');reactionBubble('¡Qué bien he dormido! 💗',false,2600);
   }
@@ -612,7 +621,7 @@ engine.runRenderLoop(()=>{
  scene.render();
 });
 addEventListener('resize',()=>engine.resize());
-setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.065);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();updateNeedAlerts(true);save();},60000);
+setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.025);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();updateNeedAlerts(true);save();},60000);
 setInterval(()=>{if(document.hidden||concertActive||!state.lastConcertAt||Date.now()-state.lastConcertAt<18*3600000)return;
  if(state.followers>0)state.followers=Math.max(0,state.followers-Math.max(1,Math.floor(state.followers*.004)));
  state.popularity=Math.max(0,state.popularity-.2);render();save();},3600000);
