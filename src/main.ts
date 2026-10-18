@@ -4,7 +4,8 @@ import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
 import {setupSceneEditor} from './editor';
 import {readLayout} from './assets';
-type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
+import {createMiniGames} from './minigames';
+type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
 type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
@@ -98,7 +99,7 @@ const tileMat=mat('very subtle tile','#eee4ef');for(let i=-6;i<=6;i++)for(let j=
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
 const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
 function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,baseY:mesh.position.y,speed,phase,amp});return mesh;}
-const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene),arena:new TransformNode('arena',scene)};
+const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene),arena:new TransformNode('arena',scene),street:new TransformNode('street',scene)};
 dressRooms(scene,groups);
 const bed=groups.bedroom;
 // Pillows belong at the NEAR (low-Z) end; Daniela's head rotates toward -Z.
