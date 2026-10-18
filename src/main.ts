@@ -1,4 +1,4 @@
-import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,SharpenPostProcess} from '@babylonjs/core';
+import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,SharpenPostProcess,DynamicTexture} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
@@ -247,6 +247,14 @@ for(let i=0;i<9;i++){
 }
 box('arena LED frame',7.7,2.75,.15,0,3.2,5.34,white,arenaRoot);
 box('arena LED display',7.4,2.5,.17,0,3.2,5.21,stageMat,arenaRoot);
+const arenaSignTexture=new DynamicTexture('Daniela World Tour LED',{width:1024,height:256},scene,false);
+const signCtx=arenaSignTexture.getContext();
+signCtx.fillStyle='#6c4197';signCtx.fillRect(0,0,1024,256);
+const gradient=signCtx.createLinearGradient(0,0,1024,0);gradient.addColorStop(0,'#ffc7e8');gradient.addColorStop(.5,'#fff7d6');gradient.addColorStop(1,'#a8f2ff');
+signCtx.fillStyle=gradient;signCtx.font='bold 100px Arial';signCtx.textAlign='center';signCtx.textBaseline='middle';signCtx.fillText('DANIELA LIVE',512,127);
+arenaSignTexture.update();
+const arenaSignMaterial=new StandardMaterial('arena LED lettering',scene);arenaSignMaterial.diffuseTexture=arenaSignTexture;arenaSignMaterial.emissiveTexture=arenaSignTexture;arenaSignMaterial.emissiveColor=new Color3(.15,.15,.15);arenaSignMaterial.disableLighting=true;arenaSignMaterial.backFaceCulling=false;
+const arenaSign=MeshBuilder.CreatePlane('Daniela LIVE LED sign',{width:6.8,height:1.55},scene);arenaSign.position.set(0,3.25,5.08);arenaSign.parent=arenaRoot;arenaSign.material=arenaSignMaterial;arenaSign.isPickable=false;
 for(let i=0;i<11;i++)star(-3.3+i*.65,3.3+Math.sin(i*1.9)*.67,5.07,.18,i%2?pink:gold,arenaRoot);
 for(let i=0;i<16;i++){
  const x=-5.3+(i%8)*1.5,z=1.9+Math.floor(i/8)*1.25;
