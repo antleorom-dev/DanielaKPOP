@@ -307,3 +307,38 @@ body.minigame-playing{overflow:hidden}
  .minigame-hint{padding:3px 8px;font-size:8px}
  .minigame-end{inset:52px 10px 12px;padding:12px;gap:8px}
 }
+
+
+/* v1.2 — manual make-up painting */
+.makeup-controls button.selected-tool{outline:3px solid #f084c2;transform:translateY(-2px);box-shadow:0 7px 18px #d36da94a;background:#fff}
+.makeup-manual{display:flex;align-items:center;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid #edc9df}
+.makeup-manual span{flex:1;font-size:8px;line-height:1.2;font-weight:900;color:#a65b8c}
+.makeup-manual button{flex:0 0 auto;border:2px solid #fff;border-radius:11px;padding:6px 9px;background:linear-gradient(135deg,#f49ccb,#ae91ed);color:#fff;font-size:8px;font-weight:1000;box-shadow:0 3px 10px #8d57982f}
+
+/* Full 3D Daniela vs CPU volleyball */
+.street-volley-ui[hidden]{display:none!important}
+.street-volley-ui{position:absolute;inset:0;z-index:40;pointer-events:none;color:#70488b;font-family:inherit}
+.street-volley-score{position:absolute;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(680px,88vw);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:9px 14px;border:2px solid #fff;border-radius:18px;background:#fff9f2e8;box-shadow:0 8px 28px #60466b35;backdrop-filter:blur(12px);font-size:12px;font-weight:1000}
+.street-volley-score span:last-child{text-align:right}.street-volley-score b{display:inline-grid;place-items:center;min-width:31px;height:31px;margin:0 5px;border-radius:10px;background:linear-gradient(145deg,#f5acd5,#ad9aed);color:#fff;font-size:18px}
+.street-volley-score em{font-style:normal;font-size:9px;letter-spacing:1px;color:#b06f9a}
+.street-volley-tip{position:absolute;top:72px;left:50%;transform:translateX(-50%);padding:6px 11px;border-radius:12px;background:#65457fa8;color:#fff;font-size:9px;font-weight:900;backdrop-filter:blur(7px)}
+.street-volley-controls{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:grid;grid-template-columns:60px minmax(145px,230px) 60px;gap:9px;pointer-events:auto}
+.street-volley-controls button,.street-volley-exit{border:2px solid #fff;border-radius:18px;background:linear-gradient(145deg,#f7a8d0,#9e91ed);color:#fff;box-shadow:0 6px 20px #5f3a7554;font-weight:1000;touch-action:none}
+.street-volley-controls button{height:55px;font-size:16px}.street-volley-controls button:nth-child(2){background:linear-gradient(145deg,#ffd27e,#f08dbf);font-size:12px}
+.street-volley-controls button:active{transform:scale(.94)}
+.street-volley-exit{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));pointer-events:auto;padding:8px 12px;font-size:9px}
+body.street-volley-playing .career-topbar,body.street-volley-playing .hud-left,body.street-volley-playing .care-panel,body.street-volley-playing .camera-button,body.street-volley-playing .scene-title,body.street-volley-playing .bottom-area,body.street-volley-playing .arena-progress,body.street-volley-playing #activity-tools{opacity:0;pointer-events:none}
+@media(max-width:680px){
+ .makeup-manual span{font-size:7px}.makeup-manual button{padding:5px 7px;font-size:7px}
+ .street-volley-score{top:max(7px,env(safe-area-inset-top));width:94vw;padding:6px 8px;border-radius:13px;font-size:9px}
+ .street-volley-score b{min-width:25px;height:25px;font-size:14px}.street-volley-score em{font-size:7px}
+ .street-volley-tip{top:53px;font-size:7px}
+ .street-volley-controls{grid-template-columns:52px minmax(135px,210px) 52px;gap:6px;bottom:max(9px,env(safe-area-inset-bottom))}
+ .street-volley-controls button{height:48px;border-radius:14px}.street-volley-exit{top:58px;right:7px;padding:5px 7px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .makeup-manual{margin-top:3px;padding-top:3px}.makeup-manual span{font-size:6px}.makeup-manual button{padding:3px 5px}
+ .street-volley-score{top:4px;width:min(620px,70vw);padding:4px 8px}.street-volley-tip{top:47px}
+ .street-volley-controls{bottom:5px;grid-template-columns:48px 160px 48px}.street-volley-controls button{height:39px}
+ .street-volley-exit{top:4px}
+}
