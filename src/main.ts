@@ -1,10 +1,11 @@
-import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,SharpenPostProcess} from '@babylonjs/core';
+import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,SharpenPostProcess,DynamicTexture} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
 import {setupSceneEditor} from './editor';
 import {readLayout} from './assets';
-type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
+import {createMiniGames} from './minigames';
+type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
 type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
@@ -53,6 +54,10 @@ act('🪩','K-pop especial','Coreografía de estadio',['#bdacff','#9c85e9'],'dan
 act('🔥','Hip-hop épico','¡Desata la energía!',['#f7a8b4','#b78bec'],'dance4',{energy:-2,happiness:10},0,24,'¡Todos saltan! 🔥'),
 act('✨','Final de estrella','Gran cierre del show',['#ffe4a6','#ff99ba'],'dance5',{energy:-2,happiness:13},0,26,'¡Un final inolvidable! ✨'),
 act('🏁','Terminar show','Guardar resultados',['#9ecfef','#b49cea'],'wave',{},0,8,'¡Hasta pronto, fans! 💜')]},
+street:{title:'Daniela City',kicker:'✦ SALIMOS A LA CALLE ✦',sub:'Dos minijuegos, aventuras y premios',accent:'#8ccde8',actions:[
+act('🍓','Lluvia de snacks','Atrapa comida · 60 s',['#ffabc7','#e88dc8'],'wave',{},0,0,'¡A por los snacks! 🍓'),
+act('🛹','Daniela Skate','Salta y consigue monedas',['#92d9ef','#a7a1ef'],'jump',{},0,0,'¡Vamos a patinar! 🛹')
+]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
@@ -98,7 +103,7 @@ const tileMat=mat('very subtle tile','#eee4ef');for(let i=-6;i<=6;i++)for(let j=
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
 const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
 function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,baseY:mesh.position.y,speed,phase,amp});return mesh;}
-const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene),arena:new TransformNode('arena',scene)};
+const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene),arena:new TransformNode('arena',scene),street:new TransformNode('street',scene)};
 dressRooms(scene,groups);
 const bed=groups.bedroom;
 // Pillows belong at the NEAR (low-Z) end; Daniela's head rotates toward -Z.
@@ -233,6 +238,56 @@ for(let row=0;row<3;row++){
 for(const z of [1.4,2.65,3.9])for(const x of [-3.9,3.9]){
  const beam=cyl('arena concert spotlight',.24,.48,2.35,x,2.2,z,lilac,arenaRoot);beam.visibility=.27;beam.isPickable=false;
 }
+// Extra concert art direction: overhead truss, pastel LED wall, fan lightsticks and confetti.
+box('arena overhead truss',11.4,.22,.32,0,5.7,3.9,stageMat,arenaRoot);
+for(let i=0;i<9;i++){
+ const x=-4.8+i*1.2;
+ const color=i%3===0?pink:i%3===1?mint:gold;
+ ball('arena overhead spotlight',.34,x,5.43,3.75,color,arenaRoot);
+}
+box('arena LED frame',7.7,2.75,.15,0,3.2,5.34,white,arenaRoot);
+box('arena LED display',7.4,2.5,.17,0,3.2,5.21,stageMat,arenaRoot);
+const arenaSignTexture=new DynamicTexture('Daniela World Tour LED',{width:1024,height:256},scene,false);
+const signCtx=arenaSignTexture.getContext();
+signCtx.fillStyle='#6c4197';signCtx.fillRect(0,0,1024,256);
+const gradient=signCtx.createLinearGradient(0,0,1024,0);gradient.addColorStop(0,'#ffc7e8');gradient.addColorStop(.5,'#fff7d6');gradient.addColorStop(1,'#a8f2ff');
+signCtx.fillStyle=gradient;signCtx.font='bold 100px Arial';const arenaLabel='DANIELA LIVE';signCtx.fillText(arenaLabel,(1024-signCtx.measureText(arenaLabel).width)/2,165);
+arenaSignTexture.update();
+const arenaSignMaterial=new StandardMaterial('arena LED lettering',scene);arenaSignMaterial.diffuseTexture=arenaSignTexture;arenaSignMaterial.emissiveTexture=arenaSignTexture;arenaSignMaterial.emissiveColor=new Color3(.15,.15,.15);arenaSignMaterial.disableLighting=true;arenaSignMaterial.backFaceCulling=false;
+const arenaSign=MeshBuilder.CreatePlane('Daniela LIVE LED sign',{width:6.8,height:1.55},scene);arenaSign.position.set(0,3.25,5.08);arenaSign.parent=arenaRoot;arenaSign.material=arenaSignMaterial;arenaSign.isPickable=false;
+for(let i=0;i<11;i++)star(-3.3+i*.65,3.3+Math.sin(i*1.9)*.67,5.07,.18,i%2?pink:gold,arenaRoot);
+for(let i=0;i<16;i++){
+ const x=-5.3+(i%8)*1.5,z=1.9+Math.floor(i/8)*1.25;
+ const stick=cyl('arena fan lightstick',.08,.11,.52,x,1.07,z,white,arenaRoot);
+ stick.isPickable=false;
+ ball('arena glowing lightstick',.19,x,1.42,z,i%3?pink:mint,arenaRoot).isPickable=false;
+}
+for(let i=0;i<20;i++){
+ const x=-5.3+(i%10)*1.15,z=-3.4+Math.floor(i/10)*1.9;
+ const confetti=box('arena floating confetti',.09,.17,.025,x,3.1+(i%5)*.28,z,i%3?gold:i%2?mint:pink,arenaRoot);
+ confetti.rotation.z=i*.48;confetti.isPickable=false;
+}
+// An independent colorful city hub behind the mini-game selection.
+const streetRoot=groups.street;
+box('city pink boulevard',13,.07,8,0,-.03,0,white,streetRoot);
+for(let i=0;i<10;i++)box('city sidewalk tile',1.2,.08,1.7,-5.6+i*1.23,.03,1.6,i%2?lilac:mint,streetRoot);
+for(let i=0;i<5;i++){
+ const x=-5.6+i*2.8;
+ const facade=box('city storefront',2.35,3.7,.9,x,1.85,5.15,i%2?pink:lilac,streetRoot);
+ facade.isPickable=false;
+ box('city window',1.5,1.15,.1,x,2.2,4.63,blue,streetRoot);
+ box('city shop awning',2.5,.19,1.15,x,3.1,4.32,i%2?mint:gold,streetRoot);
+}
+for(const x of [-5.25,5.25]){
+ cyl('city lamp post',.13,.16,3.1,x,1.55,-1.3,white,streetRoot);
+ ball('city lamp',.46,x,3.22,-1.3,gold,streetRoot);
+ const tree=cyl('city tree trunk',.3,.39,1.8,x,1.0,1.45,wood,streetRoot);
+ tree.isPickable=false;
+ for(const y of [2.05,2.65])ball('city cotton candy tree',1.1,x,y,1.45,y>2.3?pink:mint,streetRoot);
+}
+box('city arcade booth',2.8,1.55,1.35,3.65,.8,-2.9,lilac,streetRoot);
+box('city arcade screen',1.6,.8,.08,3.65,1.15,-3.61,blue,streetRoot);
+for(let i=0;i<4;i++)star(-2.7+i*1.8,4.5+(i%2)*.2,4.5,.34,i%2?pink:gold,streetRoot);
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
@@ -397,12 +452,12 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
-$('#action-label').textContent=room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
-wall.diffuseColor=Color3.FromHexString(room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
-floorMat.diffuseColor=Color3.FromHexString(room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
+$('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
+wall.diffuseColor=Color3.FromHexString(room==='street'?'#b5e9fa':room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
+floorMat.diffuseColor=Color3.FromHexString(room==='street'?'#e9e4ff':room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
 button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
@@ -457,6 +512,25 @@ const liveMessages=[
  '¡La ropa combina con el escenario!','¿Se puede pedir otra canción?','¡Qué bonito ambiente!',
  '¡Mi primera vez en este LIVE!','¡Ya tengo mi canción favorita!'
 ];
+const extraLiveMessages=[
+ '¡Te mando 100 corazones! 💖','Mi hermana y yo somos tus fans 🥹','¡Like like like! 💗','El directo más bonito de hoy 🌸',
+ '¡Ese movimiento de brazos! ✨','DANIELA PRESIDENTA DEL KPOP 👑','Te mando una rosa 🌹','¡Regalito para Daniela! 🎁',
+ '¡Los agudos, por favor! 🎵','¡Una canción más! 🙏','¿Puedes saludarme? 🥰','¡Qué bien suena el micro! 🎤',
+ '¡Las luces parecen estrellas! ⭐','¡Soy fan desde tus primeros 10 seguidores!','¡Entramos en tendencias! 🔥',
+ '¿Alguien desde Argentina? 🇦🇷','¡Saludos desde Colombia! 🇨🇴','¡Hola desde Chile! 🇨🇱','¡Desde Perú te vemos! 🇵🇪',
+ '¡Desde Japón apoyándote! 🇯🇵','¡Me quedo todo el directo!','¡Qué buena coreografía! 💃','¡Dale otra vuelta! 🪩',
+ 'El outfit azul es precioso 💙','¡Quiero un concierto en mi ciudad!','¡Esos pasitos! 😭','¡Te regalo una estrella! 🌟',
+ '¡Sube el volumen! 🔊','¡Cuántos corazones flotando!','¡Me hiciste sonreír! 😍','¡La mejor comunidad! 💜',
+ '¡Llegamos a los 1000 fans! 🎟️','¡Todos con las manos arriba! 🙌','¡Esa parte es mi favorita! 🎶',
+ '¡Viva Daniela City! 🛹','¡El escenario parece un sueño! 🌈','¡Felicidades por el concierto! 🎉',
+ '¡Qué bonito peinado! 🎀','¡Tú puedes, Daniela!','¡Te sigo desde hoy!','¡El ritmo no para! 🔥',
+ '¡Esto merece un millón de likes!','¡Me encanta tu energía! ⚡','¡Un aplauso enorme! 👏',
+ '¡Te mando una corona! 👑','¡Es el mejor show del año!','¡Quiero aprender ese baile!','¡La voz de una estrella! 🌠',
+ '¡Vamos por más seguidores! 💜','¡Otra canción, otra canción! 🎤','¡El chat está que arde! 🔥',
+ '¡Los colores del escenario son preciosos!','¡Esta noche es histórica! ✨'
+];
+liveMessages.push(...extraLiveMessages);
+const liveAvatars=['🌸','💜','🐱','🎀','🌟','🦋','🍓','🐻','🪩','👑','🌈','🧋','🎤','🩷','✨','🌷'];
 const liveUsers=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: ','@purplewave: ','@danistars: ','@moonberry: ','@luna_pop: ','@mintcloud: ','@sweetidol: ','@starry_night: ','@berrytea: ','@fan_rosa: ','@melodygirl: ','@neon_dream: ','@cloud9: ','@kawaii_dance: ','@peachy: ','@popcornfan: ','@dani_forever: '];
 function paintLiveStats(){
  $('#live-likes').textContent=liveLikes.toLocaleString('es-ES');$('#live-comment-count').textContent=liveComments.toLocaleString('es-ES');
@@ -464,10 +538,31 @@ function paintLiveStats(){
  $('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
 }
 const recentLiveComments:string[]=[];
+function appendLiveComment(){
+ const comments=$('#live-comments'),c=document.createElement('div');c.className='live-comment';
+ const options=liveMessages.filter(m=>!recentLiveComments.includes(m));
+ const message=options[Math.floor(Math.random()*options.length)]||liveMessages[0];
+ recentLiveComments.push(message);if(recentLiveComments.length>14)recentLiveComments.shift();
+ const avatar=document.createElement('span');avatar.className='live-avatar';avatar.textContent=liveAvatars[Math.floor(Math.random()*liveAvatars.length)];
+ const content=document.createElement('span');content.className='live-comment-content';
+ const username=document.createElement('b');username.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)].trim().replace(':','');
+ const words=document.createElement('span');words.textContent=message;
+ content.append(username,words);
+ const badge=document.createElement('span');badge.className='live-comment-heart';badge.textContent=['💗','♥','✨','🔥','🎁','👏'][Math.floor(Math.random()*6)];
+ c.append(avatar,content,badge);comments.append(c);
+ while(comments.children.length>6)comments.firstElementChild?.remove();
+}
 function liveReactionBurst(power=1){
- const reactions=$('#live-reactions'),comments=$('#live-comments'),count=Math.min(5,2+Math.round(power));
- for(let i=0;i<count;i++)setTimeout(()=>{if(!concertActive)return;const r=document.createElement('span');r.className='live-reaction';r.textContent=['♥','💜','🔥','✨','😍','👏'][Math.floor(Math.random()*6)];r.style.setProperty('--rx',(8+Math.random()*82)+'%');r.style.setProperty('--drift',(2.1+Math.random()*1.8)+'s');reactions.append(r);while(reactions.children.length>18)reactions.firstElementChild?.remove();setTimeout(()=>r.remove(),2600);},i*90);
- if(Math.random()<Math.min(.92,.32+power*.18)){const c=document.createElement('div');c.className='live-comment';const options=liveMessages.filter(m=>!recentLiveComments.includes(m));const message=options[Math.floor(Math.random()*options.length)]||liveMessages[0];recentLiveComments.push(message);if(recentLiveComments.length>10)recentLiveComments.shift();c.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)]+message;comments.append(c);while(comments.children.length>5)comments.firstElementChild?.remove();}
+ const reactions=$('#live-reactions'),count=Math.min(7,2+Math.round(power*1.3));
+ for(let i=0;i<count;i++)setTimeout(()=>{
+  if(!concertActive)return;
+  const r=document.createElement('span');r.className='live-reaction';
+  r.textContent=['♥','💜','🔥','✨','😍','👏','💗','🌹','🎁','⭐','🫶','🎶','👑'][Math.floor(Math.random()*13)];
+  r.style.setProperty('--rx',(10+Math.random()*80)+'%');r.style.setProperty('--drift',(1.8+Math.random()*1.4)+'s');
+  reactions.append(r);while(reactions.children.length>22)reactions.firstElementChild?.remove();
+  setTimeout(()=>r.remove(),2600);
+ },i*80);
+ if(Math.random()<Math.min(.98,.52+power*.17))appendLiveComment();
 }
 function socialBoost(kind:'dance'|'sing'|'concert'){
  if(!concertActive)return;
@@ -532,7 +627,7 @@ function socialTick(now:number){
  const scale=power*liveMomentum;
  liveViewers=Math.max(0,liveViewers+Math.floor((2+Math.random()*8)*scale)-(performing?0:Math.floor(Math.random()*4)));
  liveLikes+=Math.max(1,Math.floor((2+Math.random()*7)*scale));
- if(Math.random()<Math.min(.9,.12*scale)){liveComments+=1+Math.floor(Math.random()*2);liveReactionBurst(Math.min(2.2,scale/2));}
+ if(Math.random()<Math.min(.98,.22*scale)){liveComments+=1+Math.floor(Math.random()*3);liveReactionBurst(Math.min(2.5,scale/2));}else if(Math.random()<.56){liveComments++;appendLiveComment();}
  if(performing&&Math.random()<Math.min(.9,.16*scale))liveFollowerGain+=1+Math.floor(Math.random()*Math.max(1,Math.round(scale/2)));
  paintLiveStats();
 }
@@ -549,7 +644,7 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
+function perform(i:number){if(room==='street'){miniGames.start(i===0?'snack':'skate');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
 if(room==='arena'){
  if(i===0){
   if(concertActive){toast('🎤 ¡Ya estás dando un gran concierto!');return;}
@@ -578,6 +673,14 @@ reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound((room==='stag
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
+const miniGames=createMiniGames({
+ onReward:({score,coins,xp,kind})=>{
+  state.coins+=coins;gainXP(xp);
+  state.happiness=num(state.happiness+Math.min(9,Math.floor(score/65)));
+  render();save();toast((kind==='snack'?'🍓':'🛹')+' ¡Premio del minijuego! +'+coins+' ★ · +'+xp+' XP');
+ },
+ onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
+});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
@@ -594,7 +697,8 @@ editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,no
 showRoom('bedroom');fashion();render();updateNeedAlerts();
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
- if(document.hidden)return;
+ // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.
+ if(document.hidden||miniGames.isActive())return;
  const now=performance.now();
  // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
  if(now-performanceCheckAt>7500&&qualityMode!=='high'){
@@ -614,7 +718,7 @@ engine.runRenderLoop(()=>{
  const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
  const isEating=move==='eat'||move==='drink';const walkingToBed=(sleepPhase==='walking'&&now-sleepClock<2400)||(sleepPhase==='waking'&&now-sleepClock>900);
  const isVolley=move==='volley';
- const singing=move==='sing'&&room==='stage';
+ const singing=move==='sing'&&(room==='stage'||room==='arena');
  microphone.setEnabled(singing);
  if(singing){const micIn=Math.min(1,e/.34);microphone.scaling.setAll(.15+.85*micIn);}
  // Each choreography uses its own weight shift, bounce, turns, arms and steps.

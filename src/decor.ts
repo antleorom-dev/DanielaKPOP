@@ -1,6 +1,6 @@
 import {Color3,DynamicTexture,Mesh,MeshBuilder,Scene,StandardMaterial,TransformNode,Vector3,PointLight} from '@babylonjs/core';
 
-type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
+type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Groups=Record<Room,TransformNode>;
 
 /** Extra lightweight set dressing: detail stays attached to the active room. */

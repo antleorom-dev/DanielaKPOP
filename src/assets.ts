@@ -1,7 +1,7 @@
 import {Scene,SceneLoader,TransformNode,AbstractMesh,Vector3,StandardMaterial,Color3,Mesh} from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 
-export type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
+export type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 export type Furniture={id:string;room:Room;name:string;label:string;emoji:string;root:TransformNode;height:number;isDefault:boolean};
 type CatalogEntry={name:string;label:string;emoji:string;height:number;rooms:Room[]};
 type Position={x:number;z:number;rotation?:number;scale?:number};

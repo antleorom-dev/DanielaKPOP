@@ -5,7 +5,7 @@ import {createBath} from './bath';
 import {makeVolleyball} from './volleyball';
 // The player's own song is extracted from DanielaKPOP-recursos-v0.4.zip during Pages deployment.
 
-type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
+type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Move='idle'|'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3'|'dance4'|'dance5';
 type Dependencies={
  scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;
