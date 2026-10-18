@@ -385,7 +385,7 @@ function renderArenaPass(){
  if(el)el.textContent=String(state.arenaTickets);
  const next=(state.arenaMilestones+1)*1000;
  const progress=document.querySelector<HTMLElement>('#arena-progress');
- if(progress)progress.textContent=state.arenaTickets>0?'🎟️ '+state.arenaTickets+' entrada(s) disponibles':'Próxima entrada: '+next.toLocaleString('es-ES')+' seguidores';
+ if(progress){progress.textContent=state.arenaTickets>0?'🎟️ '+state.arenaTickets+' entrada(s) disponibles':'Próxima entrada: '+next.toLocaleString('es-ES')+' seguidores';progress.hidden=room!=='arena';}
 }
 function render(){for(const n of ['hunger','happiness','energy','hygiene'] as Need[]){$('#'+n+'-value').textContent=num(state[n])+'%';$('#'+n+'-meter').style.width=num(state[n])+'%';}
 renderArenaPass();$('#coins').textContent=state.coins.toLocaleString('es-ES');$('#followers').textContent=state.followers.toLocaleString('es-ES');$('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
@@ -406,7 +406,7 @@ floorMat.diffuseColor=Color3.FromHexString(room==='arena'?'#b995e1':room==='stag
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
 button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
-animate('wave',1.1);}
+renderArenaPass();animate('wave',1.1);}
 function toast(msg:string){$('#toast').textContent=msg;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
 function reward(msg:string){const el=$('#reward');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function reactionBubble(text:string,complaint=false,hold=1700){
