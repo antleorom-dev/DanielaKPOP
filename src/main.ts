@@ -64,16 +64,16 @@ camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadius
 // Preserve crisp edges with the engine's native antialiasing (avoid FXAA blur).
 const sharpen=new SharpenPostProcess('subtle image clarity',1,camera);
 sharpen.edgeAmount=.035;sharpen.colorAmount=1;
-const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.5;amb.diffuse=new Color3(1,.95,1);
-const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.18;
-const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.19;rim.diffuse=new Color3(1,.65,.85);rim.range=8;
+const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.68;amb.diffuse=new Color3(1,.95,1);
+const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.28;
+const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.26;rim.diffuse=new Color3(1,.65,.85);rim.range=8;
 const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.01;glow.isEnabled=false;
 function setSceneLighting(factor:number){
- const f=Math.max(.45,Math.min(1.05,factor));
- amb.intensity=.5*f;sun.intensity=.18*f;rim.intensity=.19*f;
+ const f=Math.max(.6,Math.min(1.13,factor));
+ amb.intensity=.68*f;sun.intensity=.28*f;rim.intensity=.26*f;
 }
 setSceneLighting((readLayout().lighting??70)/70);
-function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e).scale(.1);return m;}
+function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e).scale(.13);return m;}
 const skin=mat('peach','#ffe3cb'),blush=mat('blush','#f7a9b8'),dark=mat('eyes','#46305a'),white=mat('white','#fff9ff'),trim=mat('cream','#fff7ee'),gold=mat('gold','#ffd277','#65401c'),pink=mat('shiny pink','#ffc5ed','#603b58');
 const hairColors=['#684a79','#d889a8','#a59acc','#c19c75','#57385c','#b4a7e4','#704b9b','#e0b9a3'].map((s,i)=>mat('hair'+i,s));
 const dressColors=['#f49ccb','#ae91ed','#8fdacc','#ffb38f','#ffdf8b','#7d9bdc','#f4a9ba','#b7a4df'].map((s,i)=>mat('dress'+i,s));
