@@ -3,7 +3,7 @@ import './interactions.css';
 import {installRoomAssets,installHeldFood} from './assets';
 import {createBath} from './bath';
 import {makeVolleyball} from './volleyball';
-import {createStudioMusic} from './music';
+// The player's own song is extracted from DanielaKPOP-recursos-v0.4.zip during Pages deployment.
 
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Move='idle'|'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3'|'dance4'|'dance5';
@@ -59,7 +59,8 @@ export function createInteractions(c:Dependencies){
   const p=MeshBuilder.CreateCylinder('stereo speaker',{diameter:.41,height:.1,tessellation:24},c.scene);
   p.parent=stereo;p.position.set(3.1+s*.43,1.04,.61);p.rotation.x=Math.PI/2;p.material=skinPink;return p;
  });
- const audio=createStudioMusic();
+ const audio=new Audio(import.meta.env.BASE_URL+'assets/studio-song.mp3');
+ audio.loop=true;audio.volume=.65;audio.preload='auto';
  let musicPlaying=false,lastDance=0,danceIndex=0,concertStartedMusic=false;
  const volleyball=sphere('volleyball 3D',.58,-2.6,.35,-3.0,white,c.groups.bedroom);
  for(let i=0;i<3;i++){
@@ -139,7 +140,7 @@ export function createInteractions(c:Dependencies){
   // Called directly from the Concierto tap so mobile browsers permit audio playback.
   concertStartedMusic=true;
   try{
-   await audio.start();
+   await audio.play();
    musicPlaying=true;lastDance=performance.now();danceIndex=0;sync();
   }catch{
    concertStartedMusic=false;musicPlaying=false;sync();
@@ -149,7 +150,7 @@ export function createInteractions(c:Dependencies){
  function stopConcertMusic(){
   if(!concertStartedMusic)return;
   concertStartedMusic=false;
-  audio.stop();musicPlaying=false;sync();
+  audio.pause();audio.currentTime=0;musicPlaying=false;sync();
  }
  async function toggleStereo(){
   if(c.getRoom()!=='stage')return;
