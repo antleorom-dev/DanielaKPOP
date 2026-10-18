@@ -531,7 +531,7 @@ function applyMakeupStroke(x:number,y:number){
  if(room!=='closet'||!activeMakeupTool)return false;
  const lip=makeupScreenPoint(new Vector3(0,-.41,-.79)),leftEye=makeupScreenPoint(new Vector3(-.34,-.04,-.8)),rightEye=makeupScreenPoint(new Vector3(.34,-.04,-.8));
  const leftCheek=makeupScreenPoint(new Vector3(-.51,-.3,-.79)),rightCheek=makeupScreenPoint(new Vector3(.51,-.3,-.79));
- const scale=Math.max(.8,Math.min(1.45,9.25/camera.radius));
+ const scale=Math.max(.8,Math.min(1.45,9.75/camera.radius));
  let applied=false;
  if(activeMakeupTool==='lip'&&near(lip,x,y,52*scale)){state.makeupLip=makeupSelection.lip;applied=true;}
  if(activeMakeupTool==='blush'&&(near(leftCheek,x,y,62*scale)||near(rightCheek,x,y,62*scale))){state.makeupBlush=makeupSelection.blush;applied=true;}
