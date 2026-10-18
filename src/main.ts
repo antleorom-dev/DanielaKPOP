@@ -5,6 +5,7 @@ import {dressRooms} from './decor';
 import {setupSceneEditor} from './editor';
 import {readLayout} from './assets';
 import {createMiniGames} from './minigames';
+import {createStreetVolley3D} from './street-volley';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
@@ -99,7 +100,10 @@ function box(n:string,w:number,h:number,d:number,x:number,y:number,z:number,m:St
 function cyl(n:string,top:number,bottom:number,h:number,x:number,y:number,z:number,m:StandardMaterial,p?:TransformNode){return put(MeshBuilder.CreateCylinder(n,{diameterTop:top,diameterBottom:bottom,height:h,tessellation:28},scene),x,y,z,m,p);}
 function ring(n:string,d:number,t:number,x:number,y:number,z:number,m:StandardMaterial,p?:TransformNode){return put(MeshBuilder.CreateTorus(n,{diameter:d,thickness:t,tessellation:36},scene),x,y,z,m,p);}
 function star(x:number,y:number,z:number,s:number,m:StandardMaterial,p?:TransformNode){ball('star',s*.22,x,y,z,m,p);for(const k of [-1,1])box('spark ray',s*.15,s,.09,x,y,z,m,p).rotation.z=k*Math.PI/4;}
-box('floor',14,.26,11,0,-.18,1.05,floorMat);box('back wall',14,7,.3,0,3.25,6.3,wall);box('side wall',.3,7,11,-7,3.25,1.05,side);box('skirting',14,.22,.16,0,.08,6.08,white);
+const worldFloor=box('floor',14,.26,11,0,-.18,1.05,floorMat);
+const worldBackWall=box('back wall',14,7,.3,0,3.25,6.3,wall);
+const worldSideWall=box('side wall',.3,7,11,-7,3.25,1.05,side);
+const worldSkirting=box('skirting',14,.22,.16,0,.08,6.08,white);
 const tileMat=mat('very subtle tile','#eee4ef');for(let i=-6;i<=6;i++)for(let j=-4;j<=5;j++)if((i+j)%2===0)box('tile',.97,.012,.97,i,0,j+.7,tileMat).visibility=.07;
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
 const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
@@ -270,25 +274,45 @@ for(let i=0;i<20;i++){
 }
 // An independent colorful city hub behind the mini-game selection.
 const streetRoot=groups.street;
-box('city pink boulevard',13,.07,8,0,-.03,0,white,streetRoot);
-for(let i=0;i<10;i++)box('city sidewalk tile',1.2,.08,1.7,-5.6+i*1.23,.03,1.6,i%2?lilac:mint,streetRoot);
+// Daniela City is now an open outdoor plaza rather than another room.
+const streetGrass=mat('city grass','#a9e89d'),streetRoad=mat('city road','#9bb6c8'),streetSky=mat('city sky','#b9ecff'),streetCream=mat('city cream','#fff3cf');
+box('city plaza',16,.07,10,0,-.03,.2,streetCream,streetRoot);
+box('city road',16,.085,2.65,0,.01,3.65,streetRoad,streetRoot);
+for(let i=-7;i<=7;i+=2)box('road dash',.85,.018,.08,i,.06,3.65,white,streetRoot);
+for(const z of [2.2,5.05])box('green verge',16,.06,.62,0,.02,z,streetGrass,streetRoot);
+for(let i=-7;i<=7;i++)box('sidewalk slab',.93,.075,1.45,i*.98,.05,1.1,i%2?white:lilac,streetRoot);
+// Distant skyline and open sky create depth with no enclosing walls.
+box('open sky backdrop',24,10,.12,0,4.1,11.5,streetSky,streetRoot);
+for(let i=0;i<9;i++){
+ const x=-9+i*2.25,h=2.2+(i%4)*.62,z=9.2+(i%3)*.55;
+ const facade=box('distant city building',1.72,h,.65,x,h/2-.02,z,[pink,lilac,mint,blue][i%4],streetRoot);facade.isPickable=false;
+ for(let row=0;row<3;row++)for(let col=0;col<2;col++)box('city window glow',.33,.31,.04,x+(col-.5)*.52,.55+row*.62,z-.36,gold,streetRoot).isPickable=false;
+}
 for(let i=0;i<5;i++){
- const x=-5.6+i*2.8;
- const facade=box('city storefront',2.35,3.7,.9,x,1.85,5.15,i%2?pink:lilac,streetRoot);
- facade.isPickable=false;
- box('city window',1.5,1.15,.1,x,2.2,4.63,blue,streetRoot);
- box('city shop awning',2.5,.19,1.15,x,3.1,4.32,i%2?mint:gold,streetRoot);
+ const x=-5.6+i*2.8,z=6.2+(i%2)*.35;
+ const facade=box('city storefront',2.3,3.25,.72,x,1.62,z,i%2?pink:lilac,streetRoot);facade.isPickable=false;
+ box('city shop window',1.44,1.12,.08,x,1.77,z-.41,blue,streetRoot).isPickable=false;
+ box('city shop awning',2.48,.2,.82,x,2.82,z-.57,i%2?mint:gold,streetRoot).isPickable=false;
+ box('city shop sign',1.25,.42,.07,x,3.27,z-.42,white,streetRoot).isPickable=false;
 }
-for(const x of [-5.25,5.25]){
- cyl('city lamp post',.13,.16,3.1,x,1.55,-1.3,white,streetRoot);
- ball('city lamp',.46,x,3.22,-1.3,gold,streetRoot);
- const tree=cyl('city tree trunk',.3,.39,1.8,x,1.0,1.45,wood,streetRoot);
- tree.isPickable=false;
- for(const y of [2.05,2.65])ball('city cotton candy tree',1.1,x,y,1.45,y>2.3?pink:mint,streetRoot);
+for(const x of [-5.35,-3.0,3.0,5.35]){
+ cyl('city lamp post',.11,.14,3.3,x,1.65,.25,purple,streetRoot);
+ ball('city lamp',.38,x,3.38,.25,gold,streetRoot);
 }
-box('city arcade booth',2.8,1.55,1.35,3.65,.8,-2.9,lilac,streetRoot);
-box('city arcade screen',1.6,.8,.08,3.65,1.15,-3.61,blue,streetRoot);
-for(let i=0;i<4;i++)star(-2.7+i*1.8,4.5+(i%2)*.2,4.5,.34,i%2?pink:gold,streetRoot);
+for(const x of [-5.1,5.1]){
+ cyl('city tree trunk',.26,.35,1.55,x,.82,1.85,wood,streetRoot).isPickable=false;
+ for(const [dx,dy] of [[0,2.1],[-.38,1.9],[.38,1.92]])ball('city blossom tree',.88,x+dx,dy,1.85,dy>2?pink:mint,streetRoot).isPickable=false;
+ box('city bench',1.7,.18,.5,x*.62,.47,.35,wood,streetRoot).isPickable=false;
+ box('bench back',1.7,.65,.12,x*.62,.78,.55,wood,streetRoot).isPickable=false;
+}
+box('city fountain basin',2.4,.22,2.4,0,.16,-.2,lilac,streetRoot);
+cyl('city fountain',.7,.8,.9,0,.68,-.2,white,streetRoot);
+ball('fountain water',.6,0,1.25,-.2,blue,streetRoot).scaling.set(.7,.35,.7);
+box('city arcade booth',2.5,1.55,1.15,4.3,.82,-2.85,lilac,streetRoot);
+box('city arcade screen',1.42,.75,.06,4.3,1.18,-3.45,blue,streetRoot);
+box('city snacks kiosk',2.5,1.45,1.15,-4.3,.78,-2.85,pink,streetRoot);
+for(let i=0;i<3;i++)ball('kiosk snack',.28,-4.72+i*.42,1.25,-3.45,[gold,mint,lilac][i],streetRoot);
+for(let i=0;i<7;i++)star(-4.8+i*1.6,4.9+(i%2)*.18,8.3,.32,i%2?pink:gold,streetRoot);
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
