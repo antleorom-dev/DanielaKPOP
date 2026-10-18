@@ -61,7 +61,7 @@ export function createInteractions(c:Dependencies){
  });
  const audio=new Audio(base+'assets/studio-song.mp3');
  audio.loop=true;audio.volume=.6;audio.preload='none';
- let musicPlaying=false,lastDance=0,danceIndex=0;
+ let musicPlaying=false,lastDance=0,danceIndex=0,concertStartedMusic=false;
  const volleyball=sphere('volleyball 3D',.58,-2.6,.35,-3.0,white,c.groups.bedroom);
  for(let i=0;i<3;i++){
   const strip=MeshBuilder.CreateTorus('volleyball stripe',{diameter:.59,thickness:.025,tessellation:32},c.scene);
@@ -135,12 +135,34 @@ export function createInteractions(c:Dependencies){
    else el.classList.remove('bath-selected');
   });
  }
+ async function startConcertMusic(){
+  if(c.getRoom()!=='stage'||musicPlaying)return;
+  // Called directly from the Concierto tap so mobile browsers permit audio playback.
+  concertStartedMusic=true;
+  try{
+   audio.currentTime=0;
+   await audio.play();
+   musicPlaying=true;lastDance=performance.now();danceIndex=0;sync();
+  }catch{
+   concertStartedMusic=false;musicPlaying=false;sync();
+   c.toast('El navegador ha bloqueado el audio. Pulsa 🎵 Encender música');
+  }
+ }
+ function stopConcertMusic(){
+  if(!concertStartedMusic)return;
+  concertStartedMusic=false;
+  audio.pause();audio.currentTime=0;musicPlaying=false;sync();
+ }
  async function toggleStereo(){
   if(c.getRoom()!=='stage')return;
-  if(musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;sync();c.toast('¡Música apagada! 🎵');return;}
+  if(musicPlaying){
+   audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;
+   sync();c.toast('¡Música apagada! 🎵');return;
+  }
+  concertStartedMusic=false;
   try{
    audio.currentTime=0;await audio.play();musicPlaying=true;lastDance=performance.now();danceIndex=0;
-   c.animate('dance',3.5);c.toast('¡Que empiece el concierto! 🎶');
+   c.animate('dance',3.5);c.toast('¡Que empiece la música! 🎶');
   }catch{musicPlaying=false;c.toast('No se puede reproducir la canción en este navegador');}
   sync();
  }
@@ -241,7 +263,7 @@ export function createInteractions(c:Dependencies){
   if(hit?.hit)void toggleStereo();
  });
  function enterRoom(room:Room){
-  if(room!=='stage'&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;}
+  if(room!=='stage'&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;}
   if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
   brushPointer=-1;
   bath.enter(room==='bathroom');
@@ -266,5 +288,5 @@ export function createInteractions(c:Dependencies){
   }
  }
  function throwBall(){if(!volley.launch())c.toast('¡Espera que la pelota vuelva! 🏐');}
- return {beforeAction,afterAction,decorateActions,enterRoom,tick,throwBall,isPainting:()=>brushPointer!==-1||bath.isPainting(),sync};
+ return {beforeAction,afterAction,decorateActions,enterRoom,tick,throwBall,startConcertMusic,stopConcertMusic,isPainting:()=>brushPointer!==-1||bath.isPainting(),sync};
 }
