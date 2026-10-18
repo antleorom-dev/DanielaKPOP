@@ -594,18 +594,32 @@ function sound(notes:number[]=[523,659,784]){const ctx=audio();if(!ctx)return;no
 type Sfx='eat'|'drink'|'ball'|'sleep'|'wash'|'cheer';
 function sfx(kind:Sfx){const ctx=audio();if(!ctx)return;
  const now=ctx.currentTime;
- const voices:Record<Sfx,{freq:number;end:number;type:OscillatorType;duration:number;vol:number}[]>={
- eat:[{freq:390,end:240,type:'triangle',duration:.09,vol:.035},{freq:330,end:200,type:'sine',duration:.12,vol:.03}],
- drink:[{freq:720,end:460,type:'sine',duration:.19,vol:.028},{freq:880,end:600,type:'sine',duration:.13,vol:.018}],
- ball:[{freq:180,end:85,type:'triangle',duration:.13,vol:.065},{freq:420,end:230,type:'sine',duration:.07,vol:.018}],
- sleep:[{freq:330,end:260,type:'sine',duration:.48,vol:.025},{freq:440,end:330,type:'sine',duration:.6,vol:.018}],
- wash:[{freq:700,end:950,type:'sine',duration:.18,vol:.018}],
- cheer:[{freq:600,end:950,type:'triangle',duration:.18,vol:.028}]
+ const noise=(at:number,duration:number,volume:number,low:number,high:number)=>{
+  const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*duration),ctx.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length*.35);
+  const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();
+  source.buffer=buffer;filter.type='bandpass';filter.frequency.value=(low+high)/2;filter.Q.value=Math.max(.4,(low+high)/(high-low+1));
+  gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(volume,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
+  source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);source.start(at);source.stop(at+duration+.01);
+ };
+ if(kind==='eat'){
+  // Three soft crunchy/chewing pulses rather than an electronic beep.
+  [0,.16,.33].forEach((offset,i)=>{noise(now+offset,.105,.055-i*.008,280,1150);const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(165-i*14,now+offset);o.frequency.exponentialRampToValueAtTime(105,now+offset+.08);g.gain.setValueAtTime(.018,now+offset);g.gain.exponentialRampToValueAtTime(.0001,now+offset+.1);o.connect(g);g.connect(ctx.destination);o.start(now+offset);o.stop(now+offset+.11);});return;
+ }
+ if(kind==='drink'){
+  // A sequence of short filtered gulps plus a tiny finishing sip.
+  [0,.19,.38].forEach((offset,i)=>{noise(now+offset,.14,.028,450,1900);const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(410+i*35,now+offset);o.frequency.exponentialRampToValueAtTime(235+i*12,now+offset+.15);g.gain.setValueAtTime(.022,now+offset);g.gain.exponentialRampToValueAtTime(.0001,now+offset+.16);o.connect(g);g.connect(ctx.destination);o.start(now+offset);o.stop(now+offset+.17);});return;
+ }
+ const voices:Record<Exclude<Sfx,'eat'|'drink'>,{freq:number;end:number;type:OscillatorType;duration:number;vol:number}[]>={
+  ball:[{freq:180,end:85,type:'triangle',duration:.13,vol:.065},{freq:420,end:230,type:'sine',duration:.07,vol:.018}],
+  sleep:[{freq:330,end:260,type:'sine',duration:.48,vol:.025},{freq:440,end:330,type:'sine',duration:.6,vol:.018}],
+  wash:[{freq:700,end:950,type:'sine',duration:.18,vol:.018}],
+  cheer:[{freq:600,end:950,type:'triangle',duration:.18,vol:.028}]
  };
  for(const [i,v] of voices[kind].entries()){const osc=ctx.createOscillator(),gain=ctx.createGain(),start=now+i*.065;
- osc.type=v.type;osc.frequency.setValueAtTime(v.freq,start);osc.frequency.exponentialRampToValueAtTime(v.end,start+v.duration);
- gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(v.vol,start+.015);gain.gain.exponentialRampToValueAtTime(.0001,start+v.duration);
- osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+v.duration+.01);}
+  osc.type=v.type;osc.frequency.setValueAtTime(v.freq,start);osc.frequency.exponentialRampToValueAtTime(v.end,start+v.duration);
+  gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(v.vol,start+.015);gain.gain.exponentialRampToValueAtTime(.0001,start+v.duration);
+  osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+v.duration+.01);}
 }
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
 const liveMessages=[
