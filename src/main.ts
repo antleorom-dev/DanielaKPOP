@@ -679,7 +679,7 @@ const miniGames=createMiniGames({
   state.happiness=num(state.happiness+Math.min(9,Math.floor(score/65)));
   render();save();toast((kind==='snack'?'🍓':'🛹')+' ¡Premio del minijuego! +'+coins+' ★ · +'+xp+' XP');
  },
- onClose:()=>{render();updateNeedAlerts();}
+ onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
 });
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
@@ -697,7 +697,8 @@ editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,no
 showRoom('bedroom');fashion();render();updateNeedAlerts();
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
- if(document.hidden)return;
+ // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.
+ if(document.hidden||miniGames.isActive())return;
  const now=performance.now();
  // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
  if(now-performanceCheckAt>7500&&qualityMode!=='high'){
