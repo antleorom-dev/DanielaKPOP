@@ -504,6 +504,25 @@ const liveMessages=[
  '¡La ropa combina con el escenario!','¿Se puede pedir otra canción?','¡Qué bonito ambiente!',
  '¡Mi primera vez en este LIVE!','¡Ya tengo mi canción favorita!'
 ];
+const extraLiveMessages=[
+ '¡Te mando 100 corazones! 💖','Mi hermana y yo somos tus fans 🥹','¡Like like like! 💗','El directo más bonito de hoy 🌸',
+ '¡Ese movimiento de brazos! ✨','DANIELA PRESIDENTA DEL KPOP 👑','Te mando una rosa 🌹','¡Regalito para Daniela! 🎁',
+ '¡Los agudos, por favor! 🎵','¡Una canción más! 🙏','¿Puedes saludarme? 🥰','¡Qué bien suena el micro! 🎤',
+ '¡Las luces parecen estrellas! ⭐','¡Soy fan desde tus primeros 10 seguidores!','¡Entramos en tendencias! 🔥',
+ '¿Alguien desde Argentina? 🇦🇷','¡Saludos desde Colombia! 🇨🇴','¡Hola desde Chile! 🇨🇱','¡Desde Perú te vemos! 🇵🇪',
+ '¡Desde Japón apoyándote! 🇯🇵','¡Me quedo todo el directo!','¡Qué buena coreografía! 💃','¡Dale otra vuelta! 🪩',
+ 'El outfit azul es precioso 💙','¡Quiero un concierto en mi ciudad!','¡Esos pasitos! 😭','¡Te regalo una estrella! 🌟',
+ '¡Sube el volumen! 🔊','¡Cuántos corazones flotando!','¡Me hiciste sonreír! 😍','¡La mejor comunidad! 💜',
+ '¡Llegamos a los 1000 fans! 🎟️','¡Todos con las manos arriba! 🙌','¡Esa parte es mi favorita! 🎶',
+ '¡Viva Daniela City! 🛹','¡El escenario parece un sueño! 🌈','¡Felicidades por el concierto! 🎉',
+ '¡Qué bonito peinado! 🎀','¡Tú puedes, Daniela!','¡Te sigo desde hoy!','¡El ritmo no para! 🔥',
+ '¡Esto merece un millón de likes!','¡Me encanta tu energía! ⚡','¡Un aplauso enorme! 👏',
+ '¡Te mando una corona! 👑','¡Es el mejor show del año!','¡Quiero aprender ese baile!','¡La voz de una estrella! 🌠',
+ '¡Vamos por más seguidores! 💜','¡Otra canción, otra canción! 🎤','¡El chat está que arde! 🔥',
+ '¡Los colores del escenario son preciosos!','¡Esta noche es histórica! ✨'
+];
+liveMessages.push(...extraLiveMessages);
+const liveAvatars=['🌸','💜','🐱','🎀','🌟','🦋','🍓','🐻','🪩','👑','🌈','🧋','🎤','🩷','✨','🌷'];
 const liveUsers=['@kpopfan: ','@danielalover: ','@starlight: ','@cutiepop: ','@purplewave: ','@danistars: ','@moonberry: ','@luna_pop: ','@mintcloud: ','@sweetidol: ','@starry_night: ','@berrytea: ','@fan_rosa: ','@melodygirl: ','@neon_dream: ','@cloud9: ','@kawaii_dance: ','@peachy: ','@popcornfan: ','@dani_forever: '];
 function paintLiveStats(){
  $('#live-likes').textContent=liveLikes.toLocaleString('es-ES');$('#live-comment-count').textContent=liveComments.toLocaleString('es-ES');
@@ -511,10 +530,31 @@ function paintLiveStats(){
  $('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
 }
 const recentLiveComments:string[]=[];
+function appendLiveComment(){
+ const comments=$('#live-comments'),c=document.createElement('div');c.className='live-comment';
+ const options=liveMessages.filter(m=>!recentLiveComments.includes(m));
+ const message=options[Math.floor(Math.random()*options.length)]||liveMessages[0];
+ recentLiveComments.push(message);if(recentLiveComments.length>14)recentLiveComments.shift();
+ const avatar=document.createElement('span');avatar.className='live-avatar';avatar.textContent=liveAvatars[Math.floor(Math.random()*liveAvatars.length)];
+ const content=document.createElement('span');content.className='live-comment-content';
+ const username=document.createElement('b');username.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)].trim().replace(':','');
+ const words=document.createElement('span');words.textContent=message;
+ content.append(username,words);
+ const badge=document.createElement('span');badge.className='live-comment-heart';badge.textContent=['💗','♥','✨','🔥','🎁','👏'][Math.floor(Math.random()*6)];
+ c.append(avatar,content,badge);comments.append(c);
+ while(comments.children.length>6)comments.firstElementChild?.remove();
+}
 function liveReactionBurst(power=1){
- const reactions=$('#live-reactions'),comments=$('#live-comments'),count=Math.min(5,2+Math.round(power));
- for(let i=0;i<count;i++)setTimeout(()=>{if(!concertActive)return;const r=document.createElement('span');r.className='live-reaction';r.textContent=['♥','💜','🔥','✨','😍','👏'][Math.floor(Math.random()*6)];r.style.setProperty('--rx',(8+Math.random()*82)+'%');r.style.setProperty('--drift',(2.1+Math.random()*1.8)+'s');reactions.append(r);while(reactions.children.length>18)reactions.firstElementChild?.remove();setTimeout(()=>r.remove(),2600);},i*90);
- if(Math.random()<Math.min(.92,.32+power*.18)){const c=document.createElement('div');c.className='live-comment';const options=liveMessages.filter(m=>!recentLiveComments.includes(m));const message=options[Math.floor(Math.random()*options.length)]||liveMessages[0];recentLiveComments.push(message);if(recentLiveComments.length>10)recentLiveComments.shift();c.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)]+message;comments.append(c);while(comments.children.length>5)comments.firstElementChild?.remove();}
+ const reactions=$('#live-reactions'),count=Math.min(7,2+Math.round(power*1.3));
+ for(let i=0;i<count;i++)setTimeout(()=>{
+  if(!concertActive)return;
+  const r=document.createElement('span');r.className='live-reaction';
+  r.textContent=['♥','💜','🔥','✨','😍','👏','💗','🌹','🎁','⭐','🫶','🎶','👑'][Math.floor(Math.random()*13)];
+  r.style.setProperty('--rx',(10+Math.random()*80)+'%');r.style.setProperty('--drift',(1.8+Math.random()*1.4)+'s');
+  reactions.append(r);while(reactions.children.length>22)reactions.firstElementChild?.remove();
+  setTimeout(()=>r.remove(),2600);
+ },i*80);
+ if(Math.random()<Math.min(.98,.52+power*.17))appendLiveComment();
 }
 function socialBoost(kind:'dance'|'sing'|'concert'){
  if(!concertActive)return;
@@ -579,7 +619,7 @@ function socialTick(now:number){
  const scale=power*liveMomentum;
  liveViewers=Math.max(0,liveViewers+Math.floor((2+Math.random()*8)*scale)-(performing?0:Math.floor(Math.random()*4)));
  liveLikes+=Math.max(1,Math.floor((2+Math.random()*7)*scale));
- if(Math.random()<Math.min(.9,.12*scale)){liveComments+=1+Math.floor(Math.random()*2);liveReactionBurst(Math.min(2.2,scale/2));}
+ if(Math.random()<Math.min(.98,.22*scale)){liveComments+=1+Math.floor(Math.random()*3);liveReactionBurst(Math.min(2.5,scale/2));}else if(Math.random()<.56){liveComments++;appendLiveComment();}
  if(performing&&Math.random()<Math.min(.9,.16*scale))liveFollowerGain+=1+Math.floor(Math.random()*Math.max(1,Math.round(scale/2)));
  paintLiveStats();
 }
