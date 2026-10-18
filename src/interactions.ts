@@ -5,7 +5,7 @@ import {createBath} from './bath';
 import {makeVolleyball} from './volleyball';
 // The player's own song is extracted from DanielaKPOP-recursos-v0.4.zip during Pages deployment.
 
-type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
+type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena';
 type Move='idle'|'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3'|'dance4'|'dance5';
 type Dependencies={
  scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;
@@ -123,7 +123,7 @@ export function createInteractions(c:Dependencies){
  function sync(){
   const room=c.getRoom(),isBath=room==='bathroom';
   tools.dataset.room=room;
-  washHint.hidden=!isBath;musicButton.hidden=room!=='stage';ballButton.hidden=room!=='bedroom';
+  washHint.hidden=!isBath;musicButton.hidden=!['stage','arena'].includes(room);ballButton.hidden=room!=='bedroom';
   swimsuitTop.setEnabled(isBath);swimsuitBottom.setEnabled(isBath);
   outfitMeshes.forEach(m=>m.setEnabled(!isBath));
   musicButton.textContent=musicPlaying?'⏹ Apagar música':'🎵 Encender música';
@@ -136,7 +136,7 @@ export function createInteractions(c:Dependencies){
   });
  }
  async function startConcertMusic(){
-  if(c.getRoom()!=='stage'||musicPlaying)return;
+  if(!['stage','arena'].includes(c.getRoom())||musicPlaying)return;
   // Called directly from the Concierto tap so mobile browsers permit audio playback.
   concertStartedMusic=true;
   try{
@@ -153,7 +153,7 @@ export function createInteractions(c:Dependencies){
   audio.pause();audio.currentTime=0;musicPlaying=false;sync();
  }
  async function toggleStereo(){
-  if(c.getRoom()!=='stage')return;
+  if(!['stage','arena'].includes(c.getRoom()))return;
   if(musicPlaying){
    audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;
    sync();c.toast('¡Música apagada! 🎵');return;
@@ -255,13 +255,13 @@ export function createInteractions(c:Dependencies){
  c.canvas.addEventListener('pointercancel',()=>{brushPointer=-1;bath.finish();});
  // Physical stereo meshes also respond to touches and clicks.
  c.canvas.addEventListener('pointerup',e=>{
-  if(c.isEditing()||c.getRoom()!=='stage')return;
+  if(c.isEditing()||!['stage','arena'].includes(c.getRoom()))return;
   const r=c.canvas.getBoundingClientRect();
   const hit=c.scene.pick(e.clientX-r.left,e.clientY-r.top,m=>m.isDescendantOf(stereo));
   if(hit?.hit)void toggleStereo();
  });
  function enterRoom(room:Room){
-  if(room!=='stage'&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;}
+  if(!['stage','arena'].includes(room)&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;}
   if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
   brushPointer=-1;
   bath.enter(room==='bathroom');
@@ -269,7 +269,7 @@ export function createInteractions(c:Dependencies){
   sync();
  }
  function tick(now:number){
-  if(musicPlaying&&c.getRoom()==='stage'&&now-lastDance>3600){
+  if(musicPlaying&&['stage','arena'].includes(c.getRoom())&&now-lastDance>3600){
    lastDance=now;danceIndex++;
    const choreography:Move[]=['dance2','dance4','dance3','dance5','dance','sing'];
    c.animate(choreography[danceIndex%choreography.length],3.45);
