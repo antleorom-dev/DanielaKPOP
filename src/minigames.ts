@@ -75,7 +75,7 @@ export function createMiniGames(options:Options){
   round(0,548,W,132,0,'#ffd8ea');
   for(let x=0;x<W;x+=45)round(x,548,22,19,0,'#fff9ff');
   for(let x=0;x<W;x+=45)round(x+22,569,23,19,0,'#fff9ff');
-  if(spawn<=0){spawn=rand(.42,.88)*Math.max(.48,1-time/105);const good=Math.random()<.81;
+  if(dt>0&&spawn<=0){spawn=rand(.42,.88)*Math.max(.48,1-time/105);const good=Math.random()<.81;
    falling.push({x:rand(30,W-30),y:-30,vy:rand(125,185)+time*2.7,emoji:good?['🍓','🍉','🍰','🍪','🍎','🧁','🍒','🥐','🥕','🍇'][Math.floor(Math.random()*10)]:['🧦','🧼','🪨','👟'][Math.floor(Math.random()*4)],good,size:rand(31,43),spin:rand(-.2,.2)});
   }spawn-=dt;
   for(let i=falling.length-1;i>=0;i--){
@@ -94,7 +94,7 @@ export function createMiniGames(options:Options){
   const speed=205+Math.min(160,time*5.5);
   worldX+=speed*dt;
   const ground=510;
-  if(spawn<=0){spawn=rand(.85,1.55);
+  if(dt>0&&spawn<=0){spawn=rand(.85,1.55);
    const kind:Obstacle['kind']=Math.random()<.2?'gap':Math.random()<.62?'coin':'cone';
    obstacles.push({x:W+60,kind,size:kind==='gap'?rand(68,105):34});
   }spawn-=dt;
@@ -111,8 +111,8 @@ export function createMiniGames(options:Options){
   if(!grounded){skateV+=900*dt;skateY+=skateV*dt;if(skateY>=0){skateY=0;skateV=0;grounded=true;}}
   // A gap only hurts if Daniela lands on it; obstacles require a jump.
   const center=107;
-  const overGap=obstacles.some(o=>o.kind==='gap'&&center>o.x+9&&center<o.x+o.size-9);
-  if(grounded&&overGap){lives--;jump(true);}
+  const overGap=obstacles.find(o=>o.kind==='gap'&&!o.collected&&center>o.x+9&&center<o.x+o.size-9);
+  if(grounded&&overGap){lives--;overGap.collected=true;jump(true);}
   for(const o of obstacles){
    if(o.collected)continue;
    if(o.kind==='cone'&&Math.abs(center-(o.x+16))<23&&skateY>-43){lives--;o.collected=true;}
