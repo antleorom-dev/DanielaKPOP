@@ -203,3 +203,12 @@
  .money-card .career-copy{padding-right:23px}.money-card .career-mini-button:first-child{display:none}
 }
 @media(prefers-reduced-motion:reduce){.career-updated{animation:none}.popularity-track i,.career-mini-button{transition:none}}
+
+/* TikTok lives and ticketed arena shows are two separate career activities. */
+.arena-progress{position:absolute;right:clamp(14px,4vw,40px);top:clamp(78px,11vh,115px);z-index:5;padding:7px 12px;max-width:230px;border:2px solid #fff;border-radius:15px;background:#fff9f0d9;color:#9a5aa7;box-shadow:0 5px 18px #88527d28;font-size:10px;font-weight:900;pointer-events:none;backdrop-filter:blur(8px)}
+#arena-tickets{display:inline-block;min-width:13px;padding:1px 4px;border-radius:8px;background:#f9cbe8;color:#8b52a1;font-size:9px;vertical-align:middle}
+.concert-show .live-badge{background:linear-gradient(110deg,#a45bd5,#f17daa);box-shadow:0 4px 17px #9c66d27a}
+.concert-show .live-actions{background:#341444bb;border:1px solid #f3c9ff99}
+.concert-show .live-new-followers{color:#ffe59f}
+@media(max-width:680px){.arena-progress{top:72px;right:9px;padding:5px 8px;border-radius:10px;font-size:9px;max-width:45vw}.room-nav{gap:2px}.nav-item{min-width:0;padding:6px 0}.nav-item span:last-child{font-size:8px;letter-spacing:.25px}.nav-emoji{font-size:20px}}
+@media(max-width:390px){.arena-progress{top:63px;font-size:8px}.nav-item span:last-child{font-size:7px}.nav-emoji{font-size:17px}}
