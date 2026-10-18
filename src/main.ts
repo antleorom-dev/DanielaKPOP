@@ -5,12 +5,13 @@ import {dressRooms} from './decor';
 import {setupSceneEditor} from './editor';
 import {readLayout} from './assets';
 import {createMiniGames} from './minigames';
+import {createStreetVolley3D} from './street-volley';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
-type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;makeupLashes:number;makeupMascara:number;makeupLip:number;makeupBlush:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
+type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;shoe:number;makeupLashes:number;makeupMascara:number;makeupLip:number;makeupBlush:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
-const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,makeupLashes:0,makeupMascara:0,makeupLip:0,makeupBlush:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
+const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,shoe:0,makeupLashes:0,makeupMascara:0,makeupLip:0,makeupBlush:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
 let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};
  if(old.arenaMilestones===undefined){state.arenaMilestones=Math.floor(state.followers/1000);state.arenaTickets=state.arenaMilestones;}
@@ -19,7 +20,7 @@ try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as Stat
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
-let concertActive=false,liveKind:'tiktok'|'arena'|null=null,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let concertActive=false,liveKind:'tiktok'|'arena'|null=null,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let streetVolley:ReturnType<typeof createStreetVolley3D>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
@@ -62,6 +63,7 @@ act('🏐','Volley CPU','Daniela vs CPU · primero a 7',['#ffd17d','#f49cc8'],'v
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
+act('👟','Zapatos','Sneakers, botines y botas',['#a9d9ff','#d79aed'],'spin',{happiness:5},0,7,'¡Zapatos nuevos! 👟'),
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
@@ -99,7 +101,10 @@ function box(n:string,w:number,h:number,d:number,x:number,y:number,z:number,m:St
 function cyl(n:string,top:number,bottom:number,h:number,x:number,y:number,z:number,m:StandardMaterial,p?:TransformNode){return put(MeshBuilder.CreateCylinder(n,{diameterTop:top,diameterBottom:bottom,height:h,tessellation:28},scene),x,y,z,m,p);}
 function ring(n:string,d:number,t:number,x:number,y:number,z:number,m:StandardMaterial,p?:TransformNode){return put(MeshBuilder.CreateTorus(n,{diameter:d,thickness:t,tessellation:36},scene),x,y,z,m,p);}
 function star(x:number,y:number,z:number,s:number,m:StandardMaterial,p?:TransformNode){ball('star',s*.22,x,y,z,m,p);for(const k of [-1,1])box('spark ray',s*.15,s,.09,x,y,z,m,p).rotation.z=k*Math.PI/4;}
-box('floor',14,.26,11,0,-.18,1.05,floorMat);box('back wall',14,7,.3,0,3.25,6.3,wall);box('side wall',.3,7,11,-7,3.25,1.05,side);box('skirting',14,.22,.16,0,.08,6.08,white);
+const worldFloor=box('floor',14,.26,11,0,-.18,1.05,floorMat);
+const worldBackWall=box('back wall',14,7,.3,0,3.25,6.3,wall);
+const worldSideWall=box('side wall',.3,7,11,-7,3.25,1.05,side);
+const worldSkirting=box('skirting',14,.22,.16,0,.08,6.08,white);
 const tileMat=mat('very subtle tile','#eee4ef');for(let i=-6;i<=6;i++)for(let j=-4;j<=5;j++)if((i+j)%2===0)box('tile',.97,.012,.97,i,0,j+.7,tileMat).visibility=.07;
 const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.04,5.15,5.96,i%2?gold:pink));
 const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
@@ -270,35 +275,65 @@ for(let i=0;i<20;i++){
 }
 // An independent colorful city hub behind the mini-game selection.
 const streetRoot=groups.street;
-box('city pink boulevard',13,.07,8,0,-.03,0,white,streetRoot);
-for(let i=0;i<10;i++)box('city sidewalk tile',1.2,.08,1.7,-5.6+i*1.23,.03,1.6,i%2?lilac:mint,streetRoot);
+// Daniela City is now an open outdoor plaza rather than another room.
+const streetGrass=mat('city grass','#a9e89d'),streetRoad=mat('city road','#9bb6c8'),streetSky=mat('city sky','#b9ecff'),streetCream=mat('city cream','#fff3cf');
+box('city plaza',16,.07,10,0,-.03,.2,streetCream,streetRoot);
+box('city road',16,.085,2.65,0,.01,3.65,streetRoad,streetRoot);
+for(let i=-7;i<=7;i+=2)box('road dash',.85,.018,.08,i,.06,3.65,white,streetRoot);
+for(const z of [2.2,5.05])box('green verge',16,.06,.62,0,.02,z,streetGrass,streetRoot);
+for(let i=-7;i<=7;i++)box('sidewalk slab',.93,.075,1.45,i*.98,.05,1.1,i%2?white:lilac,streetRoot);
+// Distant skyline and open sky create depth with no enclosing walls.
+box('open sky backdrop',24,10,.12,0,4.1,11.5,streetSky,streetRoot);
+for(let i=0;i<9;i++){
+ const x=-9+i*2.25,h=2.2+(i%4)*.62,z=9.2+(i%3)*.55;
+ const facade=box('distant city building',1.72,h,.65,x,h/2-.02,z,[pink,lilac,mint,blue][i%4],streetRoot);facade.isPickable=false;
+ for(let row=0;row<3;row++)for(let col=0;col<2;col++)box('city window glow',.33,.31,.04,x+(col-.5)*.52,.55+row*.62,z-.36,gold,streetRoot).isPickable=false;
+}
 for(let i=0;i<5;i++){
- const x=-5.6+i*2.8;
- const facade=box('city storefront',2.35,3.7,.9,x,1.85,5.15,i%2?pink:lilac,streetRoot);
- facade.isPickable=false;
- box('city window',1.5,1.15,.1,x,2.2,4.63,blue,streetRoot);
- box('city shop awning',2.5,.19,1.15,x,3.1,4.32,i%2?mint:gold,streetRoot);
+ const x=-5.6+i*2.8,z=6.2+(i%2)*.35;
+ const facade=box('city storefront',2.3,3.25,.72,x,1.62,z,i%2?pink:lilac,streetRoot);facade.isPickable=false;
+ box('city shop window',1.44,1.12,.08,x,1.77,z-.41,blue,streetRoot).isPickable=false;
+ box('city shop awning',2.48,.2,.82,x,2.82,z-.57,i%2?mint:gold,streetRoot).isPickable=false;
+ box('city shop sign',1.25,.42,.07,x,3.27,z-.42,white,streetRoot).isPickable=false;
 }
-for(const x of [-5.25,5.25]){
- cyl('city lamp post',.13,.16,3.1,x,1.55,-1.3,white,streetRoot);
- ball('city lamp',.46,x,3.22,-1.3,gold,streetRoot);
- const tree=cyl('city tree trunk',.3,.39,1.8,x,1.0,1.45,wood,streetRoot);
- tree.isPickable=false;
- for(const y of [2.05,2.65])ball('city cotton candy tree',1.1,x,y,1.45,y>2.3?pink:mint,streetRoot);
+for(const x of [-5.35,-3.0,3.0,5.35]){
+ cyl('city lamp post',.11,.14,3.3,x,1.65,.25,purple,streetRoot);
+ ball('city lamp',.38,x,3.38,.25,gold,streetRoot);
 }
-box('city arcade booth',2.8,1.55,1.35,3.65,.8,-2.9,lilac,streetRoot);
-box('city arcade screen',1.6,.8,.08,3.65,1.15,-3.61,blue,streetRoot);
-for(let i=0;i<4;i++)star(-2.7+i*1.8,4.5+(i%2)*.2,4.5,.34,i%2?pink:gold,streetRoot);
+for(const x of [-5.1,5.1]){
+ cyl('city tree trunk',.26,.35,1.55,x,.82,1.85,wood,streetRoot).isPickable=false;
+ for(const [dx,dy] of [[0,2.1],[-.38,1.9],[.38,1.92]])ball('city blossom tree',.88,x+dx,dy,1.85,dy>2?pink:mint,streetRoot).isPickable=false;
+ box('city bench',1.7,.18,.5,x*.62,.47,.35,wood,streetRoot).isPickable=false;
+ box('bench back',1.7,.65,.12,x*.62,.78,.55,wood,streetRoot).isPickable=false;
+}
+box('city fountain basin',2.4,.22,2.4,0,.16,-.2,lilac,streetRoot);
+cyl('city fountain',.7,.8,.9,0,.68,-.2,white,streetRoot);
+ball('fountain water',.6,0,1.25,-.2,blue,streetRoot).scaling.set(.7,.35,.7);
+box('city arcade booth',2.5,1.55,1.15,4.3,.82,-2.85,lilac,streetRoot);
+box('city arcade screen',1.42,.75,.06,4.3,1.18,-3.45,blue,streetRoot);
+box('city snacks kiosk',2.5,1.45,1.15,-4.3,.78,-2.85,pink,streetRoot);
+for(let i=0;i<3;i++)ball('kiosk snack',.28,-4.72+i*.42,1.25,-3.45,[gold,mint,lilac][i],streetRoot);
+for(let i=0;i<7;i++)star(-4.8+i*1.6,4.9+(i%2)*.18,8.3,.32,i%2?pink:gold,streetRoot);
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
 const shadow=cyl('contact shadow',1.6,1.6,.024,0,.015,0,mat('shadow','#d2a2ce'),idol);shadow.visibility=.27;
-const legs:TransformNode[]=[];
+const legs:TransformNode[]=[];const baseShoes:Mesh[]=[];const sockMeshes:Mesh[]=[];
 for(const side of [-1,1]){
  const joint=new TransformNode('animated leg hip',scene);joint.parent=body;joint.position.set(side*.34,.86,0);legs.push(joint);
- ball('shoe',.43,side*.03,-.69,-.14,white,joint).scaling.set(1.1,.5,1.33);
+ const shoe=ball('classic shoe',.43,side*.03,-.69,-.14,white,joint);shoe.scaling.set(1.1,.5,1.33);baseShoes.push(shoe);
  ball('leg',.43,0,-.27,0,skin,joint).scaling.y=1.15;
- cyl('sock',.41,.41,.3,0,-.53,0,trim,joint);
+ sockMeshes.push(cyl('sock',.41,.41,.3,0,-.53,0,trim,joint));
+}
+// Real footwear silhouettes: classic, sport sneaker, ankle boot, high-top, platform and concert boot.
+const shoeVariants:TransformNode[][]=Array.from({length:6},()=>[]);
+for(let style=1;style<6;style++)for(const [index,joint] of legs.entries()){
+ const side=index===0?-1:1,root=new TransformNode('shoe style '+style+' side '+side,scene);root.parent=joint;shoeVariants[style].push(root);
+ if(style===1){const upper=ball('sport sneaker upper',.47,side*.03,-.68,-.15,white,root);upper.scaling.set(1.22,.48,1.48);box('sport sneaker sole',.54,.09,.68,side*.03,-.84,-.1,lilac,root);box('sport stripe',.06,.08,.42,side*.18,-.67,-.49,pink,root);}
+ if(style===2){const boot=ball('ankle boot',.5,side*.02,-.59,-.09,purple,root);boot.scaling.set(1.03,.8,1.25);box('ankle boot sole',.52,.1,.62,side*.02,-.84,-.08,dark,root);}
+ if(style===3){const high=ball('high top sneaker',.49,side*.02,-.56,-.1,mint,root);high.scaling.set(1.05,.95,1.28);box('high top sole',.55,.1,.64,side*.02,-.84,-.08,white,root);for(let j=0;j<3;j++)box('high top lace',.29,.025,.035,side*.02,-.54+j*.09,-.39,white,root);}
+ if(style===4){const plat=ball('platform shoe',.48,side*.02,-.69,-.11,pink,root);plat.scaling.set(1.18,.5,1.38);box('platform sole',.56,.18,.68,side*.02,-.86,-.07,white,root);ball('platform heart',.11,side*.12,-.68,-.47,gold,root);}
+ if(style===5){const tall=ball('concert boot',.48,side*.02,-.47,-.07,lilac,root);tall.scaling.set(1.05,1.28,1.2);box('concert boot sole',.54,.11,.64,side*.02,-.84,-.05,dark,root);for(let j=0;j<3;j++)ball('boot sparkle',.07,side*.13,-.31-j*.16,-.42,gold,root);}
 }
 ball('shirt',1.24,0,1.54,0,trim,body).scaling.set(.86,.9,.72);
 const dress=cyl('dress',.98,1.53,.93,0,1,0,dressColors[state.outfit%dressColors.length],body);
@@ -312,9 +347,12 @@ for(const side of [-1,1]){
 }
 const arms:TransformNode[]=[];const sleeves:Mesh[]=[];
 for(const s of [-1,1]){const pivot=new TransformNode('arm pivot',scene);pivot.parent=body;pivot.position.set(s*.67,1.79,0);arms.push(pivot);sleeves.push(ball('puff sleeve',.46,s*.13,-.18,0,dressColors[state.outfit%dressColors.length],pivot));ball('arm',.4,s*.2,-.43,0,skin,pivot).scaling.y=1.45;ball('hand',.36,s*.2,-.72,0,skin,pivot);}
-const microphone=new TransformNode('microphone in hand',scene);microphone.parent=arms[1];
-cyl('microphone handle',.14,.14,.45,.2,-.83,-.23,dark,microphone);
-ball('microphone head',.27,.2,-1.08,-.23,gold,microphone);
+const microphone=new TransformNode('real stage microphone',scene);microphone.parent=arms[1];
+const micMetal=mat('microphone metal','#d9d8e4'),micBlack=mat('microphone black','#2d2637'),micRing=mat('microphone accent','#f2a4d3');
+const micHandle=cyl('microphone black handle',.15,.18,.58,.2,-.86,-.25,micBlack,microphone);micHandle.rotation.z=.08;
+cyl('microphone grip ring',.18,.2,.08,.2,-1.12,-.25,micRing,microphone);
+const micGrille=ball('microphone silver grille',.29,.2,-1.22,-.25,micMetal,microphone);micGrille.scaling.set(1,1.05,.92);
+for(let i=0;i<3;i++){const grille=ring('microphone grille line',.24+i*.018,.008,.2,-1.22+i*.015,-.25,dark,microphone);grille.rotation.x=Math.PI/2;}
 microphone.setEnabled(false);
 const head=new TransformNode('head',scene);head.parent=body;head.position.set(0,2.56,0);
 ball('face',1.65,0,0,-.055,skin,head).scaling.set(.97,1.03,.89);
@@ -371,7 +409,7 @@ const lash=MeshBuilder.CreateLines('closed eye smile',{points:[
 ]},scene);lash.parent=head;lash.color=Color3.FromHexString('#6b446d');lash.isVisible=false;sleepingLashes.push(lash);
 const glint=ball('eye light',.11,s*.33-.055,-.005,-.823,white,head);glint.scaling.z=.35;eyeGlints.push(glint);
  eyeGlints.push(ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head));
-const cheek=ball('cheek makeup',.3,s*.62,-.31,-.68,blush,head);cheek.scaling.set(.85,.35,.2);makeupCheeks.push(cheek);
+const cheek=ball('cheek makeup',.27,s*.51,-.30,-.79,blush,head);cheek.scaling.set(.68,.28,.12);cheek.visibility=.6;makeupCheeks.push(cheek);
  const outerLash=ball('eye outer lash makeup',.12,s*.48,.02,-.77,dark,head);outerLash.scaling.set(.58,.22,.22);mascaraMeshes.push(outerLash);
  for(let j=0;j<3;j++){
   const tip=ball('fashion lash '+j,.075,s*(.43+j*.065),.075+j*.025,-.79,dark,head);
@@ -390,29 +428,73 @@ function fashion(){
  fashionOutfits.forEach((variant,i)=>variant.setEnabled(i===outfit));
  fashionHair.forEach((variant,i)=>variant.setEnabled(i===hairStyle));
  twinTails.forEach(tail=>tail.setEnabled([0,1,4,6].includes(hairStyle)));
+ const shoeStyle=state.shoe%6;baseShoes.forEach(shoe=>shoe.setEnabled(shoeStyle===0));
+ for(let style=1;style<6;style++)shoeVariants[style].forEach(root=>root.setEnabled(shoeStyle===style));
+ sockMeshes.forEach(sock=>sock.setEnabled(shoeStyle!==5));
 }
 const lashNames=['Natural','Doll','Cat eye','Drama'],mascaraNames=['Ciruela','Berry','Brown','Violeta','Azul noche'],lipNames=['Rosa','Candy','Cereza','Lavanda','Coral','Frambuesa'],blushNames=['Melocotón','Peach','Rose','Lilac','Berry','Soft nude'];
 const mascaraHex=['#46305a','#5c304f','#664837','#4e4c91','#274d62'],lipHex=['#b95e89','#ed749d','#b44966','#8c62b5','#ef927b','#c74d91'],blushHex=['#f7a9b8','#f4b092','#ec81a7','#c797dc','#f0a0ba','#ffd0c4'];
+type MakeupTool='lashes'|'mascara'|'lip'|'blush';
+let activeMakeupTool:MakeupTool|null=null,makeupPainting=false;
+const makeupToolGhost=document.createElement('div');makeupToolGhost.className='makeup-tool-ghost';makeupToolGhost.setAttribute('aria-hidden','true');document.querySelector('#app')?.append(makeupToolGhost);
+const makeupSelection:{lashes:number;mascara:number;lip:number;blush:number}={lashes:state.makeupLashes,mascara:state.makeupMascara,lip:state.makeupLip,blush:state.makeupBlush};
 function applyMakeup(){
  const lashStyle=state.makeupLashes%lashNames.length;
  makeupLashTips.forEach((mesh,i)=>mesh.setEnabled(i%3<lashStyle));
  mascaraMeshes.forEach(mesh=>mesh.material=mascaraMaterials[state.makeupMascara%mascaraMaterials.length]);
  mouth.material=lipMaterials[state.makeupLip%lipMaterials.length];
- makeupCheeks.forEach(cheek=>{cheek.material=blushMaterials[state.makeupBlush%blushMaterials.length];cheek.visibility=.72;});
+ makeupCheeks.forEach(cheek=>{cheek.material=blushMaterials[state.makeupBlush%blushMaterials.length];cheek.visibility=.6;});
 }
 function renderMakeupPanel(){
- const values:{key:'lashes'|'mascara'|'lip'|'blush';label:string;color?:string}[]=[
-  {key:'lashes',label:lashNames[state.makeupLashes%lashNames.length]},
-  {key:'mascara',label:mascaraNames[state.makeupMascara%mascaraNames.length],color:mascaraHex[state.makeupMascara%mascaraHex.length]},
-  {key:'lip',label:lipNames[state.makeupLip%lipNames.length],color:lipHex[state.makeupLip%lipHex.length]},
-  {key:'blush',label:blushNames[state.makeupBlush%blushNames.length],color:blushHex[state.makeupBlush%blushHex.length]}
+ const values:{key:MakeupTool;label:string;color?:string}[]=[
+  {key:'lashes',label:lashNames[makeupSelection.lashes%lashNames.length]},
+  {key:'mascara',label:mascaraNames[makeupSelection.mascara%mascaraNames.length],color:mascaraHex[makeupSelection.mascara%mascaraHex.length]},
+  {key:'lip',label:lipNames[makeupSelection.lip%lipNames.length],color:lipHex[makeupSelection.lip%lipHex.length]},
+  {key:'blush',label:blushNames[makeupSelection.blush%blushNames.length],color:blushHex[makeupSelection.blush%blushHex.length]}
  ];
  values.forEach(item=>{
   const label=document.querySelector<HTMLElement>('#makeup-'+item.key+'-label');if(label)label.textContent=item.label;
   const swatch=document.querySelector<HTMLElement>('#makeup-'+item.key+'-swatch');if(swatch&&item.color)swatch.style.background=item.color;
+  const button=document.querySelector<HTMLButtonElement>('[data-makeup="'+item.key+'"]');button?.classList.toggle('selected-tool',activeMakeupTool===item.key);
  });
+ const hint=document.querySelector<HTMLElement>('#makeup-hint');
+ if(hint)hint.textContent=!activeMakeupTool?'Elige una herramienta y arrástrala sobre su cara':
+  activeMakeupTool==='lip'?'💋 Arrastra el pintalabios sobre los labios':
+  activeMakeupTool==='blush'?'🌸 Frota suavemente sobre una mejilla':
+  activeMakeupTool==='mascara'?'🖌️ Arrastra el rímel sobre los ojos':
+  '👁️ Arrastra sobre los ojos para colocar las pestañas';
 }
-fashion();applyMakeup();renderMakeupPanel();
+function makeupScreenPoint(local:Vector3){
+ const engine=scene.getEngine(),rect=canvas.getBoundingClientRect();
+ const world=Vector3.TransformCoordinates(local,head.getWorldMatrix());
+ const p=Vector3.Project(world,Matrix.Identity(),scene.getTransformMatrix(),camera.viewport.toGlobal(engine.getRenderWidth(),engine.getRenderHeight()));
+ return{x:rect.left+p.x*rect.width/engine.getRenderWidth(),y:rect.top+p.y*rect.height/engine.getRenderHeight()};
+}
+function near(point:{x:number;y:number},x:number,y:number,radius:number){return Math.hypot(point.x-x,point.y-y)<=radius;}
+function applyMakeupStroke(x:number,y:number){
+ if(room!=='closet'||!activeMakeupTool)return false;
+ const lip=makeupScreenPoint(new Vector3(0,-.41,-.79)),leftEye=makeupScreenPoint(new Vector3(-.34,-.04,-.8)),rightEye=makeupScreenPoint(new Vector3(.34,-.04,-.8));
+ const leftCheek=makeupScreenPoint(new Vector3(-.51,-.3,-.79)),rightCheek=makeupScreenPoint(new Vector3(.51,-.3,-.79));
+ const scale=Math.max(.8,Math.min(1.45,9.25/camera.radius));
+ let applied=false;
+ if(activeMakeupTool==='lip'&&near(lip,x,y,52*scale)){state.makeupLip=makeupSelection.lip;applied=true;}
+ if(activeMakeupTool==='blush'&&(near(leftCheek,x,y,62*scale)||near(rightCheek,x,y,62*scale))){state.makeupBlush=makeupSelection.blush;applied=true;}
+ if(activeMakeupTool==='mascara'&&(near(leftEye,x,y,55*scale)||near(rightEye,x,y,55*scale))){state.makeupMascara=makeupSelection.mascara;applied=true;}
+ if(activeMakeupTool==='lashes'&&(near(leftEye,x,y,58*scale)||near(rightEye,x,y,58*scale))){state.makeupLashes=makeupSelection.lashes;applied=true;}
+ if(applied){applyMakeup();renderMakeupPanel();save();return true;}
+ return false;
+}
+function enterMakeupMode(tool:MakeupTool){
+ activeMakeupTool=tool;camera.detachControl();camera.alpha=-Math.PI/2;camera.beta=1.26;camera.radius=4.55;camera.target.set(0,2.55,-.3);
+ makeupToolGhost.textContent=tool==='lip'?'💄':tool==='blush'?'🖌️':tool==='mascara'?'🪄':'👁️';
+ renderMakeupPanel();
+}
+function exitMakeupMode(resetCamera=true){
+ activeMakeupTool=null;makeupPainting=false;makeupToolGhost.classList.remove('visible');camera.attachControl(canvas,true);
+ if(resetCamera){camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=7.8;camera.target.set(0,1.9,-.35);}
+ renderMakeupPanel();
+}
+
 // A complete sleep cycle: Daniela walks to her bed, lies down, recovers gradually,
 // then gets up. Leaving the bedroom cancels safely without losing earned energy.
 type SleepPhase='awake'|'walking'|'resting'|'waking';
@@ -484,7 +566,9 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetVolley?.isActive()&&next!=='street')streetVolley.stop();if(room==='closet'&&next!=='closet'&&activeMakeupTool)exitMakeupMode(true);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);orbs.forEach(o=>o.setEnabled(indoors));
+scene.clearColor=room==='street'?new Color4(.69,.9,1,1):room==='arena'?new Color4(.32,.23,.42,1):new Color4(.97,.81,.92,1);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
 $('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
@@ -513,18 +597,32 @@ function sound(notes:number[]=[523,659,784]){const ctx=audio();if(!ctx)return;no
 type Sfx='eat'|'drink'|'ball'|'sleep'|'wash'|'cheer';
 function sfx(kind:Sfx){const ctx=audio();if(!ctx)return;
  const now=ctx.currentTime;
- const voices:Record<Sfx,{freq:number;end:number;type:OscillatorType;duration:number;vol:number}[]>={
- eat:[{freq:390,end:240,type:'triangle',duration:.09,vol:.035},{freq:330,end:200,type:'sine',duration:.12,vol:.03}],
- drink:[{freq:720,end:460,type:'sine',duration:.19,vol:.028},{freq:880,end:600,type:'sine',duration:.13,vol:.018}],
- ball:[{freq:180,end:85,type:'triangle',duration:.13,vol:.065},{freq:420,end:230,type:'sine',duration:.07,vol:.018}],
- sleep:[{freq:330,end:260,type:'sine',duration:.48,vol:.025},{freq:440,end:330,type:'sine',duration:.6,vol:.018}],
- wash:[{freq:700,end:950,type:'sine',duration:.18,vol:.018}],
- cheer:[{freq:600,end:950,type:'triangle',duration:.18,vol:.028}]
+ const noise=(at:number,duration:number,volume:number,low:number,high:number)=>{
+  const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*duration),ctx.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length*.35);
+  const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();
+  source.buffer=buffer;filter.type='bandpass';filter.frequency.value=(low+high)/2;filter.Q.value=Math.max(.4,(low+high)/(high-low+1));
+  gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(volume,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
+  source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);source.start(at);source.stop(at+duration+.01);
+ };
+ if(kind==='eat'){
+  // Three soft crunchy/chewing pulses rather than an electronic beep.
+  [0,.16,.33].forEach((offset,i)=>{noise(now+offset,.105,.055-i*.008,280,1150);const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(165-i*14,now+offset);o.frequency.exponentialRampToValueAtTime(105,now+offset+.08);g.gain.setValueAtTime(.018,now+offset);g.gain.exponentialRampToValueAtTime(.0001,now+offset+.1);o.connect(g);g.connect(ctx.destination);o.start(now+offset);o.stop(now+offset+.11);});return;
+ }
+ if(kind==='drink'){
+  // A sequence of short filtered gulps plus a tiny finishing sip.
+  [0,.19,.38].forEach((offset,i)=>{noise(now+offset,.14,.028,450,1900);const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(410+i*35,now+offset);o.frequency.exponentialRampToValueAtTime(235+i*12,now+offset+.15);g.gain.setValueAtTime(.022,now+offset);g.gain.exponentialRampToValueAtTime(.0001,now+offset+.16);o.connect(g);g.connect(ctx.destination);o.start(now+offset);o.stop(now+offset+.17);});return;
+ }
+ const voices:Record<Exclude<Sfx,'eat'|'drink'>,{freq:number;end:number;type:OscillatorType;duration:number;vol:number}[]>={
+  ball:[{freq:180,end:85,type:'triangle',duration:.13,vol:.065},{freq:420,end:230,type:'sine',duration:.07,vol:.018}],
+  sleep:[{freq:330,end:260,type:'sine',duration:.48,vol:.025},{freq:440,end:330,type:'sine',duration:.6,vol:.018}],
+  wash:[{freq:700,end:950,type:'sine',duration:.18,vol:.018}],
+  cheer:[{freq:600,end:950,type:'triangle',duration:.18,vol:.028}]
  };
  for(const [i,v] of voices[kind].entries()){const osc=ctx.createOscillator(),gain=ctx.createGain(),start=now+i*.065;
- osc.type=v.type;osc.frequency.setValueAtTime(v.freq,start);osc.frequency.exponentialRampToValueAtTime(v.end,start+v.duration);
- gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(v.vol,start+.015);gain.gain.exponentialRampToValueAtTime(.0001,start+v.duration);
- osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+v.duration+.01);}
+  osc.type=v.type;osc.frequency.setValueAtTime(v.freq,start);osc.frequency.exponentialRampToValueAtTime(v.end,start+v.duration);
+  gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(v.vol,start+.015);gain.gain.exponentialRampToValueAtTime(.0001,start+v.duration);
+  osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+v.duration+.01);}
 }
 function gainXP(amount:number){state.xp+=amount;while(state.xp>=state.level*100){state.xp-=state.level*100;state.level++;state.coins+=50;toast('¡Nivel '+state.level+'! +50 monedas ✨');reward('LEVEL UP! 🌟');}}
 const liveMessages=[
@@ -676,7 +774,7 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(room==='street'){miniGames.start(i===0?'snack':i===1?'skate':'volley');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
+function perform(i:number){if(room==='street'){if(i===2){streetVolley?.start();return;}miniGames.start(i===0?'snack':'skate');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
 if(room==='arena'){
  if(i===0){
   if(concertActive){toast('🎤 ¡Ya estás dando un gran concierto!');return;}
@@ -692,6 +790,7 @@ if(room==='arena'){
 if((room==='stage'||room==='arena')&&state.energy<5){toast('¡Daniela está agotada! Descansa un poquito 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
+if(room==='closet'&&i===2)state.shoe=(state.shoe+1)%6;
 fashion();for(const [need,delta] of Object.entries(a.effect) as [Need,number][])state[need]=num(state[need]+delta);
 state.coins=Math.max(0,state.coins+a.coins);gainXP(a.xp);animate(a.move);
 if(room==='kitchen')sfx(a.move==='drink'?'drink':'eat');
@@ -699,12 +798,12 @@ else if(a.move==='sleep')sfx('sleep');
 else if(room==='bathroom')sfx('wash');
 else if((room==='stage'&&i===6)||(room==='arena'&&i===0))sfx('cheer');
 if(room==='stage'){if(i===6)startConcert('tiktok');else if(concertActive)socialBoost(a.move==='sing'?'sing':'dance');}else if(room==='arena'&&concertActive)socialBoost(a.move==='sing'?'sing':'dance');
-const outfitNames=['Fresa pop','Princesa lavanda','Hoodie mint','Peto melocotón','Idol dorada','Sporty blue','Ballet rosa','Retro disco'],hairNames=['Coletas chocolate','Coletas altas','Bob lavanda','Melena miel','Moños espaciales','Coleta lateral','Trenzas violetas','Recogido elegante'];
-toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':a.message);
-reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound((room==='stage'||room==='arena')?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
+const outfitNames=['Fresa pop','Princesa lavanda','Hoodie mint','Peto melocotón','Idol dorada','Sporty blue','Ballet rosa','Retro disco'],hairNames=['Coletas chocolate','Coletas altas','Bob lavanda','Melena miel','Moños espaciales','Coleta lateral','Trenzas violetas','Recogido elegante'],shoeNames=['Zapato clásico','Sneakers sport','Botines','High-top mint','Plataforma idol','Botas de concierto'];
+toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':room==='closet'&&i===2?shoeNames[state.shoe]+' 👟':a.message);
+reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));if(room!=='kitchen')sound((room==='stage'||room==='arena')?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
-canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
+canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||activeMakeupTool||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 const miniGames=createMiniGames({
  onReward:({score,coins,xp,kind})=>{
   state.coins+=coins;gainXP(xp);
@@ -713,16 +812,27 @@ const miniGames=createMiniGames({
  },
  onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
 });
+streetVolley=createStreetVolley3D({
+ scene,canvas,camera,idol,street:groups.street,animate,toast,
+ onFinish:(won,playerScore,cpuScore,rally)=>{
+  const coins=won?125:40,xp=won?120:55;state.coins+=coins;gainXP(xp);state.happiness=num(state.happiness+(won?10:4));state.energy=num(state.energy-3);
+  render();save();reward(won?'🏆 +'+coins+' ★ · +'+xp+' XP':'🏐 +'+coins+' ★ · +'+xp+' XP');
+  toast((won?'¡Daniela gana ':'Partido terminado ')+playerScore+'-'+cpuScore+' · rally '+rally);
+ }
+});
 document.querySelectorAll<HTMLButtonElement>('[data-makeup]').forEach(button=>button.addEventListener('click',()=>{
- const kind=button.dataset.makeup;
- if(kind==='lashes')state.makeupLashes=(state.makeupLashes+1)%lashNames.length;
- if(kind==='mascara')state.makeupMascara=(state.makeupMascara+1)%mascaraNames.length;
- if(kind==='lip')state.makeupLip=(state.makeupLip+1)%lipNames.length;
- if(kind==='blush')state.makeupBlush=(state.makeupBlush+1)%blushNames.length;
- applyMakeup();renderMakeupPanel();state.happiness=num(state.happiness+1);save();render();animate('giggle',1.25);sound([659,784,988]);
- const names={lashes:lashNames[state.makeupLashes%lashNames.length],mascara:mascaraNames[state.makeupMascara%mascaraNames.length],lip:lipNames[state.makeupLip%lipNames.length],blush:blushNames[state.makeupBlush%blushNames.length]};
- if(kind&&kind in names)toast('💄 '+names[kind as keyof typeof names]);
+ const kind=button.dataset.makeup as MakeupTool|undefined;if(!kind)return;
+ if(kind==='lashes')makeupSelection.lashes=(makeupSelection.lashes+1)%lashNames.length;
+ if(kind==='mascara')makeupSelection.mascara=(makeupSelection.mascara+1)%mascaraNames.length;
+ if(kind==='lip')makeupSelection.lip=(makeupSelection.lip+1)%lipNames.length;
+ if(kind==='blush')makeupSelection.blush=(makeupSelection.blush+1)%blushNames.length;
+ enterMakeupMode(kind);renderMakeupPanel();sound([659,784]);
 }));
+document.querySelector<HTMLButtonElement>('#makeup-done')?.addEventListener('click',()=>{exitMakeupMode();toast('💄 ¡Maquillaje listo!');animate('giggle',1.2);});
+canvas.addEventListener('pointerdown',e=>{if(room==='closet'&&activeMakeupTool){makeupPainting=true;canvas.setPointerCapture(e.pointerId);makeupToolGhost.classList.add('visible');makeupToolGhost.style.left=e.clientX+'px';makeupToolGhost.style.top=e.clientY+'px';if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();sound([740,880]);}}},{capture:true});
+canvas.addEventListener('pointermove',e=>{if(makeupPainting&&activeMakeupTool){makeupToolGhost.style.left=e.clientX+'px';makeupToolGhost.style.top=e.clientY+'px';if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();}}},{capture:true});
+const stopMakeupPaint=(e:PointerEvent)=>{if(makeupPainting){makeupPainting=false;makeupToolGhost.classList.remove('visible');state.happiness=num(state.happiness+1);render();save();try{canvas.releasePointerCapture(e.pointerId);}catch{}}};
+canvas.addEventListener('pointerup',stopMakeupPaint,{capture:true});canvas.addEventListener('pointercancel',stopMakeupPaint,{capture:true});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
@@ -736,12 +846,12 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
-showRoom('bedroom');fashion();render();updateNeedAlerts();
+showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();updateNeedAlerts();
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
  // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.
  if(document.hidden||miniGames.isActive())return;
- const now=performance.now();
+ const now=performance.now();streetVolley?.tick(now);
  // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
  if(now-performanceCheckAt>7500&&qualityMode!=='high'){
   performanceCheckAt=now;const fps=engine.getFps();
