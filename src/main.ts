@@ -313,7 +313,32 @@ box('city arcade booth',2.5,1.55,1.15,4.3,.82,-2.85,lilac,streetRoot);
 box('city arcade screen',1.42,.75,.06,4.3,1.18,-3.45,blue,streetRoot);
 box('city snacks kiosk',2.5,1.45,1.15,-4.3,.78,-2.85,pink,streetRoot);
 for(let i=0;i<3;i++)ball('kiosk snack',.28,-4.72+i*.42,1.25,-3.45,[gold,mint,lilac][i],streetRoot);
+
 for(let i=0;i<7;i++)star(-4.8+i*1.6,4.9+(i%2)*.18,8.3,.32,i%2?pink:gold,streetRoot);
+// Extra street depth: crossing, café terrace, bus stop, planters, clouds and signs.
+for(let i=0;i<7;i++)box('city crosswalk stripe',.72,.025,1.6,-2.7+i*.9,.07,3.62,white,streetRoot);
+const busShelter=box('pastel bus stop roof',2.8,.16,.9,-4.55,2.35,.55,lilac,streetRoot);busShelter.isPickable=false;
+for(const x of [-5.75,-3.35])box('bus stop post',.12,2.2,.12,x,1.18,.55,purple,streetRoot).isPickable=false;
+box('bus stop glass',2.15,1.7,.08,-4.55,1.35,.95,blue,streetRoot).visibility=.28;
+box('bus stop bench',1.7,.22,.5,-4.55,.45,.56,wood,streetRoot);
+box('bus stop sign',.55,.72,.07,-3.2,2.2,.35,pink,streetRoot);
+for(const [x,z] of [[3.0,.15],[4.05,.2]] as [number,number][]){
+ cyl('cafe table',.72,.72,.08,x,.65,z,white,streetRoot);
+ cyl('cafe table leg',.1,.12,.55,x,.34,z,gold,streetRoot);
+ for(const sx of [-.55,.55]){box('cafe chair',.42,.5,.42,x+sx,.36,z, sx<0?mint:pink,streetRoot);box('cafe chair back',.42,.62,.1,x+sx,.7,z+.18,sx<0?mint:pink,streetRoot);}
+}
+for(const [x,z] of [[-2.4,.4],[2.4,.5],[-1.4,2.15],[1.45,2.2]] as [number,number][]){
+ box('flower planter',.82,.38,.54,x,.2,z,white,streetRoot);
+ for(let j=0;j<4;j++){ball('city flower',.16,x-.25+j*.17,.51,z+(j%2?-.1:.1),j%2?pink:gold,streetRoot);cyl('flower stem',.035,.045,.28,x-.25+j*.17,.38,z+(j%2?-.1:.1),streetGrass,streetRoot);}
+}
+for(let i=0;i<5;i++){
+ const x=-7+i*3.5,y=5.6+(i%2)*.55,z=10.9;
+ const cloud=ball('soft city cloud',1.25,x,y,z,white,streetRoot);cloud.scaling.set(1.5,.5,.35);cloud.visibility=.78;
+ ball('soft city cloud puff',.85,x+.65,y+.05,z-.02,white,streetRoot).scaling.set(1.2,.55,.35);
+}
+box('Daniela City sign',3.5,.82,.12,0,4.65,8.55,white,streetRoot);
+for(let i=0;i<5;i++)star(-1.25+i*.62,4.67,8.42,.16,i%2?pink:lilac,streetRoot);
+
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
