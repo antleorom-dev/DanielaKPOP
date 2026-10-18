@@ -479,29 +479,55 @@ function socialBoost(kind:'dance'|'sing'|'concert'){
  liveFollowerGain+=Math.max(1,Math.floor((1+Math.random()*3.4)*power));
  liveReactionBurst(power);paintLiveStats();render();
 }
-function startConcert(){
- if(concertActive){socialBoost('sing');return;}
- concertActive=true;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1.2;lastLiveTick=performance.now();concertStartedAt=lastLiveTick;livePerformanceSeconds=0;
- $('#live-comments').replaceChildren();$('#live-reactions').replaceChildren();const live=$('#studio-live');live.classList.add('visible');live.setAttribute('aria-hidden','false');
- void play?.startConcertMusic();paintLiveStats();toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
+function startConcert(kind:'tiktok'|'arena'){
+ if(concertActive)return;
+ concertActive=true;liveKind=kind;
+ liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=kind==='arena'?1.6:1.2;
+ lastLiveTick=performance.now();concertStartedAt=lastLiveTick;livePerformanceSeconds=0;
+ $('#live-comments').replaceChildren();$('#live-reactions').replaceChildren();
+ const live=$('#studio-live');live.classList.add('visible');live.classList.toggle('concert-show',kind==='arena');live.setAttribute('aria-hidden','false');
+ const label=document.querySelector<HTMLElement>('#live-kind');
+ if(label)label.textContent=kind==='arena'?'GRAN CONCIERTO':'TIKTOK LIVE';
+ void play?.startConcertMusic();paintLiveStats();
+ toast(kind==='arena'?'🎟️ ¡Gran concierto! Canta y baila para conquistar a todo el estadio':'📱 ¡Directo TikTok! Baila y canta para ganar seguidores');
+ reactionBubble(kind==='arena'?'¡Este estadio es nuestro! ✨':'¡Hola, TikTok! 💜',false,2300);
+ render();
 }
 function endConcert(announce=true){
  if(!concertActive)return;
- concertActive=false;play?.stopConcertMusic();const eligible=performance.now()-concertStartedAt>=12000;
+ const kind=liveKind;
+ const elapsed=(performance.now()-concertStartedAt)/1000;
+ const eligible=elapsed>=(kind==='arena'?30:12);
+ concertActive=false;liveKind=null;play?.stopConcertMusic();
  const gained=eligible?liveFollowerGain:0;
- const popGain=eligible?Math.max(0,Math.min(3,Math.floor((gained/180)+(liveViewers/1300)+(liveLikes/4200)))):0;
- const effort=Math.min(1,livePerformanceSeconds/35);
- const concertPay=eligible?Math.max(12,Math.floor((liveLikes/14+liveViewers/55+gained*1.7)*(.3+.7*effort))):0;
- state.followers=Math.max(0,state.followers+gained);state.popularity=num(state.popularity+popGain);state.coins+=concertPay;state.lastConcertAt=Date.now();state.concerts++;
- $('#studio-live').classList.remove('visible');$('#studio-live').setAttribute('aria-hidden','true');$('#followers-live').textContent='';
+ const effort=Math.min(1,livePerformanceSeconds/(kind==='arena'?48:35));
+ const popGain=eligible?Math.max(0,Math.min(kind==='arena'?5:2,Math.floor((gained/(kind==='arena'?110:230))+(liveViewers/(kind==='arena'?700:1600))+(liveLikes/4800)))):0;
+ // TikTok is for growing a fanbase; ticketed stadium shows generate most revenue.
+ const concertPay=!eligible?0:kind==='arena'
+  ?Math.max(85,Math.floor((liveLikes/6+liveViewers/22+gained*3)*(.35+.65*effort)))
+  :Math.max(4,Math.floor((liveLikes/75+liveViewers/230+gained*.26)*(.25+.75*effort)));
+ if(kind==='arena'){
+  if(eligible)state.arenaShows++;
+  else state.arenaTickets++; // A mistakenly interrupted show does not cost a ticket.
+ }
+ state.followers=Math.max(0,state.followers+gained);
+ state.popularity=num(state.popularity+popGain);
+ state.coins+=concertPay;
+ if(eligible){state.lastConcertAt=Date.now();state.concerts++;updateArenaUnlocks();}
+ const live=$('#studio-live');live.classList.remove('visible','concert-show');live.setAttribute('aria-hidden','true');
+ $('#followers-live').textContent='';
  document.querySelectorAll('.career-card').forEach(card=>{card.classList.remove('career-updated');void (card as HTMLElement).offsetWidth;card.classList.add('career-updated');});
- if(announce){toast(eligible?'¡Concierto terminado! +'+gained+' seguidores · +'+popGain+'% popularidad · +'+concertPay+' ★':'¡Concierto muy corto! Actúa al menos 12 segundos para ganar fans y dinero 💜');if(eligible)reward('¡CARRERA +! ✨');}
+ if(announce){
+  toast(eligible?'¡'+(kind==='arena'?'CONCIERTO':'DIRECTO')+' terminado! +'+gained+' fans · +'+popGain+'% popularidad · +'+concertPay+' ★'
+   :'Actúa '+(kind==='arena'?'30':'12')+' segundos para completar el '+(kind==='arena'?'concierto':'directo')+'.'+(kind==='arena'?' Entrada devuelta 🎟️':''));
+  if(eligible)reward(kind==='arena'?'¡ESTADIO ÉPICO! ✨':'¡DIRECTO COMPLETADO! 💜');
+ }
  liveFollowerGain=0;render();save();
 }
 function socialTick(now:number){
- if(!concertActive||room!=='stage'||now-lastLiveTick<1500)return;lastLiveTick=now;
+ if(!concertActive||(room!=='stage'&&room!=='arena')||now-lastLiveTick<1500)return;lastLiveTick=now;
  const performing=move==='sing'||move==='dance'||move==='dance2'||move==='dance3'||move==='dance4'||move==='dance5';
- const singing=move==='sing',power=performing?(singing?2.15:2.45):.45;if(performing)livePerformanceSeconds+=1.5;
+ const singing=move==='sing',power=performing?(singing?2.15:2.45)*(liveKind==='arena'?1.65:1):.45;if(performing)livePerformanceSeconds+=1.5;
  liveMomentum=Math.max(.75,Math.min(5.5,liveMomentum*.91+(performing?.36:-.05)));
  const scale=power*liveMomentum;
  liveViewers=Math.max(0,liveViewers+Math.floor((2+Math.random()*8)*scale)-(performing?0:Math.floor(Math.random()*4)));
@@ -674,6 +700,7 @@ engine.runRenderLoop(()=>{
  bow.rotation.x=sin(t*1.1)*.025;
  orbs.forEach((o,i)=>o.scaling.setAll(1+sin(t*2+i*.7)*.18));
  if(Math.floor(now/50)!==Math.floor((now-engine.getDeltaTime())/50))roomMotion.forEach((item,i)=>{if(item.mesh.isEnabled()&&!item.mesh.isDisposed()){item.mesh.position.y=item.baseY+sin(now*item.speed+item.phase)*item.amp;item.mesh.rotation.y+=.0015*((i%3)-1);}});
+ if(room==='arena'&&Math.floor(now/115)!==Math.floor((now-engine.getDeltaTime())/115))stadiumAudience.forEach((fan,i)=>{fan.head.position.y=fan.originalY+(concertActive?Math.abs(Math.sin(now*.005+fan.phase))*.18:Math.sin(now*.001+fan.phase)*.018);});
  socialTick(now);
  play?.tick(now);
  scene.render();
