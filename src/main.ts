@@ -251,7 +251,7 @@ const arenaSignTexture=new DynamicTexture('Daniela World Tour LED',{width:1024,h
 const signCtx=arenaSignTexture.getContext();
 signCtx.fillStyle='#6c4197';signCtx.fillRect(0,0,1024,256);
 const gradient=signCtx.createLinearGradient(0,0,1024,0);gradient.addColorStop(0,'#ffc7e8');gradient.addColorStop(.5,'#fff7d6');gradient.addColorStop(1,'#a8f2ff');
-signCtx.fillStyle=gradient;signCtx.font='bold 100px Arial';signCtx.textAlign='center';signCtx.textBaseline='middle';signCtx.fillText('DANIELA LIVE',512,127);
+signCtx.fillStyle=gradient;signCtx.font='bold 100px Arial';const arenaLabel='DANIELA LIVE';signCtx.fillText(arenaLabel,(1024-signCtx.measureText(arenaLabel).width)/2,165);
 arenaSignTexture.update();
 const arenaSignMaterial=new StandardMaterial('arena LED lettering',scene);arenaSignMaterial.diffuseTexture=arenaSignTexture;arenaSignMaterial.emissiveTexture=arenaSignTexture;arenaSignMaterial.emissiveColor=new Color3(.15,.15,.15);arenaSignMaterial.disableLighting=true;arenaSignMaterial.backFaceCulling=false;
 const arenaSign=MeshBuilder.CreatePlane('Daniela LIVE LED sign',{width:6.8,height:1.55},scene);arenaSign.position.set(0,3.25,5.08);arenaSign.parent=arenaRoot;arenaSign.material=arenaSignMaterial;arenaSign.isPickable=false;
