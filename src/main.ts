@@ -347,9 +347,12 @@ for(const side of [-1,1]){
 }
 const arms:TransformNode[]=[];const sleeves:Mesh[]=[];
 for(const s of [-1,1]){const pivot=new TransformNode('arm pivot',scene);pivot.parent=body;pivot.position.set(s*.67,1.79,0);arms.push(pivot);sleeves.push(ball('puff sleeve',.46,s*.13,-.18,0,dressColors[state.outfit%dressColors.length],pivot));ball('arm',.4,s*.2,-.43,0,skin,pivot).scaling.y=1.45;ball('hand',.36,s*.2,-.72,0,skin,pivot);}
-const microphone=new TransformNode('microphone in hand',scene);microphone.parent=arms[1];
-cyl('microphone handle',.14,.14,.45,.2,-.83,-.23,dark,microphone);
-ball('microphone head',.27,.2,-1.08,-.23,gold,microphone);
+const microphone=new TransformNode('real stage microphone',scene);microphone.parent=arms[1];
+const micMetal=mat('microphone metal','#d9d8e4'),micBlack=mat('microphone black','#2d2637'),micRing=mat('microphone accent','#f2a4d3');
+const micHandle=cyl('microphone black handle',.15,.18,.58,.2,-.86,-.25,micBlack,microphone);micHandle.rotation.z=.08;
+cyl('microphone grip ring',.18,.2,.08,.2,-1.12,-.25,micRing,microphone);
+const micGrille=ball('microphone silver grille',.29,.2,-1.22,-.25,micMetal,microphone);micGrille.scaling.set(1,1.05,.92);
+for(let i=0;i<3;i++){const grille=ring('microphone grille line',.24+i*.018,.008,.2,-1.22+i*.015,-.25,dark,microphone);grille.rotation.x=Math.PI/2;}
 microphone.setEnabled(false);
 const head=new TransformNode('head',scene);head.parent=body;head.position.set(0,2.56,0);
 ball('face',1.65,0,0,-.055,skin,head).scaling.set(.97,1.03,.89);
@@ -406,7 +409,7 @@ const lash=MeshBuilder.CreateLines('closed eye smile',{points:[
 ]},scene);lash.parent=head;lash.color=Color3.FromHexString('#6b446d');lash.isVisible=false;sleepingLashes.push(lash);
 const glint=ball('eye light',.11,s*.33-.055,-.005,-.823,white,head);glint.scaling.z=.35;eyeGlints.push(glint);
  eyeGlints.push(ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head));
-const cheek=ball('cheek makeup',.3,s*.62,-.31,-.68,blush,head);cheek.scaling.set(.85,.35,.2);makeupCheeks.push(cheek);
+const cheek=ball('cheek makeup',.27,s*.51,-.30,-.79,blush,head);cheek.scaling.set(.68,.28,.12);cheek.visibility=.6;makeupCheeks.push(cheek);
  const outerLash=ball('eye outer lash makeup',.12,s*.48,.02,-.77,dark,head);outerLash.scaling.set(.58,.22,.22);mascaraMeshes.push(outerLash);
  for(let j=0;j<3;j++){
   const tip=ball('fashion lash '+j,.075,s*(.43+j*.065),.075+j*.025,-.79,dark,head);
@@ -431,26 +434,64 @@ function fashion(){
 }
 const lashNames=['Natural','Doll','Cat eye','Drama'],mascaraNames=['Ciruela','Berry','Brown','Violeta','Azul noche'],lipNames=['Rosa','Candy','Cereza','Lavanda','Coral','Frambuesa'],blushNames=['Melocotón','Peach','Rose','Lilac','Berry','Soft nude'];
 const mascaraHex=['#46305a','#5c304f','#664837','#4e4c91','#274d62'],lipHex=['#b95e89','#ed749d','#b44966','#8c62b5','#ef927b','#c74d91'],blushHex=['#f7a9b8','#f4b092','#ec81a7','#c797dc','#f0a0ba','#ffd0c4'];
+type MakeupTool='lashes'|'mascara'|'lip'|'blush';
+let activeMakeupTool:MakeupTool|null=null,makeupPainting=false;
+const makeupSelection:{lashes:number;mascara:number;lip:number;blush:number}={lashes:state.makeupLashes,mascara:state.makeupMascara,lip:state.makeupLip,blush:state.makeupBlush};
 function applyMakeup(){
  const lashStyle=state.makeupLashes%lashNames.length;
  makeupLashTips.forEach((mesh,i)=>mesh.setEnabled(i%3<lashStyle));
  mascaraMeshes.forEach(mesh=>mesh.material=mascaraMaterials[state.makeupMascara%mascaraMaterials.length]);
  mouth.material=lipMaterials[state.makeupLip%lipMaterials.length];
- makeupCheeks.forEach(cheek=>{cheek.material=blushMaterials[state.makeupBlush%blushMaterials.length];cheek.visibility=.72;});
+ makeupCheeks.forEach(cheek=>{cheek.material=blushMaterials[state.makeupBlush%blushMaterials.length];cheek.visibility=.6;});
 }
 function renderMakeupPanel(){
- const values:{key:'lashes'|'mascara'|'lip'|'blush';label:string;color?:string}[]=[
-  {key:'lashes',label:lashNames[state.makeupLashes%lashNames.length]},
-  {key:'mascara',label:mascaraNames[state.makeupMascara%mascaraNames.length],color:mascaraHex[state.makeupMascara%mascaraHex.length]},
-  {key:'lip',label:lipNames[state.makeupLip%lipNames.length],color:lipHex[state.makeupLip%lipHex.length]},
-  {key:'blush',label:blushNames[state.makeupBlush%blushNames.length],color:blushHex[state.makeupBlush%blushHex.length]}
+ const values:{key:MakeupTool;label:string;color?:string}[]=[
+  {key:'lashes',label:lashNames[makeupSelection.lashes%lashNames.length]},
+  {key:'mascara',label:mascaraNames[makeupSelection.mascara%mascaraNames.length],color:mascaraHex[makeupSelection.mascara%mascaraHex.length]},
+  {key:'lip',label:lipNames[makeupSelection.lip%lipNames.length],color:lipHex[makeupSelection.lip%lipHex.length]},
+  {key:'blush',label:blushNames[makeupSelection.blush%blushNames.length],color:blushHex[makeupSelection.blush%blushHex.length]}
  ];
  values.forEach(item=>{
   const label=document.querySelector<HTMLElement>('#makeup-'+item.key+'-label');if(label)label.textContent=item.label;
   const swatch=document.querySelector<HTMLElement>('#makeup-'+item.key+'-swatch');if(swatch&&item.color)swatch.style.background=item.color;
+  const button=document.querySelector<HTMLButtonElement>('[data-makeup="'+item.key+'"]');button?.classList.toggle('selected-tool',activeMakeupTool===item.key);
  });
+ const hint=document.querySelector<HTMLElement>('#makeup-hint');
+ if(hint)hint.textContent=!activeMakeupTool?'Elige una herramienta y arrástrala sobre su cara':
+  activeMakeupTool==='lip'?'💋 Arrastra el pintalabios sobre los labios':
+  activeMakeupTool==='blush'?'🌸 Frota suavemente sobre una mejilla':
+  activeMakeupTool==='mascara'?'🖌️ Arrastra el rímel sobre los ojos':
+  '👁️ Arrastra sobre los ojos para colocar las pestañas';
 }
-fashion();applyMakeup();renderMakeupPanel();
+function makeupScreenPoint(local:Vector3){
+ const engine=scene.getEngine(),rect=canvas.getBoundingClientRect();
+ const world=Vector3.TransformCoordinates(local,head.getWorldMatrix());
+ const p=Vector3.Project(world,Matrix.Identity(),scene.getTransformMatrix(),camera.viewport.toGlobal(engine.getRenderWidth(),engine.getRenderHeight()));
+ return{x:rect.left+p.x*rect.width/engine.getRenderWidth(),y:rect.top+p.y*rect.height/engine.getRenderHeight()};
+}
+function near(point:{x:number;y:number},x:number,y:number,radius:number){return Math.hypot(point.x-x,point.y-y)<=radius;}
+function applyMakeupStroke(x:number,y:number){
+ if(room!=='closet'||!activeMakeupTool)return false;
+ const lip=makeupScreenPoint(new Vector3(0,-.41,-.79)),leftEye=makeupScreenPoint(new Vector3(-.34,-.04,-.8)),rightEye=makeupScreenPoint(new Vector3(.34,-.04,-.8));
+ const leftCheek=makeupScreenPoint(new Vector3(-.51,-.3,-.79)),rightCheek=makeupScreenPoint(new Vector3(.51,-.3,-.79));
+ const scale=Math.max(.8,Math.min(1.45,9.25/camera.radius));
+ let applied=false;
+ if(activeMakeupTool==='lip'&&near(lip,x,y,52*scale)){state.makeupLip=makeupSelection.lip;applied=true;}
+ if(activeMakeupTool==='blush'&&(near(leftCheek,x,y,62*scale)||near(rightCheek,x,y,62*scale))){state.makeupBlush=makeupSelection.blush;applied=true;}
+ if(activeMakeupTool==='mascara'&&(near(leftEye,x,y,55*scale)||near(rightEye,x,y,55*scale))){state.makeupMascara=makeupSelection.mascara;applied=true;}
+ if(activeMakeupTool==='lashes'&&(near(leftEye,x,y,58*scale)||near(rightEye,x,y,58*scale))){state.makeupLashes=makeupSelection.lashes;applied=true;}
+ if(applied){applyMakeup();renderMakeupPanel();save();return true;}
+ return false;
+}
+function enterMakeupMode(tool:MakeupTool){
+ activeMakeupTool=tool;camera.detachControl();camera.alpha=-Math.PI/2;camera.beta=1.26;camera.radius=4.55;camera.target.set(0,2.55,-.3);renderMakeupPanel();
+}
+function exitMakeupMode(resetCamera=true){
+ activeMakeupTool=null;makeupPainting=false;camera.attachControl(canvas,true);
+ if(resetCamera){camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=7.8;camera.target.set(0,1.9,-.35);}
+ renderMakeupPanel();
+}
+
 // A complete sleep cycle: Daniela walks to her bed, lies down, recovers gradually,
 // then gets up. Leaving the bedroom cancels safely without losing earned energy.
 type SleepPhase='awake'|'walking'|'resting'|'waking';
@@ -522,7 +563,7 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(room==='closet'&&next!=='closet')exitMakeupMode(false);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
 $('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
@@ -753,15 +794,18 @@ const miniGames=createMiniGames({
  onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
 });
 document.querySelectorAll<HTMLButtonElement>('[data-makeup]').forEach(button=>button.addEventListener('click',()=>{
- const kind=button.dataset.makeup;
- if(kind==='lashes')state.makeupLashes=(state.makeupLashes+1)%lashNames.length;
- if(kind==='mascara')state.makeupMascara=(state.makeupMascara+1)%mascaraNames.length;
- if(kind==='lip')state.makeupLip=(state.makeupLip+1)%lipNames.length;
- if(kind==='blush')state.makeupBlush=(state.makeupBlush+1)%blushNames.length;
- applyMakeup();renderMakeupPanel();state.happiness=num(state.happiness+1);save();render();animate('giggle',1.25);sound([659,784,988]);
- const names={lashes:lashNames[state.makeupLashes%lashNames.length],mascara:mascaraNames[state.makeupMascara%mascaraNames.length],lip:lipNames[state.makeupLip%lipNames.length],blush:blushNames[state.makeupBlush%blushNames.length]};
- if(kind&&kind in names)toast('💄 '+names[kind as keyof typeof names]);
+ const kind=button.dataset.makeup as MakeupTool|undefined;if(!kind)return;
+ if(kind==='lashes')makeupSelection.lashes=(makeupSelection.lashes+1)%lashNames.length;
+ if(kind==='mascara')makeupSelection.mascara=(makeupSelection.mascara+1)%mascaraNames.length;
+ if(kind==='lip')makeupSelection.lip=(makeupSelection.lip+1)%lipNames.length;
+ if(kind==='blush')makeupSelection.blush=(makeupSelection.blush+1)%blushNames.length;
+ enterMakeupMode(kind);renderMakeupPanel();sound([659,784]);
 }));
+document.querySelector<HTMLButtonElement>('#makeup-done')?.addEventListener('click',()=>{exitMakeupMode();toast('💄 ¡Maquillaje listo!');animate('giggle',1.2);});
+canvas.addEventListener('pointerdown',e=>{if(room==='closet'&&activeMakeupTool){makeupPainting=true;canvas.setPointerCapture(e.pointerId);if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();sound([740,880]);}}},{capture:true});
+canvas.addEventListener('pointermove',e=>{if(makeupPainting&&activeMakeupTool){if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();}}},{capture:true});
+const stopMakeupPaint=(e:PointerEvent)=>{if(makeupPainting){makeupPainting=false;state.happiness=num(state.happiness+1);render();save();try{canvas.releasePointerCapture(e.pointerId);}catch{}}};
+canvas.addEventListener('pointerup',stopMakeupPaint,{capture:true});canvas.addEventListener('pointercancel',stopMakeupPaint,{capture:true});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
