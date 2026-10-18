@@ -444,12 +444,12 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
-$('#action-label').textContent=room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
-wall.diffuseColor=Color3.FromHexString(room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
-floorMat.diffuseColor=Color3.FromHexString(room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
+$('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
+wall.diffuseColor=Color3.FromHexString(room==='street'?'#b5e9fa':room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
+floorMat.diffuseColor=Color3.FromHexString(room==='street'?'#e9e4ff':room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
 button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
@@ -596,7 +596,7 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
+function perform(i:number){if(room==='street'){miniGames.start(i===0?'snack':'skate');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
 if(room==='arena'){
  if(i===0){
   if(concertActive){toast('🎤 ¡Ya estás dando un gran concierto!');return;}
@@ -625,6 +625,14 @@ reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound((room==='stag
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
+const miniGames=createMiniGames({
+ onReward:({score,coins,xp,kind})=>{
+  state.coins+=coins;gainXP(xp);
+  state.happiness=num(state.happiness+Math.min(9,Math.floor(score/65)));
+  render();save();toast((kind==='snack'?'🍓':'🛹')+' ¡Premio del minijuego! +'+coins+' ★ · +'+xp+' XP');
+ },
+ onClose:()=>{render();updateNeedAlerts();}
+});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
 $('#sound-toggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';toast(soundEnabled?'Sonidos activados 🎵':'Sonidos desactivados 🔕');if(soundEnabled)sound();});
@@ -661,7 +669,7 @@ engine.runRenderLoop(()=>{
  const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
  const isEating=move==='eat'||move==='drink';const walkingToBed=(sleepPhase==='walking'&&now-sleepClock<2400)||(sleepPhase==='waking'&&now-sleepClock>900);
  const isVolley=move==='volley';
- const singing=move==='sing'&&room==='stage';
+ const singing=move==='sing'&&(room==='stage'||room==='arena');
  microphone.setEnabled(singing);
  if(singing){const micIn=Math.min(1,e/.34);microphone.scaling.setAll(.15+.85*micIn);}
  // Each choreography uses its own weight shift, bounce, turns, arms and steps.
