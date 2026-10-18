@@ -3,6 +3,7 @@ import './interactions.css';
 import {installRoomAssets,installHeldFood} from './assets';
 import {createBath} from './bath';
 import {makeVolleyball} from './volleyball';
+import {createStudioMusic} from './music';
 
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet';
 type Move='idle'|'eat'|'drink'|'bath'|'volley'|'sing'|'dance'|'dance2'|'dance3'|'dance4'|'dance5';
@@ -15,7 +16,6 @@ type Dependencies={
  perform:(index:number)=>void;animate:(name:Move,duration?:number)=>void;
  toast:(msg:string)=>void;reward:(msg:string)=>void;sound:(notes?:number[])=>void;
 };
-const base=import.meta.env.BASE_URL;
 export function createInteractions(c:Dependencies){
  const bubbleMaterial=new StandardMaterial('shower pearlescent',c.scene);
  bubbleMaterial.diffuseColor=Color3.FromHexString('#cdf3ff');
@@ -59,8 +59,7 @@ export function createInteractions(c:Dependencies){
   const p=MeshBuilder.CreateCylinder('stereo speaker',{diameter:.41,height:.1,tessellation:24},c.scene);
   p.parent=stereo;p.position.set(3.1+s*.43,1.04,.61);p.rotation.x=Math.PI/2;p.material=skinPink;return p;
  });
- const audio=new Audio(base+'assets/studio-song.mp3');
- audio.loop=true;audio.volume=.6;audio.preload='none';
+ const audio=createStudioMusic();
  let musicPlaying=false,lastDance=0,danceIndex=0,concertStartedMusic=false;
  const volleyball=sphere('volleyball 3D',.58,-2.6,.35,-3.0,white,c.groups.bedroom);
  for(let i=0;i<3;i++){
@@ -140,33 +139,31 @@ export function createInteractions(c:Dependencies){
   // Called directly from the Concierto tap so mobile browsers permit audio playback.
   concertStartedMusic=true;
   try{
-   audio.currentTime=0;
-   await audio.play();
+   await audio.start();
    musicPlaying=true;lastDance=performance.now();danceIndex=0;sync();
   }catch{
    concertStartedMusic=false;musicPlaying=false;sync();
-   c.toast('El navegador ha bloqueado el audio. Pulsa 🎵 Encender música');
+   c.toast('No se ha podido activar el audio. Comprueba el volumen y pulsa 🎵');
   }
  }
  function stopConcertMusic(){
   if(!concertStartedMusic)return;
   concertStartedMusic=false;
-  audio.pause();audio.currentTime=0;musicPlaying=false;sync();
+  audio.stop();musicPlaying=false;sync();
  }
  async function toggleStereo(){
   if(c.getRoom()!=='stage')return;
   if(musicPlaying){
-   audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;
+   audio.stop();musicPlaying=false;concertStartedMusic=false;
    sync();c.toast('¡Música apagada! 🎵');return;
   }
   concertStartedMusic=false;
   try{
-   audio.currentTime=0;await audio.play();musicPlaying=true;lastDance=performance.now();danceIndex=0;
+   await audio.start();musicPlaying=true;lastDance=performance.now();danceIndex=0;
    c.animate('dance',3.5);c.toast('¡Que empiece la música! 🎶');
   }catch{musicPlaying=false;c.toast('No se puede reproducir la canción en este navegador');}
   sync();
  }
- audio.addEventListener('error',()=>{musicPlaying=false;sync();});
  function selectBath(index:number){
   bath.setTool(index===0?'soap':'water');
   sync();
@@ -263,7 +260,7 @@ export function createInteractions(c:Dependencies){
   if(hit?.hit)void toggleStereo();
  });
  function enterRoom(room:Room){
-  if(room!=='stage'&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;}
+  if(room!=='stage'&&musicPlaying){audio.stop();musicPlaying=false;concertStartedMusic=false;}
   if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
   brushPointer=-1;
   bath.enter(room==='bathroom');
