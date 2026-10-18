@@ -348,3 +348,20 @@ body.street-volley-playing .career-topbar,body.street-volley-playing .hud-left,b
 @keyframes makeup-tool-pulse{to{transform:translate(-50%,-72%) rotate(-10deg) scale(1.08)}}
 @media(max-width:680px){.makeup-tool-ghost{font-size:34px}}
 @media(prefers-reduced-motion:reduce){.makeup-tool-ghost.visible{animation:none}}
+
+
+/* v1.3 — clearer manual beauty tools */
+.makeup-controls button[data-makeup="eyes"]{grid-column:1/-1;background:linear-gradient(135deg,#f7fbffdb,#eee7ffdb)}
+.makeup-controls button[data-makeup="eyes"]>span{font-size:21px}
+.makeup-controls button[data-makeup="eyes"] i{width:13px;height:13px;box-shadow:0 0 0 2px #fff,0 0 10px #9677ce55}
+.makeup-controls button.selected-tool::after{content:'ARRASTRA';position:absolute;right:5px;bottom:4px;padding:2px 4px;border-radius:5px;background:#8850a3;color:#fff;font-size:5px;letter-spacing:.5px}
+.makeup-manual{background:#fff8fc8f;border-radius:10px;padding:6px 7px}
+@media(max-width:680px){
+ .makeup-controls button[data-makeup="eyes"]{grid-column:auto}
+ .makeup-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .makeup-controls{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .makeup-controls button[data-makeup="eyes"]{grid-column:auto}
+ .makeup-controls button.selected-tool::after{display:none}
+}
