@@ -155,12 +155,12 @@ export function createInteractions(c:Dependencies){
  async function toggleStereo(){
   if(c.getRoom()!=='stage')return;
   if(musicPlaying){
-   audio.stop();musicPlaying=false;concertStartedMusic=false;
+   audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;
    sync();c.toast('¡Música apagada! 🎵');return;
   }
   concertStartedMusic=false;
   try{
-   await audio.start();musicPlaying=true;lastDance=performance.now();danceIndex=0;
+   await audio.play();musicPlaying=true;lastDance=performance.now();danceIndex=0;
    c.animate('dance',3.5);c.toast('¡Que empiece la música! 🎶');
   }catch{musicPlaying=false;c.toast('No se puede reproducir la canción en este navegador');}
   sync();
@@ -261,7 +261,7 @@ export function createInteractions(c:Dependencies){
   if(hit?.hit)void toggleStereo();
  });
  function enterRoom(room:Room){
-  if(room!=='stage'&&musicPlaying){audio.stop();musicPlaying=false;concertStartedMusic=false;}
+  if(room!=='stage'&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;}
   if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
   brushPointer=-1;
   bath.enter(room==='bathroom');
