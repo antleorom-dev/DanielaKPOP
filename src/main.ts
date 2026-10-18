@@ -54,6 +54,10 @@ act('🪩','K-pop especial','Coreografía de estadio',['#bdacff','#9c85e9'],'dan
 act('🔥','Hip-hop épico','¡Desata la energía!',['#f7a8b4','#b78bec'],'dance4',{energy:-2,happiness:10},0,24,'¡Todos saltan! 🔥'),
 act('✨','Final de estrella','Gran cierre del show',['#ffe4a6','#ff99ba'],'dance5',{energy:-2,happiness:13},0,26,'¡Un final inolvidable! ✨'),
 act('🏁','Terminar show','Guardar resultados',['#9ecfef','#b49cea'],'wave',{},0,8,'¡Hasta pronto, fans! 💜')]},
+street:{title:'Daniela City',kicker:'✦ SALIMOS A LA CALLE ✦',sub:'Dos minijuegos, aventuras y premios',accent:'#8ccde8',actions:[
+act('🍓','Lluvia de snacks','Atrapa comida · 60 s',['#ffabc7','#e88dc8'],'wave',{},0,0,'¡A por los snacks! 🍓'),
+act('🛹','Daniela Skate','Salta y consigue monedas',['#92d9ef','#a7a1ef'],'jump',{},0,0,'¡Vamos a patinar! 🛹')
+]},
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
@@ -234,6 +238,48 @@ for(let row=0;row<3;row++){
 for(const z of [1.4,2.65,3.9])for(const x of [-3.9,3.9]){
  const beam=cyl('arena concert spotlight',.24,.48,2.35,x,2.2,z,lilac,arenaRoot);beam.visibility=.27;beam.isPickable=false;
 }
+// Extra concert art direction: overhead truss, pastel LED wall, fan lightsticks and confetti.
+box('arena overhead truss',11.4,.22,.32,0,5.7,3.9,stageMat,arenaRoot);
+for(let i=0;i<9;i++){
+ const x=-4.8+i*1.2;
+ const color=i%3===0?pink:i%3===1?mint:gold;
+ ball('arena overhead spotlight',.34,x,5.43,3.75,color,arenaRoot);
+}
+box('arena LED frame',7.7,2.75,.15,0,3.2,5.34,white,arenaRoot);
+box('arena LED display',7.4,2.5,.17,0,3.2,5.21,stageMat,arenaRoot);
+for(let i=0;i<11;i++)star(-3.3+i*.65,3.3+Math.sin(i*1.9)*.67,5.07,.18,i%2?pink:gold,arenaRoot);
+for(let i=0;i<16;i++){
+ const x=-5.3+(i%8)*1.5,z=1.9+Math.floor(i/8)*1.25;
+ const stick=cyl('arena fan lightstick',.08,.11,.52,x,1.07,z,white,arenaRoot);
+ stick.isPickable=false;
+ ball('arena glowing lightstick',.19,x,1.42,z,i%3?pink:mint,arenaRoot).isPickable=false;
+}
+for(let i=0;i<20;i++){
+ const x=-5.3+(i%10)*1.15,z=-3.4+Math.floor(i/10)*1.9;
+ const confetti=box('arena floating confetti',.09,.17,.025,x,3.1+(i%5)*.28,z,i%3?gold:i%2?mint:pink,arenaRoot);
+ confetti.rotation.z=i*.48;confetti.isPickable=false;
+}
+// An independent colorful city hub behind the mini-game selection.
+const streetRoot=groups.street;
+box('city pink boulevard',13,.07,8,0,-.03,0,white,streetRoot);
+for(let i=0;i<10;i++)box('city sidewalk tile',1.2,.08,1.7,-5.6+i*1.23,.03,1.6,i%2?lilac:mint,streetRoot);
+for(let i=0;i<5;i++){
+ const x=-5.6+i*2.8;
+ const facade=box('city storefront',2.35,3.7,.9,x,1.85,5.15,i%2?pink:lilac,streetRoot);
+ facade.isPickable=false;
+ box('city window',1.5,1.15,.1,x,2.2,4.63,blue,streetRoot);
+ box('city shop awning',2.5,.19,1.15,x,3.1,4.32,i%2?mint:gold,streetRoot);
+}
+for(const x of [-5.25,5.25]){
+ cyl('city lamp post',.13,.16,3.1,x,1.55,-1.3,white,streetRoot);
+ ball('city lamp',.46,x,3.22,-1.3,gold,streetRoot);
+ const tree=cyl('city tree trunk',.3,.39,1.8,x,1.0,1.45,wood,streetRoot);
+ tree.isPickable=false;
+ for(const y of [2.05,2.65])ball('city cotton candy tree',1.1,x,y,1.45,y>2.3?pink:mint,streetRoot);
+}
+box('city arcade booth',2.8,1.55,1.35,3.65,.8,-2.9,lilac,streetRoot);
+box('city arcade screen',1.6,.8,.08,3.65,1.15,-3.61,blue,streetRoot);
+for(let i=0;i<4;i++)star(-2.7+i*1.8,4.5+(i%2)*.2,4.5,.34,i%2?pink:gold,streetRoot);
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
