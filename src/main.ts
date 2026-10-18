@@ -1,4 +1,4 @@
-import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,FxaaPostProcess,SharpenPostProcess} from '@babylonjs/core';
+import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,SharpenPostProcess} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
@@ -59,8 +59,7 @@ let renderScale=bestScale;engine.setHardwareScalingLevel(renderScale);
 const scene=new Scene(engine);scene.skipPointerMovePicking=true;scene.clearColor=new Color4(.97,.81,.92,1);
 const camera=new ArcRotateCamera('camera',-Math.PI/2,1.23,9.25,new Vector3(0,1.8,-.35),scene);
 camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadiusLimit=12.5;camera.lowerBetaLimit=.85;camera.upperBetaLimit=1.48;camera.lowerAlphaLimit=-Math.PI/2-.48;camera.upperAlphaLimit=-Math.PI/2+.48;camera.wheelPrecision=48;camera.pinchPrecision=140;
-// FXAA smooths jagged silhouettes; a conservative sharpening pass restores fine details.
-const fxaa=new FxaaPostProcess('smooth silhouette FXAA',1,camera);
+// Preserve crisp edges with the engine's native antialiasing (avoid FXAA blur).
 const sharpen=new SharpenPostProcess('subtle image clarity',1,camera);
 sharpen.edgeAmount=.07;sharpen.colorAmount=1;
 const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.62;amb.diffuse=new Color3(1,.94,1);
