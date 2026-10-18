@@ -212,3 +212,29 @@
 .concert-show .live-new-followers{color:#ffe59f}
 @media(max-width:680px){.arena-progress{top:72px;right:9px;padding:5px 8px;border-radius:10px;font-size:9px;max-width:45vw}.room-nav{gap:2px}.nav-item{min-width:0;padding:6px 0}.nav-item span:last-child{font-size:8px;letter-spacing:.25px}.nav-emoji{font-size:20px}}
 @media(max-width:390px){.arena-progress{top:63px;font-size:8px}.nav-item span:last-child{font-size:7px}.nav-emoji{font-size:17px}}
+
+/* Social video chat: legible avatars, usernames and emoji reactions. */
+.live-comment{display:flex;align-items:center;gap:6px;max-width:100%;padding:5px 7px;background:#29163eac;border:1px solid #ffffff36;box-shadow:0 2px 9px #38144820}
+.live-avatar{display:grid;place-items:center;flex:0 0 23px;height:23px;border-radius:50%;background:linear-gradient(145deg,#ffb4e6,#bd99ff);border:1px solid #fffd;font-size:13px}
+.live-comment-content{min-width:0;display:flex;flex-direction:column;gap:2px;line-height:1.22}
+.live-comment-content b{font-size:9px;color:#ffc9f0;overflow:hidden;text-overflow:ellipsis}
+.live-comment-content>span{font-size:10px;overflow-wrap:anywhere}
+.live-comment-heart{margin-left:auto;font-size:12px}
+.live-reaction{filter:drop-shadow(0 2px 3px #3d125f80)}
+/* Full-screen 2D games. Fixed logical canvas coordinates scale to any phone. */
+.minigame-overlay[hidden],.minigame-end[hidden]{display:none!important}
+.minigame-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:env(safe-area-inset-top,0px) 8px env(safe-area-inset-bottom,0px);background:linear-gradient(145deg,#543a7bf0,#f4b3d4f2);overscroll-behavior:contain}
+.minigame-shell{position:relative;display:flex;flex-direction:column;width:min(100%,470px);max-height:100dvh;overflow:hidden;border:3px solid #fff;border-radius:25px;background:#ffeff9;box-shadow:0 20px 65px #2710448c}
+.minigame-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;background:linear-gradient(120deg,#f5a3d2,#bda5f9);color:#fff;font-size:15px}
+.minigame-top button{display:grid;place-items:center;width:39px;height:36px;border-radius:12px;background:#ffffffdf;color:#8350a9;font-size:20px;font-weight:900;cursor:pointer}
+.minigame-hud{display:flex;justify-content:space-around;gap:6px;padding:6px;background:#fff9e8;color:#794c9c;font-size:13px;font-weight:900}
+#minigame-canvas{display:block;align-self:center;width:min(100%,calc((100dvh - 178px)*.61765));max-height:calc(100dvh - 178px);aspect-ratio:420/680;touch-action:none;user-select:none;cursor:pointer;background:#c2f6ff}
+.minigame-hint{padding:7px 12px;text-align:center;background:#fff9f0;color:#915c9f;font-size:11px;font-weight:800}
+.minigame-end{position:absolute;inset:85px 10px 32px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:15px;text-align:center;padding:20px;background:#f9eaffed;border:3px solid #fff;border-radius:24px;color:#8455a1;box-shadow:0 12px 40px #3b19534f}
+.minigame-end h3{font-size:clamp(21px,5vw,30px);line-height:1.15}
+.minigame-end p{font-weight:900}
+.minigame-end>div{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+.minigame-end button{border:2px solid #fff;border-radius:15px;padding:11px 14px;color:#fff;background:linear-gradient(125deg,#f4a5d3,#a78deb);font-weight:900;cursor:pointer}
+body.minigame-playing{overflow:hidden}
+@media(max-width:680px){.live-comments{width:min(245px,57vw)}.live-comment{padding:4px 6px}.live-avatar{flex-basis:19px;height:19px;font-size:11px}.live-comment-content>span{font-size:9px}.live-comment-heart{font-size:10px}.room-nav{gap:1px}.nav-item span:last-child{font-size:7px;letter-spacing:0}.nav-emoji{font-size:18px}}
+@media(max-width:390px){.room-nav{padding:4px 0}.nav-item{padding:5px 0}.nav-item span:last-child{font-size:6.5px}.nav-emoji{font-size:16px}}
