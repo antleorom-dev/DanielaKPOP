@@ -14,7 +14,7 @@ export function dressRooms(scene:Scene, groups:Groups){
   const m=new StandardMaterial('decoration '+name,scene);
   m.diffuseColor=Color3.FromHexString(hex);
   m.specularColor=new Color3(.26,.24,.26);
-  if(emissive)m.emissiveColor=Color3.FromHexString(emissive);
+  if(emissive)m.emissiveColor=Color3.FromHexString(emissive).scale(.09);
   return m;
  };
  const m:Record<string,StandardMaterial>={};
@@ -50,7 +50,7 @@ export function dressRooms(scene:Scene, groups:Groups){
   ctx.fillStyle=palettes[fg as keyof typeof palettes]??'#ffffff';
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 75px sans-serif';
   const words=label.split('|');words.forEach((word,i)=>ctx.fillText(word,256,256+(i-(words.length-1)/2)*88,470));
-  tex.update();const mat=material('print '+label,palettes.snow);mat.diffuseTexture=tex;mat.emissiveColor=new Color3(.13,.13,.13);
+  tex.update();const mat=material('print '+label,palettes.snow);mat.diffuseTexture=tex;mat.emissiveColor=new Color3(.025,.025,.025);
   panel.material=mat;
  }
  function garland(room:Room,from:number,to:number,y:number,z:number){
@@ -156,7 +156,7 @@ export function dressRooms(scene:Scene, groups:Groups){
  garland(stage,-5,5,5.56,5.54);
  // Glow is restricted to the active studio instead of coloring the entire world.
  const spot=new PointLight('pink concert accent',new Vector3(2.2,3.8,1.2),scene);
- spot.parent=groups.stage;spot.diffuse=Color3.FromHexString('#ff7fc7');spot.intensity=.42;spot.range=10;
+ spot.parent=groups.stage;spot.diffuse=Color3.FromHexString('#ff7fc7');spot.intensity=.12;spot.range=7;
  // Closet: clothing rail, color-coded boxes, vanity bulbs and mirrors.
  const closet:Room='closet';
  cube(closet,'fashion sign',2.8,.53,.12,1.8,4.65,5.83,m.lavender);
