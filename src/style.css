@@ -342,3 +342,9 @@ body.street-volley-playing .career-topbar,body.street-volley-playing .hud-left,b
  .street-volley-controls{bottom:5px;grid-template-columns:48px 160px 48px}.street-volley-controls button{height:39px}
  .street-volley-exit{top:4px}
 }
+
+.makeup-tool-ghost{position:fixed;z-index:80;left:0;top:0;display:none;pointer-events:none;transform:translate(-50%,-72%) rotate(-18deg);font-size:42px;filter:drop-shadow(0 7px 8px #6f476d55);will-change:left,top}
+.makeup-tool-ghost.visible{display:block;animation:makeup-tool-pulse .42s ease-in-out infinite alternate}
+@keyframes makeup-tool-pulse{to{transform:translate(-50%,-72%) rotate(-10deg) scale(1.08)}}
+@media(max-width:680px){.makeup-tool-ghost{font-size:34px}}
+@media(prefers-reduced-motion:reduce){.makeup-tool-ghost.visible{animation:none}}
