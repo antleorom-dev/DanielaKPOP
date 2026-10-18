@@ -542,12 +542,12 @@ function applyMakeupStroke(x:number,y:number){
  return false;
 }
 function enterMakeupMode(tool:MakeupTool){
- activeMakeupTool=tool;camera.detachControl();camera.alpha=-Math.PI/2;camera.beta=1.26;camera.radius=4.55;camera.target.set(0,2.55,-.3);
+ activeMakeupTool=tool;document.body.classList.add('makeup-active');camera.detachControl();camera.alpha=-Math.PI/2;camera.beta=1.26;camera.radius=4.75;camera.target.set(-.34,2.55,-.3);
  makeupToolGhost.textContent=tool==='lip'?'💄':tool==='blush'?'🖌️':tool==='mascara'?'🪄':tool==='eyes'?'🎨':'👁️';
  renderMakeupPanel();
 }
 function exitMakeupMode(resetCamera=true){
- activeMakeupTool=null;makeupPainting=false;makeupToolGhost.classList.remove('visible');camera.attachControl(canvas,true);
+ activeMakeupTool=null;makeupPainting=false;document.body.classList.remove('makeup-active');makeupToolGhost.classList.remove('visible');camera.attachControl(canvas,true);
  if(resetCamera){camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.75;camera.target.set(0,1.82,-.35);}
  renderMakeupPanel();
 }
@@ -735,16 +735,21 @@ function appendLiveComment(){
  const username=document.createElement('b');username.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)].trim().replace(':','');
  const words=document.createElement('span');words.textContent=message;
  content.append(username,words);
- const badge=document.createElement('span');badge.className='live-comment-heart';badge.textContent=['💗','♥','✨','🔥','🎁','👏'][Math.floor(Math.random()*6)];
- c.append(avatar,content,badge);comments.append(c);
- while(comments.children.length>6)comments.firstElementChild?.remove();
+ const badge=document.createElement('span');badge.className='live-comment-heart';badge.textContent=['💗','♥','✨','🔥','🎁','👏','🌹','👑','⭐','🫶','🎤','🎶'][Math.floor(Math.random()*12)];
+ const gifts=document.createElement('span');gifts.className='live-comment-icons';
+ const iconPool=['💜','🔥','✨','🎁','🌹','⭐','👏','🫶','🎀','🎤','🎶','👑','😍','💎','🌈','🍓'];
+ const iconCount=2+(Math.random()>.58?1:0);
+ gifts.textContent=Array.from({length:iconCount},()=>iconPool[Math.floor(Math.random()*iconPool.length)]).join('');
+ c.append(avatar,content,gifts,badge);comments.append(c);
+ const maxComments=window.innerWidth<=680?4:5;
+ while(comments.children.length>maxComments)comments.firstElementChild?.remove();
 }
 function liveReactionBurst(power=1){
  const reactions=$('#live-reactions'),count=Math.min(7,2+Math.round(power*1.3));
  for(let i=0;i<count;i++)setTimeout(()=>{
   if(!concertActive)return;
   const r=document.createElement('span');r.className='live-reaction';
-  r.textContent=['♥','💜','🔥','✨','😍','👏','💗','🌹','🎁','⭐','🫶','🎶','👑'][Math.floor(Math.random()*13)];
+  r.textContent=['♥','💜','🔥','✨','😍','👏','💗','🌹','🎁','⭐','🫶','🎶','👑','🎀','💎','🌈','🍓','🦋','🎤','🩷'][Math.floor(Math.random()*20)];
   r.style.setProperty('--rx',(10+Math.random()*80)+'%');r.style.setProperty('--drift',(1.8+Math.random()*1.4)+'s');
   reactions.append(r);while(reactions.children.length>22)reactions.firstElementChild?.remove();
   setTimeout(()=>r.remove(),2600);
