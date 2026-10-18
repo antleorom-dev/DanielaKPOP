@@ -64,8 +64,15 @@ export function createInteractions(c:Dependencies){
   {label:'Dai Dai',src:import.meta.env.BASE_URL+'assets/Shakira_Burna_Boy_-_Dai_Dai.mp3'}
  ];
  const audio=new Audio();audio.loop=true;audio.volume=.65;audio.preload='auto';
- let currentTrack=studioTracks[0];
- function chooseTrack(){currentTrack=studioTracks[Math.floor(Math.random()*studioTracks.length)];audio.src=currentTrack.src;audio.currentTime=0;audio.load();}
+ let currentTrack=studioTracks[0],lastTrackIndex=-1;
+ function chooseTrack(){
+  let index=0;
+  if(studioTracks.length>1){
+   const choices=studioTracks.map((_,i)=>i).filter(i=>i!==lastTrackIndex);
+   index=choices[Math.floor(Math.random()*choices.length)];
+  }
+  currentTrack=studioTracks[index];lastTrackIndex=index;audio.src=currentTrack.src;audio.currentTime=0;audio.load();
+ }
  let musicPlaying=false,lastDance=0,danceIndex=0,concertStartedMusic=false;
  const volleyball=sphere('volleyball 3D',.58,-2.6,.35,-3.0,white,c.groups.bedroom);
  for(let i=0;i<3;i++){
