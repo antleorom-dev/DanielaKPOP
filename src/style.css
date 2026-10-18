@@ -238,3 +238,72 @@
 body.minigame-playing{overflow:hidden}
 @media(max-width:680px){.live-comments{width:min(245px,57vw)}.live-comment{padding:4px 6px}.live-avatar{flex-basis:19px;height:19px;font-size:11px}.live-comment-content>span{font-size:9px}.live-comment-heart{font-size:10px}.room-nav{gap:1px}.nav-item span:last-child{font-size:7px;letter-spacing:0}.nav-emoji{font-size:18px}}
 @media(max-width:390px){.room-nav{padding:4px 0}.nav-item{padding:5px 0}.nav-item span:last-child{font-size:6.5px}.nav-emoji{font-size:16px}}
+
+
+/* v1.1 — fashion make-up studio */
+.makeup-panel{
+ position:absolute;z-index:6;left:clamp(12px,3vw,36px);bottom:182px;width:min(310px,42vw);
+ padding:10px;border:2px solid #fff;border-radius:20px;
+ background:linear-gradient(145deg,#fffaf7e8,#ffe8f6e8);box-shadow:0 10px 28px #794c7938;
+ backdrop-filter:blur(14px);color:#84569e;
+}
+.makeup-panel[hidden]{display:none!important}
+.makeup-title{display:flex;align-items:end;justify-content:space-between;gap:8px;margin:0 2px 7px;font-weight:1000;font-size:11px;letter-spacing:.7px}
+.makeup-title small{font-size:8px;color:#c07da4;letter-spacing:0}
+.makeup-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.makeup-controls button{
+ position:relative;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto auto;
+ align-items:center;gap:0 6px;min-width:0;padding:7px 9px;border:1.5px solid #fff;border-radius:13px;
+ background:#ffffffc9;color:#83549a;box-shadow:0 3px 10px #80537d17;text-align:left;
+ transition:transform .16s,box-shadow .16s;
+}
+.makeup-controls button:hover{transform:translateY(-2px);box-shadow:0 6px 15px #80537d2b}
+.makeup-controls button>span{grid-row:1/3;font-size:19px}
+.makeup-controls b{font-size:9px;line-height:1.05}.makeup-controls em{font-size:8px;font-style:normal;font-weight:900;color:#c16d9c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.makeup-controls i{position:absolute;right:7px;top:7px;width:10px;height:10px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px #b78ca6}
+
+/* A deliberate phone-landscape composition instead of merely shrinking portrait UI. */
+@media (orientation:landscape) and (max-height:600px){
+ .career-topbar{top:max(3px,env(safe-area-inset-top));left:max(7px,env(safe-area-inset-left));right:max(7px,env(safe-area-inset-right))}
+ .career-hud{grid-template-columns:1fr 1fr 1fr;gap:5px}
+ .career-card{height:43px;padding:4px 7px;gap:5px;border-radius:13px}
+ .career-icon{flex-basis:25px;width:25px;height:25px;border-radius:8px;font-size:12px}
+ .career-copy small{font-size:6px;letter-spacing:.35px}.career-copy strong{font-size:13px;margin-top:1px}.career-copy em{display:none}
+ .career-card-actions{gap:2px}.career-mini-button{width:20px;height:20px;border-radius:6px;font-size:11px}
+ .popularity-card{padding-bottom:9px}.popularity-track{height:3px;bottom:3px;left:6px;right:6px}
+ .hud-left{top:53px;left:max(7px,env(safe-area-inset-left));width:105px;padding:5px 7px;border-radius:12px}
+ .level-icon{width:23px;height:23px;font-size:15px}.level-badge{gap:5px}.level-badge strong{font-size:8px}.level-badge small{font-size:7px}.level-track{height:4px;margin-top:4px}
+ .scene-title{display:none}
+ .care-panel{top:53px;right:max(7px,env(safe-area-inset-right));left:auto;bottom:auto;transform:none;width:min(57vw,520px);padding:5px 8px 6px;border-radius:13px}
+ .care-heading{margin-bottom:3px}.care-heading>span:first-child{font-size:8px}.care-status{font-size:7px;padding:2px 6px}
+ .care-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.need-head{gap:2px}.need-head span{font-size:11px}.need-head b{font-size:7px}.need-head em{font-size:7px}
+ .meter{height:5px;margin-top:2px;border-width:1px}
+ .camera-button{top:104px;right:max(8px,env(safe-area-inset-right));width:31px;height:31px;border-radius:10px;font-size:20px}
+ .arena-progress{top:55px;left:119px;right:auto;max-width:180px;font-size:7px;padding:4px 7px}
+ .bottom-area{padding:0 max(5px,env(safe-area-inset-right)) max(3px,env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,#ffe9f5d4 12%,#ffe6f4f5 100%)}
+ .action-intro,.footer-note{display:none}
+ .action-row{width:min(96vw,900px);gap:4px;margin-bottom:3px;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scrollbar-width:none}
+ .action-row::-webkit-scrollbar{display:none}
+ .action-card,.action-row.has-five-actions .action-card{flex:0 0 108px;height:40px;min-width:108px;padding:3px 5px;border-radius:11px;gap:4px;box-shadow:0 3px 0 #e5b3d3,0 5px 10px #cf8aaa35}
+ .action-card strong{font-size:8px}.action-card small{font-size:6.5px;margin-top:1px}.action-emoji,.action-row.has-five-actions .action-emoji{font-size:16px}
+ .room-nav{width:min(96vw,900px);padding:2px;border-radius:13px;gap:1px}
+ .nav-item{padding:2px 1px;border-radius:9px;gap:0}.nav-emoji{font-size:15px}.nav-item span:last-child{font-size:6px;letter-spacing:0}
+ .character-tag{top:auto;bottom:91px;font-size:9px;padding:6px 10px}
+ .character-tag.complaint{font-size:9px;max-width:31vw;padding:6px 9px}
+ .toast{bottom:94px;padding:8px 12px;font-size:9px}
+ .reward-pop{top:38%;font-size:18px}.tutorial{display:none}
+ .makeup-panel{left:max(8px,env(safe-area-inset-left));bottom:91px;width:min(355px,43vw);padding:6px;border-radius:14px}
+ .makeup-title{margin-bottom:4px;font-size:8px}.makeup-title small{font-size:6px}
+ .makeup-controls{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ .makeup-controls button{grid-template-columns:20px 1fr;padding:4px 5px;border-radius:9px;gap:0 3px}
+ .makeup-controls button>span{font-size:14px}.makeup-controls b{font-size:6.5px}.makeup-controls em{font-size:6px}.makeup-controls i{right:4px;top:4px;width:7px;height:7px}
+ .live-comments{width:min(270px,39vw);bottom:78px}.live-comment-content>span{font-size:8px}
+ .live-actions{bottom:80px;padding:5px 7px}.live-tip{display:none}
+ .minigame-overlay{padding:2px max(4px,env(safe-area-inset-right)) 2px max(4px,env(safe-area-inset-left))}
+ .minigame-shell{height:calc(100dvh - 4px);width:min(96vw,760px);border-radius:16px}
+ .minigame-top{padding:4px 8px;font-size:11px}.minigame-top button{width:30px;height:27px;border-radius:8px;font-size:15px}
+ .minigame-hud{padding:3px;font-size:9px}
+ #minigame-canvas{height:calc(100dvh - 94px);width:auto;max-height:none}
+ .minigame-hint{padding:3px 8px;font-size:8px}
+ .minigame-end{inset:52px 10px 12px;padding:12px;gap:8px}
+}

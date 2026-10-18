@@ -12,7 +12,8 @@ Este directorio debe contener los recursos originales facilitados por el propiet
 También funciona subir los archivos ya descomprimidos directamente en `public/assets/`, pero el ZIP es mucho más sencillo.
 
 Archivos utilizados directamente:
-- `public/assets/studio-song.mp3` — canción completa, activable solo en el estudio.
+- `public/assets/studio-song.mp3` — canción original del propietario.
+- `public/assets/Shakira_Burna_Boy_-_Dai_Dai.mp3` — segunda canción del propietario; la minicadena elige al azar entre ambas al empezar.
 - `public/assets/food/strawberry.glb`, `soda-can.glb`, `cupcake.glb` — alimentación 3D.
 - `public/assets/interior/*.glb` — muebles de habitación, cocina y baño.
 - `public/assets/vfx/*.png` — partículas y efectos complementarios.
