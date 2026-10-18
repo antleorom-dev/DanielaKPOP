@@ -20,7 +20,7 @@ try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as Stat
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
-let concertActive=false,liveKind:'tiktok'|'arena'|null=null,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
+let concertActive=false,liveKind:'tiktok'|'arena'|null=null,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let streetVolley:ReturnType<typeof createStreetVolley3D>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
 const rooms:Record<Room,{title:string;kicker:string;sub:string;accent:string;actions:Action[]}>={
 bedroom:{title:'Mi habitación',kicker:'✦ BIENVENIDA A CASA ✦',sub:'Un rinconcito lleno de sueños',accent:'#f7b4df',actions:[
@@ -563,7 +563,9 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(room==='closet'&&next!=='closet')exitMakeupMode(false);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetVolley?.isActive()&&next!=='street')streetVolley.stop();if(room==='closet'&&next!=='closet')exitMakeupMode(false);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);
+scene.clearColor=room==='street'?new Color4(.69,.9,1,1):room==='arena'?new Color4(.32,.23,.42,1):new Color4(.97,.81,.92,1);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
 $('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
@@ -755,7 +757,7 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(room==='street'){miniGames.start(i===0?'snack':i===1?'skate':'volley');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
+function perform(i:number){if(room==='street'){if(i===2){streetVolley?.start();return;}miniGames.start(i===0?'snack':'skate');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
 if(room==='arena'){
  if(i===0){
   if(concertActive){toast('🎤 ¡Ya estás dando un gran concierto!');return;}
@@ -793,6 +795,14 @@ const miniGames=createMiniGames({
  },
  onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
 });
+streetVolley=createStreetVolley3D({
+ scene,canvas,camera,idol,street:groups.street,animate,toast,
+ onFinish:(won,playerScore,cpuScore,rally)=>{
+  const coins=won?125:40,xp=won?120:55;state.coins+=coins;gainXP(xp);state.happiness=num(state.happiness+(won?10:4));state.energy=num(state.energy-3);
+  render();save();reward(won?'🏆 +'+coins+' ★ · +'+xp+' XP':'🏐 +'+coins+' ★ · +'+xp+' XP');
+  toast((won?'¡Daniela gana ':'Partido terminado ')+playerScore+'-'+cpuScore+' · rally '+rally);
+ }
+});
 document.querySelectorAll<HTMLButtonElement>('[data-makeup]').forEach(button=>button.addEventListener('click',()=>{
  const kind=button.dataset.makeup as MakeupTool|undefined;if(!kind)return;
  if(kind==='lashes')makeupSelection.lashes=(makeupSelection.lashes+1)%lashNames.length;
@@ -819,12 +829,12 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
-showRoom('bedroom');fashion();render();updateNeedAlerts();
+showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();updateNeedAlerts();
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
  // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.
  if(document.hidden||miniGames.isActive())return;
- const now=performance.now();
+ const now=performance.now();streetVolley?.tick(now);
  // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
  if(now-performanceCheckAt>7500&&qualityMode!=='high'){
   performanceCheckAt=now;const fps=engine.getFps();
