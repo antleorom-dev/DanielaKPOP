@@ -436,6 +436,7 @@ const lashNames=['Natural','Doll','Cat eye','Drama'],mascaraNames=['Ciruela','Be
 const mascaraHex=['#46305a','#5c304f','#664837','#4e4c91','#274d62'],lipHex=['#b95e89','#ed749d','#b44966','#8c62b5','#ef927b','#c74d91'],blushHex=['#f7a9b8','#f4b092','#ec81a7','#c797dc','#f0a0ba','#ffd0c4'];
 type MakeupTool='lashes'|'mascara'|'lip'|'blush';
 let activeMakeupTool:MakeupTool|null=null,makeupPainting=false;
+const makeupToolGhost=document.createElement('div');makeupToolGhost.className='makeup-tool-ghost';makeupToolGhost.setAttribute('aria-hidden','true');document.querySelector('#app')?.append(makeupToolGhost);
 const makeupSelection:{lashes:number;mascara:number;lip:number;blush:number}={lashes:state.makeupLashes,mascara:state.makeupMascara,lip:state.makeupLip,blush:state.makeupBlush};
 function applyMakeup(){
  const lashStyle=state.makeupLashes%lashNames.length;
@@ -484,10 +485,12 @@ function applyMakeupStroke(x:number,y:number){
  return false;
 }
 function enterMakeupMode(tool:MakeupTool){
- activeMakeupTool=tool;camera.detachControl();camera.alpha=-Math.PI/2;camera.beta=1.26;camera.radius=4.55;camera.target.set(0,2.55,-.3);renderMakeupPanel();
+ activeMakeupTool=tool;camera.detachControl();camera.alpha=-Math.PI/2;camera.beta=1.26;camera.radius=4.55;camera.target.set(0,2.55,-.3);
+ makeupToolGhost.textContent=tool==='lip'?'💄':tool==='blush'?'🖌️':tool==='mascara'?'🪄':'👁️';
+ renderMakeupPanel();
 }
 function exitMakeupMode(resetCamera=true){
- activeMakeupTool=null;makeupPainting=false;camera.attachControl(canvas,true);
+ activeMakeupTool=null;makeupPainting=false;makeupToolGhost.classList.remove('visible');camera.attachControl(canvas,true);
  if(resetCamera){camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=7.8;camera.target.set(0,1.9,-.35);}
  renderMakeupPanel();
 }
@@ -564,7 +567,7 @@ $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
 function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetVolley?.isActive()&&next!=='street')streetVolley.stop();if(room==='closet'&&next!=='closet')exitMakeupMode(false);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
-const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);
+const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);orbs.forEach(o=>o.setEnabled(indoors));
 scene.clearColor=room==='street'?new Color4(.69,.9,1,1):room==='arena'?new Color4(.32,.23,.42,1):new Color4(.97,.81,.92,1);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
@@ -797,10 +800,10 @@ else if((room==='stage'&&i===6)||(room==='arena'&&i===0))sfx('cheer');
 if(room==='stage'){if(i===6)startConcert('tiktok');else if(concertActive)socialBoost(a.move==='sing'?'sing':'dance');}else if(room==='arena'&&concertActive)socialBoost(a.move==='sing'?'sing':'dance');
 const outfitNames=['Fresa pop','Princesa lavanda','Hoodie mint','Peto melocotón','Idol dorada','Sporty blue','Ballet rosa','Retro disco'],hairNames=['Coletas chocolate','Coletas altas','Bob lavanda','Melena miel','Moños espaciales','Coleta lateral','Trenzas violetas','Recogido elegante'],shoeNames=['Zapato clásico','Sneakers sport','Botines','High-top mint','Plataforma idol','Botas de concierto'];
 toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':room==='closet'&&i===2?shoeNames[state.shoe]+' 👟':a.message);
-reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound((room==='stage'||room==='arena')?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
+reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));if(room!=='kitchen')sound((room==='stage'||room==='arena')?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
-canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
+canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||activeMakeupTool||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 const miniGames=createMiniGames({
  onReward:({score,coins,xp,kind})=>{
   state.coins+=coins;gainXP(xp);
@@ -826,9 +829,9 @@ document.querySelectorAll<HTMLButtonElement>('[data-makeup]').forEach(button=>bu
  enterMakeupMode(kind);renderMakeupPanel();sound([659,784]);
 }));
 document.querySelector<HTMLButtonElement>('#makeup-done')?.addEventListener('click',()=>{exitMakeupMode();toast('💄 ¡Maquillaje listo!');animate('giggle',1.2);});
-canvas.addEventListener('pointerdown',e=>{if(room==='closet'&&activeMakeupTool){makeupPainting=true;canvas.setPointerCapture(e.pointerId);if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();sound([740,880]);}}},{capture:true});
-canvas.addEventListener('pointermove',e=>{if(makeupPainting&&activeMakeupTool){if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();}}},{capture:true});
-const stopMakeupPaint=(e:PointerEvent)=>{if(makeupPainting){makeupPainting=false;state.happiness=num(state.happiness+1);render();save();try{canvas.releasePointerCapture(e.pointerId);}catch{}}};
+canvas.addEventListener('pointerdown',e=>{if(room==='closet'&&activeMakeupTool){makeupPainting=true;canvas.setPointerCapture(e.pointerId);makeupToolGhost.classList.add('visible');makeupToolGhost.style.left=e.clientX+'px';makeupToolGhost.style.top=e.clientY+'px';if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();sound([740,880]);}}},{capture:true});
+canvas.addEventListener('pointermove',e=>{if(makeupPainting&&activeMakeupTool){makeupToolGhost.style.left=e.clientX+'px';makeupToolGhost.style.top=e.clientY+'px';if(applyMakeupStroke(e.clientX,e.clientY)){e.preventDefault();}}},{capture:true});
+const stopMakeupPaint=(e:PointerEvent)=>{if(makeupPainting){makeupPainting=false;makeupToolGhost.classList.remove('visible');state.happiness=num(state.happiness+1);render();save();try{canvas.releasePointerCapture(e.pointerId);}catch{}}};
 canvas.addEventListener('pointerup',stopMakeupPaint,{capture:true});canvas.addEventListener('pointercancel',stopMakeupPaint,{capture:true});
 for(const b of document.querySelectorAll<HTMLButtonElement>('[data-room]'))b.addEventListener('click',()=>{showRoom(b.dataset.room as Room);sound([659,784]);});
 $('#camera-reset').addEventListener('click',()=>{camera.alpha=-Math.PI/2;camera.beta=1.23;camera.radius=9.25;camera.target.set(0,1.8,-.35);toast('¡Cámara centrada! 📷');});
