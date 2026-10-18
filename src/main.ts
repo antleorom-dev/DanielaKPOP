@@ -203,6 +203,36 @@ box('outfit inspiration frame',1.25,1.35,.12,1.1,3.85,5.88,gold,closet);
 box('outfit inspiration print',1.04,1.15,.13,1.1,3.85,5.77,pink,closet);
 star(1.1,3.9,5.68,.48,white,closet);
 for(const decoration of scene.meshes.slice(decorMeshStart))decoration.isPickable=false;
+// A separate low-poly stadium, intentionally light: no new downloads or textures.
+const arenaRoot=groups.arena;
+const stadiumAudience:{head:Mesh;phase:number;originalY:number}[]=[];
+const crowdColors=[pink,lilac,mint,blue,gold,white];
+box('arena main podium',9,.58,5.2,0,.26,-.65,purple,arenaRoot);
+box('arena luminous runway',3,.09,2.15,0,.6,-3.15,lilac,arenaRoot);
+for(const x of [-4.48,4.48])for(let i=0;i<4;i++)ball('arena podium light',.15,x,.63,-2.4+i*1.15,i%2?pink:gold,arenaRoot);
+box('arena backdrop',12,5.4,.24,0,2.85,5.72,purple,arenaRoot);
+box('arena fan banner',5.9,1.25,.15,0,4.48,5.5,pink,arenaRoot);
+for(let i=0;i<14;i++)star(-5.35+i*.82,5.06,5.38,.17,i%2?gold:mint,arenaRoot);
+for(const x of [-5.7,5.7]){
+ box('arena stage tower',.72,4.45,.85,x,2.35,4.42,stageMat,arenaRoot);
+ for(let i=0;i<6;i++)ball('arena neon bulb',.26,x,.73+i*.59,3.97,i%2?lilac:gold,arenaRoot);
+}
+for(let row=0;row<3;row++){
+ const count=12+row*4;
+ for(let i=0;i<count;i++){
+  const x=(i-(count-1)/2)*(.58-row*.035);
+  const y=.95+row*.61;
+  const z=4.5+row*.52;
+  const color=crowdColors[(i+row*3)%crowdColors.length];
+  const head=ball('arena cheering fan',.33,x,y,z,color,arenaRoot);
+  const torso=box('arena fan shirt',.29,.32,.2,x,y-.31,z,color,arenaRoot);
+  head.isPickable=false;torso.isPickable=false;
+  stadiumAudience.push({head,phase:i*.55+row*1.7,originalY:y});
+ }
+}
+for(const z of [1.4,2.65,3.9])for(const x of [-3.9,3.9]){
+ const beam=cyl('arena concert spotlight',.24,.48,2.35,x,2.2,z,lilac,arenaRoot);beam.visibility=.27;beam.isPickable=false;
+}
 // Procedural animated 3D K-pop idol
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
