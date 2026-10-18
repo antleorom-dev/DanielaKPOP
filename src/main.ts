@@ -9,9 +9,9 @@ import {createStreetVolley3D} from './street-volley';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
-type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;makeupLashes:number;makeupMascara:number;makeupLip:number;makeupBlush:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
+type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;shoe:number;makeupLashes:number;makeupMascara:number;makeupLip:number;makeupBlush:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
-const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,makeupLashes:0,makeupMascara:0,makeupLip:0,makeupBlush:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
+const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,shoe:0,makeupLashes:0,makeupMascara:0,makeupLip:0,makeupBlush:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
 let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};
  if(old.arenaMilestones===undefined){state.arenaMilestones=Math.floor(state.followers/1000);state.arenaTickets=state.arenaMilestones;}
@@ -63,6 +63,7 @@ act('🏐','Volley CPU','Daniela vs CPU · primero a 7',['#ffd17d','#f49cc8'],'v
 closet:{title:'Fashion room',kicker:'✦ DRESS LIKE A STAR ✦',sub:'Cada look cuenta una historia',accent:'#f7a7da',actions:[
 act('👗','Nuevo look','Cambiar ropa',['#ffb2dc','#e989c6'],'spin',{happiness:7},0,8,'¡Nuevo outfit! 🎀'),
 act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0,8,'¡Nuevo peinado! 💜'),
+act('👟','Zapatos','Sneakers, botines y botas',['#a9d9ff','#d79aed'],'spin',{happiness:5},0,7,'¡Zapatos nuevos! 👟'),
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
@@ -317,12 +318,22 @@ for(let i=0;i<7;i++)star(-4.8+i*1.6,4.9+(i%2)*.18,8.3,.32,i%2?pink:gold,streetRo
 const idol=new TransformNode('Daniela',scene);idol.position.set(0,0,-1.33);
 const body=new TransformNode('animated body',scene);body.parent=idol;
 const shadow=cyl('contact shadow',1.6,1.6,.024,0,.015,0,mat('shadow','#d2a2ce'),idol);shadow.visibility=.27;
-const legs:TransformNode[]=[];
+const legs:TransformNode[]=[];const baseShoes:Mesh[]=[];const sockMeshes:Mesh[]=[];
 for(const side of [-1,1]){
  const joint=new TransformNode('animated leg hip',scene);joint.parent=body;joint.position.set(side*.34,.86,0);legs.push(joint);
- ball('shoe',.43,side*.03,-.69,-.14,white,joint).scaling.set(1.1,.5,1.33);
+ const shoe=ball('classic shoe',.43,side*.03,-.69,-.14,white,joint);shoe.scaling.set(1.1,.5,1.33);baseShoes.push(shoe);
  ball('leg',.43,0,-.27,0,skin,joint).scaling.y=1.15;
- cyl('sock',.41,.41,.3,0,-.53,0,trim,joint);
+ sockMeshes.push(cyl('sock',.41,.41,.3,0,-.53,0,trim,joint));
+}
+// Real footwear silhouettes: classic, sport sneaker, ankle boot, high-top, platform and concert boot.
+const shoeVariants:TransformNode[][]=Array.from({length:6},()=>[]);
+for(let style=1;style<6;style++)for(const [index,joint] of legs.entries()){
+ const side=index===0?-1:1,root=new TransformNode('shoe style '+style+' side '+side,scene);root.parent=joint;shoeVariants[style].push(root);
+ if(style===1){const upper=ball('sport sneaker upper',.47,side*.03,-.68,-.15,white,root);upper.scaling.set(1.22,.48,1.48);box('sport sneaker sole',.54,.09,.68,side*.03,-.84,-.1,lilac,root);box('sport stripe',.06,.08,.42,side*.18,-.67,-.49,pink,root);}
+ if(style===2){const boot=ball('ankle boot',.5,side*.02,-.59,-.09,purple,root);boot.scaling.set(1.03,.8,1.25);box('ankle boot sole',.52,.1,.62,side*.02,-.84,-.08,dark,root);}
+ if(style===3){const high=ball('high top sneaker',.49,side*.02,-.56,-.1,mint,root);high.scaling.set(1.05,.95,1.28);box('high top sole',.55,.1,.64,side*.02,-.84,-.08,white,root);for(let j=0;j<3;j++)box('high top lace',.29,.025,.035,side*.02,-.54+j*.09,-.39,white,root);}
+ if(style===4){const plat=ball('platform shoe',.48,side*.02,-.69,-.11,pink,root);plat.scaling.set(1.18,.5,1.38);box('platform sole',.56,.18,.68,side*.02,-.86,-.07,white,root);ball('platform heart',.11,side*.12,-.68,-.47,gold,root);}
+ if(style===5){const tall=ball('concert boot',.48,side*.02,-.47,-.07,lilac,root);tall.scaling.set(1.05,1.28,1.2);box('concert boot sole',.54,.11,.64,side*.02,-.84,-.05,dark,root);for(let j=0;j<3;j++)ball('boot sparkle',.07,side*.13,-.31-j*.16,-.42,gold,root);}
 }
 ball('shirt',1.24,0,1.54,0,trim,body).scaling.set(.86,.9,.72);
 const dress=cyl('dress',.98,1.53,.93,0,1,0,dressColors[state.outfit%dressColors.length],body);
@@ -414,6 +425,9 @@ function fashion(){
  fashionOutfits.forEach((variant,i)=>variant.setEnabled(i===outfit));
  fashionHair.forEach((variant,i)=>variant.setEnabled(i===hairStyle));
  twinTails.forEach(tail=>tail.setEnabled([0,1,4,6].includes(hairStyle)));
+ const shoeStyle=state.shoe%6;baseShoes.forEach(shoe=>shoe.setEnabled(shoeStyle===0));
+ for(let style=1;style<6;style++)shoeVariants[style].forEach(root=>root.setEnabled(shoeStyle===style));
+ sockMeshes.forEach(sock=>sock.setEnabled(shoeStyle!==5));
 }
 const lashNames=['Natural','Doll','Cat eye','Drama'],mascaraNames=['Ciruela','Berry','Brown','Violeta','Azul noche'],lipNames=['Rosa','Candy','Cereza','Lavanda','Coral','Frambuesa'],blushNames=['Melocotón','Peach','Rose','Lilac','Berry','Soft nude'];
 const mascaraHex=['#46305a','#5c304f','#664837','#4e4c91','#274d62'],lipHex=['#b95e89','#ed749d','#b44966','#8c62b5','#ef927b','#c74d91'],blushHex=['#f7a9b8','#f4b092','#ec81a7','#c797dc','#f0a0ba','#ffd0c4'];
@@ -716,6 +730,7 @@ if(room==='arena'){
 if((room==='stage'||room==='arena')&&state.energy<5){toast('¡Daniela está agotada! Descansa un poquito 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
+if(room==='closet'&&i===2)state.shoe=(state.shoe+1)%6;
 fashion();for(const [need,delta] of Object.entries(a.effect) as [Need,number][])state[need]=num(state[need]+delta);
 state.coins=Math.max(0,state.coins+a.coins);gainXP(a.xp);animate(a.move);
 if(room==='kitchen')sfx(a.move==='drink'?'drink':'eat');
@@ -723,8 +738,8 @@ else if(a.move==='sleep')sfx('sleep');
 else if(room==='bathroom')sfx('wash');
 else if((room==='stage'&&i===6)||(room==='arena'&&i===0))sfx('cheer');
 if(room==='stage'){if(i===6)startConcert('tiktok');else if(concertActive)socialBoost(a.move==='sing'?'sing':'dance');}else if(room==='arena'&&concertActive)socialBoost(a.move==='sing'?'sing':'dance');
-const outfitNames=['Fresa pop','Princesa lavanda','Hoodie mint','Peto melocotón','Idol dorada','Sporty blue','Ballet rosa','Retro disco'],hairNames=['Coletas chocolate','Coletas altas','Bob lavanda','Melena miel','Moños espaciales','Coleta lateral','Trenzas violetas','Recogido elegante'];
-toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':a.message);
+const outfitNames=['Fresa pop','Princesa lavanda','Hoodie mint','Peto melocotón','Idol dorada','Sporty blue','Ballet rosa','Retro disco'],hairNames=['Coletas chocolate','Coletas altas','Bob lavanda','Melena miel','Moños espaciales','Coleta lateral','Trenzas violetas','Recogido elegante'],shoeNames=['Zapato clásico','Sneakers sport','Botines','High-top mint','Plataforma idol','Botas de concierto'];
+toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':room==='closet'&&i===2?shoeNames[state.shoe]+' 👟':a.message);
 reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound((room==='stage'||room==='arena')?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
