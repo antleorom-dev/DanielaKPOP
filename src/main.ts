@@ -598,7 +598,7 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetVolley?.isActive()&&next!=='street')streetVolley.stop();if(room==='closet'&&next!=='closet'&&activeMakeupTool)exitMakeupMode(true);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetVolley?.isActive()&&next!=='street')streetVolley.stop();if(room==='closet'&&next!=='closet'&&activeMakeupTool)exitMakeupMode(true);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);fashion();
 const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);orbs.forEach(o=>o.setEnabled(indoors));
 scene.clearColor=room==='street'?new Color4(.69,.9,1,1):room==='arena'?new Color4(.32,.23,.42,1):new Color4(.97,.81,.92,1);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
@@ -905,7 +905,12 @@ engine.runRenderLoop(()=>{
  const isVolley=move==='volley';
  const singing=move==='sing'&&(room==='stage'||room==='arena');
  microphone.setEnabled(singing);
- if(singing){const micIn=Math.min(1,e/.34);microphone.scaling.setAll(.15+.85*micIn);}
+ if(singing){
+  const micIn=Math.min(1,e/.34);
+  microphone.scaling.setAll(.2+.8*micIn);
+  microphone.position.x=sin(a*2.2)*.025;microphone.position.y=1.61+sin(a*3.2)*.018;microphone.position.z=-.86;
+  microphone.rotation.z=sin(a*2.4)*.035;microphone.rotation.x=.04+sin(a*2.7)*.018;
+ }
  // Each choreography uses its own weight shift, bounce, turns, arms and steps.
  body.position.x=dance?move==='dance2'?sin(a*4.2)*.19+(popPhrase===2?.10:0):move==='dance3'?sin(a*2.6)*.15:move==='dance4'?sin(a*5.4)*.22:move==='dance5'?sin(a*3.1)*.25:sin(a*beat*.5)*.12:0;
  body.position.y=dance?(move==='dance2'?abs(sin(a*9))*.27:move==='dance4'?abs(step)*.13:move==='dance3'?abs(sin(a*5))*.13:abs(b)*.17):
@@ -932,7 +937,7 @@ engine.runRenderLoop(()=>{
  else if(move==='dance3'){if(cutePhrase===0){left=-.72+cuteBeat*.22;right=.72-cuteBeat*.22;leftX=.48;rightX=-.48;}else if(cutePhrase===1){left=-1.5;right=1.5;leftX=.18;rightX=-.18;}else if(cutePhrase===2){left=-.22+abs(cuteBeat)*.48;right=.22-abs(cuteBeat)*.48;leftX=.58;rightX=-.58;}else{left=-1.02+cuteBeat*.25;right=1.02-cuteBeat*.25;leftX=.35;rightX=-.35;}}
  else if(move==='dance4'){if(hipPhrase===0){left=-.25+hipBeat*.9;right=.25+cos(a*10.8)*.9;leftX=-.55;rightX=.55;}else if(hipPhrase===1){left=-1.7+hipBeat*.18;right=-.55;leftX=-.22;rightX=.5;}else if(hipPhrase===2){left=.55;right=1.7-hipBeat*.18;leftX=-.5;rightX=.22;}else{left=-.65+hipBeat*.55;right=.65-hipBeat*.55;leftX=-.62;rightX=.62;}}
  else if(move==='dance5'){if(discoPhrase===0){left=-2.2;right=.35+discoBeat*.18;}else if(discoPhrase===1){left=-.35;right=2.2;}else if(discoPhrase===2){left=-1.25+discoBeat*.38;right=1.25-discoBeat*.38;}else{left=-2.05+abs(discoBeat)*.55;right=2.05-abs(discoBeat)*.55;}leftX=.17;rightX=-.17;}
- else if(move==='sing'){const micLift=Math.min(1,a/.46);left=-.34+sin(a*3)*.22;right=-.08-1.62*micLift+sin(a*6)*.1;rightX=-.19*micLift;}
+ else if(move==='sing'){const micLift=Math.min(1,a/.38);left=.86+sin(a*2.5)*.04;right=-.86-sin(a*2.5)*.04;leftX=.52*micLift;rightX=.52*micLift;}
  else if(isVolley){left=-1.72+sin(a*11)*.32;right=1.72-sin(a*11)*.32;leftX=-.16;rightX=-.16;}
  else if(move==='laugh'){left=-1.05+sin(a*13)*.19;right=1.05-sin(a*13)*.19;}
  else if(move==='giggle'){left=-.5+sin(a*9)*.15;right=.5-sin(a*9)*.15;}
@@ -944,8 +949,8 @@ engine.runRenderLoop(()=>{
  const gripUp=Math.max(0,Math.min(1,(a-.12)/.69));
  const gripDown=Math.max(0,Math.min(1,(a-2.5)/.57));
  const bringToMouth=gripUp*(1-gripDown);
- arms[0].rotation.z=left;arms[0].rotation.x=leftX;
- arms[1].position.z=isEating?-.43*bringToMouth:0;
+ arms[0].rotation.z=left;arms[0].rotation.x=leftX;arms[0].position.z=singing?-.22:0;
+ arms[1].position.z=isEating?-.43*bringToMouth:singing?-.22:0;
  arms[1].rotation.z=isEating?.08-2.44*bringToMouth+(a>1&&a<2.5?sin(a*12)*.045:0):right;
  arms[1].rotation.x=isEating?-.15*bringToMouth:rightX;
  head.rotation.z=move==='laugh'?sin(a*11)*.15:move==='giggle'?sin(a*9)*.08:
