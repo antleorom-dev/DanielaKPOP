@@ -67,3 +67,10 @@
 #drag-ghost.over-target{filter:drop-shadow(0 0 13px #fff) drop-shadow(0 0 20px #ff79c6);animation:ghost-target .28s ease-in-out infinite alternate}
 @keyframes ghost-target{to{transform:translate(-50%,-50%) scale(1.28) rotate(-7deg)}}
 @media(prefers-reduced-motion:reduce){#drag-ghost.over-target{animation:none;transform:translate(-50%,-50%) scale(1.12)}}
+
+@media (orientation:landscape) and (max-height:600px){
+ #activity-tools{bottom:91px;width:min(72vw,520px);gap:4px}
+ #activity-tools button{padding:5px 10px;border-radius:12px;font-size:8px}
+ #activity-tools .wash-hint{padding:4px 7px;border-radius:11px;font-size:8px;max-width:42vw}
+ #drag-ghost{font-size:42px}
+}
