@@ -346,13 +346,13 @@ for(const side of [-1,1]){
  ball('dress star',.09,side*.30,.9,-.62,gold,body).scaling.set(.7,.9,.36);
 }
 const arms:TransformNode[]=[];const sleeves:Mesh[]=[];
-for(const s of [-1,1]){const pivot=new TransformNode('arm pivot',scene);pivot.parent=body;pivot.position.set(s*.67,1.79,0);arms.push(pivot);sleeves.push(ball('puff sleeve',.46,s*.13,-.18,0,dressColors[state.outfit%dressColors.length],pivot));ball('arm',.4,s*.2,-.43,0,skin,pivot).scaling.y=1.45;ball('hand',.36,s*.2,-.72,0,skin,pivot);}
-const microphone=new TransformNode('real stage microphone',scene);microphone.parent=arms[1];
+for(const s of [-1,1]){const pivot=new TransformNode('arm pivot',scene);pivot.parent=body;pivot.position.set(s*.67,1.79,0);arms.push(pivot);sleeves.push(ball('puff sleeve',.44,s*.13,-.18,0,dressColors[state.outfit%dressColors.length],pivot));ball('arm',.36,s*.19,-.43,0,skin,pivot).scaling.y=1.5;const hand=ball('soft hand',.31,s*.19,-.72,0,skin,pivot);hand.scaling.set(1.02,.94,.96);}
+const microphone=new TransformNode('two hand stage microphone',scene);microphone.parent=body;microphone.position.set(0,1.62,-.84);
 const micMetal=mat('microphone metal','#d9d8e4'),micBlack=mat('microphone black','#2d2637'),micRing=mat('microphone accent','#f2a4d3');
-const micHandle=cyl('microphone black handle',.15,.18,.58,.2,-.86,-.25,micBlack,microphone);micHandle.rotation.z=.08;
-cyl('microphone grip ring',.18,.2,.08,.2,-1.12,-.25,micRing,microphone);
-const micGrille=ball('microphone silver grille',.29,.2,-1.22,-.25,micMetal,microphone);micGrille.scaling.set(1,1.05,.92);
-for(let i=0;i<3;i++){const grille=ring('microphone grille line',.24+i*.018,.008,.2,-1.22+i*.015,-.25,dark,microphone);grille.rotation.x=Math.PI/2;}
+cyl('microphone black handle',.15,.18,.68,0,.08,0,micBlack,microphone);
+cyl('microphone grip ring',.19,.2,.07,0,.33,0,micRing,microphone);
+const micGrille=ball('microphone silver grille',.31,0,.5,0,micMetal,microphone);micGrille.scaling.set(1,1.06,.94);
+for(let i=0;i<3;i++){const grille=ring('microphone grille line',.25+i*.018,.008,0,.5+i*.014,0,dark,microphone);grille.rotation.x=Math.PI/2;}
 microphone.setEnabled(false);
 const head=new TransformNode('head',scene);head.parent=body;head.position.set(0,2.56,0);
 ball('face',1.65,0,0,-.055,skin,head).scaling.set(.97,1.03,.89);
@@ -428,6 +428,26 @@ const cheek=ball('cheek makeup',.27,s*.51,-.30,-.79,blush,head);cheek.scaling.se
 const mouth=ball('smile',.18,0,-.41,-.79,lipMaterials[0],head);mouth.scaling.set(1,.42,.27);const laughingMouth=ball('laughing mouth',.22,0,-.41,-.8,dark,head);laughingMouth.scaling.set(.88,.72,.32);laughingMouth.setEnabled(false);ball('nose',.09,0,-.25,-.817,blush,head).scaling.set(.66,.6,.3);
 const bow=new TransformNode('hair bow',scene);bow.parent=head;bow.position.set(.57,.91,-.22);
 ball('bow left',.43,-.21,0,0,pink,bow).scaling.set(1,.6,.45);ball('bow right',.43,.21,0,0,pink,bow).scaling.set(1,.6,.45);ball('bow knot',.21,0,0,-.12,gold,bow);star(-.12,.95,-.6,.18,gold,head);
+// Softer facial and hair detail while preserving the original Daniela silhouette.
+const faceHighlight=ball('soft face highlight',.17,-.23,.31,-.805,white,head);faceHighlight.scaling.set(.72,.34,.08);faceHighlight.visibility=.24;
+for(const [x,y] of [[-.43,.55],[-.18,.67],[.13,.65]]){const shine=ball('hair shine strand',.18,x,y,-.69,white,head);shine.scaling.set(.55,.14,.08);shine.visibility=.2;}
+const lipHighlight=ball('lip gloss highlight',.065,-.025,-.385,-.825,white,head);lipHighlight.scaling.set(.72,.22,.08);lipHighlight.visibility=.48;
+// Dedicated bathroom look: one-piece swimsuit, ruffle, headband and shower sandals.
+const bathLook=new TransformNode('Daniela bath outfit',scene);bathLook.parent=body;
+const bathFabric=mat('bath swimsuit fabric','#9edee3'),bathAccent=mat('bath swimsuit accent','#f4acd3');
+const bathSuit=cyl('cute one piece swimsuit',.82,1.26,.92,0,1.18,0,bathFabric,bathLook);
+ring('swimsuit waist ruffle',1.23,.055,0,.88,0,white,bathLook);
+ball('swimsuit heart',.18,0,1.42,-.5,bathAccent,bathLook).scaling.set(1,.85,.22);
+for(const side of [-1,1])box('swimsuit strap',.13,.52,.08,side*.31,1.73,-.34,white,bathLook).rotation.z=side*.16;
+const bathHeadband=new TransformNode('bath headband',scene);bathHeadband.parent=head;
+ring('bath spa headband',1.42,.075,0,.43,.01,white,bathHeadband);ball('bath headband bow',.23,.5,.48,-.48,bathAccent,bathHeadband).scaling.set(1.4,.62,.35);
+const bathSandals:Mesh[]=[];
+for(const [i,joint] of legs.entries()){const side=i===0?-1:1;const sole=box('bath sandal',.48,.08,.58,side*.02,-.79,-.06,white,joint);bathSandals.push(sole);const strap=ball('bath sandal strap',.27,side*.02,-.72,-.32,bathAccent,joint);strap.scaling.set(1.2,.3,.35);bathSandals.push(strap);}
+function setBathLook(active:boolean){
+ bathLook.setEnabled(active);bathHeadband.setEnabled(active);bathSandals.forEach(m=>m.setEnabled(active));
+ dress.setEnabled(!active);sleeves.forEach(m=>m.setEnabled(!active));
+ if(active){fashionOutfits.forEach(root=>root.setEnabled(false));baseShoes.forEach(m=>m.setEnabled(false));for(let style=1;style<6;style++)shoeVariants[style].forEach(root=>root.setEnabled(false));sockMeshes.forEach(m=>m.setEnabled(false));}
+}
 function fashion(){
  const outfit=state.outfit%dressColors.length,hairStyle=state.hair%hairColors.length;
  dress.material=dressColors[outfit];sleeves.forEach(s=>s.material=dressColors[outfit]);
@@ -438,6 +458,7 @@ function fashion(){
  const shoeStyle=state.shoe%6;baseShoes.forEach(shoe=>shoe.setEnabled(shoeStyle===0));
  for(let style=1;style<6;style++)shoeVariants[style].forEach(root=>root.setEnabled(shoeStyle===style));
  sockMeshes.forEach(sock=>sock.setEnabled(shoeStyle!==5));
+ setBathLook(room==='bathroom');
 }
 const lashNames=['Natural','Doll','Cat eye','Drama'],mascaraNames=['Ciruela','Berry','Brown','Violeta','Azul noche'],lipNames=['Rosa','Candy','Cereza','Lavanda','Coral','Frambuesa'],blushNames=['Melocotón','Peach','Rose','Lilac','Berry','Soft nude'];
 const mascaraHex=['#46305a','#5c304f','#664837','#4e4c91','#274d62'],lipHex=['#b95e89','#ed749d','#b44966','#8c62b5','#ef927b','#c74d91'],blushHex=['#f7a9b8','#f4b092','#ec81a7','#c797dc','#f0a0ba','#ffd0c4'];
