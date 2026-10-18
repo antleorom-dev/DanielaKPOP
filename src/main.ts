@@ -1,4 +1,4 @@
-import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix} from '@babylonjs/core';
+import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,FxaaPostProcess,SharpenPostProcess} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
@@ -50,10 +50,19 @@ act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
-let renderScale=Math.max(1.25,devicePixelRatio/1.35);engine.setHardwareScalingLevel(renderScale);
+// WebGL-friendly alternative to DLSS: native-ish resolution, FXAA and mild sharpening.
+const qualityParam=new URLSearchParams(location.search).get('quality');
+const qualityMode=qualityParam==='high'||qualityParam==='performance'?qualityParam:'auto';
+const nativeScale=Math.max(1,Math.min(2.3,window.devicePixelRatio/1.6));
+const bestScale=qualityMode==='high'?1:qualityMode==='performance'?Math.max(1.55,nativeScale):nativeScale;
+let renderScale=bestScale;engine.setHardwareScalingLevel(renderScale);
 const scene=new Scene(engine);scene.skipPointerMovePicking=true;scene.clearColor=new Color4(.97,.81,.92,1);
 const camera=new ArcRotateCamera('camera',-Math.PI/2,1.23,9.25,new Vector3(0,1.8,-.35),scene);
 camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadiusLimit=12.5;camera.lowerBetaLimit=.85;camera.upperBetaLimit=1.48;camera.lowerAlphaLimit=-Math.PI/2-.48;camera.upperAlphaLimit=-Math.PI/2+.48;camera.wheelPrecision=48;camera.pinchPrecision=140;
+// FXAA smooths jagged silhouettes; a conservative sharpening pass restores fine details.
+const fxaa=new FxaaPostProcess('smooth silhouette FXAA',1,camera);
+const sharpen=new SharpenPostProcess('subtle image clarity',1,camera);
+sharpen.edgeAmount=.18;sharpen.colorAmount=1;
 const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.83;amb.diffuse=new Color3(1,.92,1);
 const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.47;
 const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=1.35;rim.diffuse=new Color3(1,.45,.76);rim.range=12;
@@ -485,11 +494,11 @@ engine.runRenderLoop(()=>{
  if(document.hidden)return;
  const now=performance.now();
  // Adaptive quality: prefer a stable concert to an expensive postprocessing effect.
- if(now-performanceCheckAt>7500){
+ if(now-performanceCheckAt>7500&&qualityMode!=='high'){
   performanceCheckAt=now;const fps=engine.getFps();
   if(fps<39){slowSamples++;fastSamples=0;}else if(fps>55){fastSamples++;slowSamples=0;}else{slowSamples=0;fastSamples=0;}
-  if(slowSamples>=2){const next=Math.min(2.25,renderScale+.22);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}glow.isEnabled=false;slowSamples=0;}
-  if(fastSamples>=3){const next=Math.max(1.25,renderScale-.12);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}if(fps>57)glow.isEnabled=true;fastSamples=0;}
+  if(slowSamples>=2){const next=Math.min(2.5,renderScale+.18);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}glow.isEnabled=false;sharpen.edgeAmount=.13;slowSamples=0;}
+  if(fastSamples>=3){const next=Math.max(bestScale,renderScale-.12);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}if(fps>57)glow.isEnabled=true;sharpen.edgeAmount=.18;fastSamples=0;}
  }
  tickSleep(now);const t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
