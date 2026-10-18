@@ -112,11 +112,11 @@ export function createMiniGames(options:Options){
   // A gap only hurts if Daniela lands on it; obstacles require a jump.
   const center=107;
   const overGap=obstacles.find(o=>o.kind==='gap'&&!o.collected&&center>o.x+9&&center<o.x+o.size-9);
-  if(grounded&&overGap){lives--;overGap.collected=true;jump(true);}
+  if(dt>0&&grounded&&overGap){lives--;overGap.collected=true;jump(true);}
   for(const o of obstacles){
    if(o.collected)continue;
-   if(o.kind==='cone'&&Math.abs(center-(o.x+16))<23&&skateY>-43){lives--;o.collected=true;}
-   if(o.kind==='coin'&&Math.abs(center-(o.x+15))<31&&skateY<-32){score+=25;o.collected=true;}
+   if(dt>0&&o.kind==='cone'&&Math.abs(center-(o.x+16))<23&&skateY>-43){lives--;o.collected=true;}
+   if(dt>0&&o.kind==='coin'&&Math.abs(center-(o.x+15))<31&&skateY<-32){score+=25;o.collected=true;}
   }
   score+=dt*3;
   drawDaniela(center,ground-57+skateY,.95,true);
