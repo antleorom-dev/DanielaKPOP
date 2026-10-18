@@ -371,8 +371,24 @@ function tickSleep(now:number){
  }
 }
 function save(){state.lastSaved=Date.now();try{localStorage.setItem('danielakpop-v2',JSON.stringify(state));}catch{}}
+function updateArenaUnlocks(){
+ const reached=Math.floor(state.followers/1000);
+ if(reached>state.arenaMilestones){
+  const newTickets=reached-state.arenaMilestones;
+  state.arenaTickets+=newTickets;state.arenaMilestones=reached;
+  toast('🎟️ ¡Has desbloqueado '+newTickets+' entrada(s) para un gran concierto!');
+  reward('¡NUEVO CONCIERTO! 🎟️');
+ }
+}
+function renderArenaPass(){
+ const el=document.querySelector<HTMLElement>('#arena-tickets');
+ if(el)el.textContent=String(state.arenaTickets);
+ const next=(state.arenaMilestones+1)*1000;
+ const progress=document.querySelector<HTMLElement>('#arena-progress');
+ if(progress)progress.textContent=state.arenaTickets>0?'🎟️ '+state.arenaTickets+' entrada(s) disponibles':'Próxima entrada: '+next.toLocaleString('es-ES')+' seguidores';
+}
 function render(){for(const n of ['hunger','happiness','energy','hygiene'] as Need[]){$('#'+n+'-value').textContent=num(state[n])+'%';$('#'+n+'-meter').style.width=num(state[n])+'%';}
-$('#coins').textContent=state.coins.toLocaleString('es-ES');$('#followers').textContent=state.followers.toLocaleString('es-ES');$('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
+renderArenaPass();$('#coins').textContent=state.coins.toLocaleString('es-ES');$('#followers').textContent=state.followers.toLocaleString('es-ES');$('#followers-live').textContent=concertActive&&liveFollowerGain?'+'+liveFollowerGain+' LIVE':'';
 $('#popularity').textContent=String(num(state.popularity));$('#popularity-bar').style.width=num(state.popularity)+'%';
 $('#popularity-label').textContent=state.popularity>=90?'SUPERSTAR GLOBAL':state.popularity>=70?'IDOL ESTRELLA':state.popularity>=45?'EN TENDENCIA':state.popularity>=20?'PROMESA K-POP':'NUEVA IDOL';
 $('#level').textContent=String(state.level);$('#xp').textContent=String(state.xp);$('#xp-target').textContent=String(state.level*100);$('#xp-bar').style.width=state.xp/(state.level*100)*100+'%';
@@ -381,12 +397,12 @@ const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimo
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
 $('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
-function showRoom(next:Room){if(room==='bedroom'&&next!=='bedroom')stopSleep();if(room==='stage'&&next!=='stage'&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
+function showRoom(next:Room){if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
 const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
-$('#action-label').textContent=room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
-wall.diffuseColor=Color3.FromHexString(room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
-floorMat.diffuseColor=Color3.FromHexString(room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
+$('#action-label').textContent=room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
+wall.diffuseColor=Color3.FromHexString(room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
+floorMat.diffuseColor=Color3.FromHexString(room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
 button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
@@ -507,8 +523,20 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();sfx('ball');return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
-if(room==='stage'&&state.energy<10){toast('¡Daniela está agotada! Llévala a descansar 💤');return;}
+function perform(i:number){if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
+if(room==='arena'){
+ if(i===0){
+  if(concertActive){toast('🎤 ¡Ya estás dando un gran concierto!');return;}
+  if(state.arenaTickets<=0){toast('🎟️ Necesitas alcanzar el siguiente hito de 1.000 seguidores para un concierto. ¡Haz Directos TikTok!');return;}
+  state.arenaTickets--;startConcert('arena');save();render();return;
+ }
+ if(i===5){
+  if(!concertActive){toast('🎟️ Primero comienza el espectáculo');return;}
+  endConcert(true);return;
+ }
+ if(!concertActive){toast('🎟️ Pulsa Empezar concierto antes de actuar');return;}
+}if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();sfx('ball');return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
+if((room==='stage'||room==='arena')&&state.energy<5){toast('¡Daniela está agotada! Descansa un poquito 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
 fashion();for(const [need,delta] of Object.entries(a.effect) as [Need,number][])state[need]=num(state[need]+delta);
@@ -516,11 +544,11 @@ state.coins=Math.max(0,state.coins+a.coins);gainXP(a.xp);animate(a.move);
 if(room==='kitchen')sfx(a.move==='drink'?'drink':'eat');
 else if(a.move==='sleep')sfx('sleep');
 else if(room==='bathroom')sfx('wash');
-else if(room==='stage'&&i===6)sfx('cheer');
-if(room==='stage'){if(i===6)startConcert();else if(concertActive)socialBoost(a.move==='sing'?'sing':'dance');}
+else if((room==='stage'&&i===6)||(room==='arena'&&i===0))sfx('cheer');
+if(room==='stage'){if(i===6)startConcert('tiktok');else if(concertActive)socialBoost(a.move==='sing'?'sing':'dance');}else if(room==='arena'&&concertActive)socialBoost(a.move==='sing'?'sing':'dance');
 const outfitNames=['Fresa pop','Princesa lavanda','Hoodie mint','Peto melocotón','Idol dorada','Sporty blue','Ballet rosa','Retro disco'],hairNames=['Coletas chocolate','Coletas altas','Bob lavanda','Melena miel','Moños espaciales','Coleta lateral','Trenzas violetas','Recogido elegante'];
 toast(room==='closet'&&i===0?outfitNames[state.outfit]+' 🎀':room==='closet'&&i===1?'Pelo '+hairNames[state.hair]+' 💜':a.message);
-reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound(room==='stage'?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
+reward('+'+a.xp+' XP '+(a.coins>0?'· +'+a.coins+' ★':''));sound((room==='stage'||room==='arena')?[523,659,784,1046]:[659,784,988]);render();updateNeedAlerts(true);save();play?.afterAction(room,i);}
 canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,time:performance.now()};});
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
