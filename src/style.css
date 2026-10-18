@@ -365,3 +365,171 @@ body.street-volley-playing .career-topbar,body.street-volley-playing .hud-left,b
  .makeup-controls button[data-makeup="eyes"]{grid-column:auto}
  .makeup-controls button.selected-tool::after{display:none}
 }
+
+
+/* v1.4 — keep Daniela unobstructed while interacting */
+.makeup-panel{
+ left:clamp(8px,1.8vw,20px);
+ bottom:170px;
+ width:154px;
+ padding:8px;
+ border-radius:17px;
+}
+.makeup-title{
+ display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+ margin:0 2px 6px;font-size:9px;line-height:1.05;
+}
+.makeup-title small{font-size:6.5px}
+.makeup-controls{grid-template-columns:1fr;gap:4px}
+.makeup-controls button{
+ min-height:38px;
+ grid-template-columns:25px 1fr;
+ padding:5px 6px;
+ border-radius:10px;
+ gap:0 4px;
+}
+.makeup-controls button>span{font-size:17px}
+.makeup-controls b{font-size:7.5px}
+.makeup-controls em{font-size:6.5px;padding-right:9px}
+.makeup-controls i{right:5px;top:5px;width:8px;height:8px}
+.makeup-controls button[data-makeup="eyes"]{grid-column:auto}
+.makeup-manual{
+ margin-top:5px;padding:5px;
+ display:grid;grid-template-columns:1fr;gap:5px;
+ border-radius:9px;
+}
+.makeup-manual span{font-size:6.5px;line-height:1.12}
+.makeup-manual button{width:100%;padding:5px 6px;font-size:7px}
+.makeup-controls button.selected-tool::after{
+ right:4px;bottom:3px;font-size:4.5px;padding:1px 3px;
+}
+body.makeup-active .makeup-panel{
+ background:linear-gradient(160deg,#fffaf8f1,#ffe9f7ee);
+ box-shadow:0 8px 22px #5f3c6c26;
+}
+body.makeup-active .care-panel{opacity:.72}
+body.makeup-active .scene-title{display:none}
+
+/* TikTok chat lives on the edges; the performer stays visible in the center. */
+.live-comments{
+ left:6px;
+ bottom:8px;
+ width:min(210px,31vw);
+ gap:4px;
+ pointer-events:none;
+}
+.live-comment{
+ min-height:0;
+ padding:4px 6px;
+ border-radius:10px;
+ background:#24162fc4;
+ gap:4px;
+}
+.live-avatar{
+ flex:0 0 19px;
+ width:19px;height:19px;
+ font-size:10px;
+}
+.live-comment-content{gap:1px}
+.live-comment-content b{font-size:7.5px;line-height:1.05}
+.live-comment-content>span{font-size:8px;line-height:1.08}
+.live-comment-icons{
+ margin-left:auto;
+ display:flex;
+ align-items:center;
+ white-space:nowrap;
+ font-size:8px;
+ letter-spacing:-2px;
+ opacity:.95;
+}
+.live-comment-heart{
+ margin-left:1px;
+ flex:0 0 auto;
+ font-size:9px;
+}
+.live-actions{
+ right:6px;
+ bottom:8px;
+ padding:7px 8px;
+ border-radius:13px;
+}
+.live-actions span{font-size:18px}
+.live-actions b{font-size:9px}
+
+@media(max-width:680px){
+ .makeup-panel{
+  left:max(6px,env(safe-area-inset-left));
+  top:42%;
+  bottom:auto;
+  transform:translateY(-32%);
+  width:126px;
+  padding:6px;
+  border-radius:15px;
+ }
+ .makeup-title{font-size:8px;margin-bottom:4px}
+ .makeup-title small{font-size:5.5px}
+ .makeup-controls{grid-template-columns:1fr;gap:3px}
+ .makeup-controls button,
+ .makeup-controls button[data-makeup="eyes"]{
+  min-height:34px;
+  grid-template-columns:22px 1fr;
+  padding:4px 5px;
+  border-radius:9px;
+ }
+ .makeup-controls button>span,
+ .makeup-controls button[data-makeup="eyes"]>span{font-size:15px}
+ .makeup-controls b{font-size:6.6px}
+ .makeup-controls em{font-size:5.7px}
+ .makeup-manual{margin-top:4px;padding:4px}
+ .makeup-manual span{font-size:5.6px}
+ .makeup-manual button{padding:4px;font-size:6px}
+ body.makeup-active .care-panel{opacity:.42}
+ 
+ .studio-live{inset:82px 6px 151px}
+ .live-comments{
+  left:4px;
+  bottom:5px;
+  width:min(142px,36vw);
+  gap:3px;
+ }
+ .live-comment{
+  padding:3px 4px;
+  border-radius:8px;
+  gap:3px;
+ }
+ .live-avatar{
+  flex-basis:16px;width:16px;height:16px;font-size:8px;
+ }
+ .live-comment-content b{font-size:6.5px}
+ .live-comment-content>span{font-size:7px;line-height:1.05}
+ .live-comment-icons{font-size:7px;letter-spacing:-2.5px}
+ .live-comment-heart{font-size:8px}
+ .live-actions{
+  right:4px;
+  bottom:5px;
+  padding:6px 7px;
+ }
+ .live-actions span{font-size:16px}
+ .live-actions b{font-size:8px}
+}
+
+@media(max-width:390px){
+ .makeup-panel{width:118px;top:43%}
+ .live-comments{width:min(132px,35vw)}
+ .live-comment-content>span{font-size:6.6px}
+}
+
+@media(orientation:landscape) and (max-height:600px){
+ .makeup-panel{
+  left:max(5px,env(safe-area-inset-left));
+  top:50%;bottom:auto;transform:translateY(-45%);
+  width:128px;padding:5px;
+ }
+ .makeup-controls{grid-template-columns:1fr}
+ .makeup-controls button[data-makeup="eyes"]{grid-column:auto}
+ .makeup-title small{display:none}
+ .makeup-manual span{display:none}
+ .makeup-manual{grid-template-columns:1fr}
+ .live-comments{width:min(160px,23vw);bottom:48px}
+ .live-actions{bottom:48px}
+}
