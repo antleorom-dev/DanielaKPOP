@@ -50,11 +50,11 @@ act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
-// WebGL-friendly alternative to DLSS: native-ish resolution, FXAA and mild sharpening.
+// Prioritize readable pixels on mobile: 1 means full CSS resolution, not device DPR.
+// Previous DPR/1.6 scaling made high-DPI phones render at almost half resolution.
 const qualityParam=new URLSearchParams(location.search).get('quality');
 const qualityMode=qualityParam==='high'||qualityParam==='performance'?qualityParam:'auto';
-const nativeScale=Math.max(1,Math.min(2.3,window.devicePixelRatio/1.6));
-const bestScale=qualityMode==='high'?1:qualityMode==='performance'?Math.max(1.55,nativeScale):nativeScale;
+const bestScale=qualityMode==='high'?.8:qualityMode==='performance'?1.35:1;
 let renderScale=bestScale;engine.setHardwareScalingLevel(renderScale);
 const scene=new Scene(engine);scene.skipPointerMovePicking=true;scene.clearColor=new Color4(.97,.81,.92,1);
 const camera=new ArcRotateCamera('camera',-Math.PI/2,1.23,9.25,new Vector3(0,1.8,-.35),scene);
@@ -62,14 +62,14 @@ camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadius
 // FXAA smooths jagged silhouettes; a conservative sharpening pass restores fine details.
 const fxaa=new FxaaPostProcess('smooth silhouette FXAA',1,camera);
 const sharpen=new SharpenPostProcess('subtle image clarity',1,camera);
-sharpen.edgeAmount=.18;sharpen.colorAmount=1;
-const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.83;amb.diffuse=new Color3(1,.92,1);
-const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.47;
-const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=1.35;rim.diffuse=new Color3(1,.45,.76);rim.range=12;
-const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.15;
+sharpen.edgeAmount=.07;sharpen.colorAmount=1;
+const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.62;amb.diffuse=new Color3(1,.94,1);
+const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.25;
+const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.4;rim.diffuse=new Color3(1,.55,.8);rim.range=9;
+const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.025;glow.isEnabled=false;
 function setSceneLighting(factor:number){
- const f=Math.max(.45,Math.min(1.55,factor));
- amb.intensity=.83*f;sun.intensity=.47*f;rim.intensity=1.35*f;
+ const f=Math.max(.55,Math.min(1.12,factor));
+ amb.intensity=.62*f;sun.intensity=.25*f;rim.intensity=.4*f;
 }
 setSceneLighting((readLayout().lighting??70)/70);
 function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e);return m;}
@@ -91,9 +91,13 @@ function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,bas
 const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene)};
 dressRooms(scene,groups);
 const bed=groups.bedroom;
-box('bed base',3.2,.48,1.85,3,.36,3.75,wood,bed);box('mattress',3.05,.32,1.72,3,.71,3.7,white,bed);box('blanket',3,.12,1.02,3,.92,3.44,lilac,bed);
-for(const x of [2.25,3.25])ball('pillow',.63,x,.94,4.14,white,bed).scaling.set(1.17,.37,.75);
-box('headboard',3.3,1.2,.18,3,.91,4.7,pink,bed);for(let i=0;i<3;i++)star(2.1+i*.65,2.1+(i%2)*.35,4.8,.27,gold,bed);
+// Bed faces the camera with its foot nearest us, pillows at the headboard.
+box('bed base',2.35,.48,3.35,3,.36,3.48,wood,bed);
+box('mattress',2.22,.32,3.14,3,.71,3.48,white,bed);
+box('blanket',2.18,.12,1.65,3,.92,2.9,lilac,bed);
+for(const x of [2.48,3.52])ball('pillow',.63,x,.98,4.58,white,bed).scaling.set(.95,.37,.8);
+box('headboard',2.55,1.2,.18,3,.91,5.25,pink,bed);
+for(let i=0;i<3;i++)star(2.35+i*.65,2.1+(i%2)*.35,5.34,.27,gold,bed);
 box('vanity',1.65,.19,1.05,-3.7,1.05,3.5,white,bed);for(const x of [-4.3,-3.1])box('vanity leg',.14,.95,.14,x,.52,3.5,lilac,bed);
 box('mirror frame',1.08,1.25,.09,-3.7,2,4.15,wood,bed);box('mirror glass',.88,1.06,.12,-3.7,2,4.03,blue,bed);
 box('poster frame',1.65,1.65,.12,0,3.65,6.07,white,bed);box('poster',1.46,1.45,.14,0,3.65,5.96,lilac,bed);star(0,3.65,5.85,.95,pink,bed);
@@ -142,7 +146,7 @@ cyl('bedside lamp base',.18,.26,.12,4.8,.79,2.25,gold,bed);
 cyl('bedside lamp shade',.62,.34,.48,4.8,1.09,2.25,trim,bed);
 box('bookshelf bedroom',2,.14,.55,-2.8,2.35,5.57,white,bed);
 for(let i=0;i<5;i++)box('bedroom storybook',.23,.42+(i%2)*.12,.3,-3.5+i*.33,2.62,5.46,bookColors[i%4],bed);
-for(const x of [2.25,3.75])ball('bed heart cushion',.46,x,1.12,3.3,pink,bed).scaling.set(1.15,.5,.75);
+for(const x of [2.55,3.45])ball('bed heart cushion',.35,x,1.1,4.12,pink,bed).scaling.set(.8,.4,.7);
 ball('sleepy moon decor',.56,-1.4,4.13,5.77,gold,bed).scaling.z=.25;
 box('dreams wall trim',2.8,.07,.1,3.1,3.96,5.78,white,bed);
 for(const x of [1.95,2.85,3.75])ball('dreams pearl',.18,x,3.96,5.67,pink,bed);
@@ -249,6 +253,7 @@ for(let style=0;style<8;style++){
 }
 const eyelids:Mesh[]=[];
 const eyeGlints:Mesh[]=[];
+const sleepingLashes:Mesh[]=[];
 const twinTails:Mesh[]=[];
 const eyeMeshes:Mesh[]=[];
 const eyeBaseX:number[]=[];
@@ -258,6 +263,10 @@ for(const s of [-1,1]){hair('side hair',.53,s*.78,-.25,-.08).scaling.set(.62,1.9
 ball('hair tie',.27,s*.87,.15,.02,pink,head);
 const eye=ball('big eye',.33,s*.33,-.08,-.755,dark,head);eye.scaling.set(.8,1.1,.25);eyeMeshes.push(eye);eyeBaseX.push(eye.position.x);eyeBaseY.push(eye.position.y);
 const lid=ball('soft eyelid',.35,s*.33,-.08,-.784,skin,head);lid.scaling.set(.83,.025,.25);lid.visibility=0;eyelids.push(lid);
+const lash=MeshBuilder.CreateLines('closed eye smile',{points:[
+ new Vector3(s*.33-.22,-.11,-.862),new Vector3(s*.33-.11,-.18,-.87),
+ new Vector3(s*.33+.04,-.19,-.87),new Vector3(s*.33+.22,-.1,-.862)
+]},scene);lash.parent=head;lash.color=Color3.FromHexString('#6b446d');lash.isVisible=false;sleepingLashes.push(lash);
 const glint=ball('eye light',.11,s*.33-.055,-.005,-.823,white,head);glint.scaling.z=.35;eyeGlints.push(glint);
  eyeGlints.push(ball('eye sparkle',.05,s*.33+.055,-.17,-.829,white,head));
 ball('cheek',.3,s*.62,-.31,-.68,blush,head).scaling.set(.85,.35,.2);
@@ -302,7 +311,7 @@ function tickSleep(now:number){
  const dt=Math.min(.07,Math.max(0,(now-sleepLast)/1000));sleepLast=now;
  if(sleepPhase==='walking'){
   const walk=smooth((now-sleepClock)/2400),lie=smooth((now-sleepClock-2400)/1400);
-  idol.position.set(3*walk,1.05*lie,-1.33+3.83*walk);idol.rotation.x=Math.PI*.5*lie;
+  idol.position.set(3*walk,1.05*lie,-1.33+4.13*walk);idol.rotation.x=Math.PI*.5*lie;
   idol.scaling.setAll(1-.4*lie);shadow.visibility=.27*(1-lie);
   camera.target.set(1.6*walk,1.8-.12*lie,-.35+2.15*walk);
   if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
@@ -315,7 +324,7 @@ function tickSleep(now:number){
   }
  }else{
   const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1700),r=1-walk;
-  idol.position.set(3*r,1.05*(1-stand),-1.33+3.83*r);idol.rotation.x=Math.PI*.5*(1-stand);
+  idol.position.set(3*r,1.05*(1-stand),-1.33+4.13*r);idol.rotation.x=Math.PI*.5*(1-stand);
   idol.scaling.setAll(1-.4*(1-stand));shadow.visibility=.27*stand;
   camera.target.set(1.6*r,1.8-.12*(1-stand),-.35+2.15*r);
   if(walk>=1){stopSleep();$('#scene-desc').textContent=rooms.bedroom.sub;render();}
@@ -418,11 +427,11 @@ function startConcert(){
  if(concertActive){socialBoost('sing');return;}
  concertActive=true;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1.2;lastLiveTick=performance.now();concertStartedAt=lastLiveTick;livePerformanceSeconds=0;
  $('#live-comments').replaceChildren();$('#live-reactions').replaceChildren();const live=$('#studio-live');live.classList.add('visible');live.setAttribute('aria-hidden','false');
- paintLiveStats();toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
+ void play?.startConcertMusic();paintLiveStats();toast('🔴 ¡Concierto EN DIRECTO! Baila y canta para crecer');reactionBubble('¡Vamos a darlo todo! 🎤💜',false,2300);
 }
 function endConcert(announce=true){
  if(!concertActive)return;
- concertActive=false;const eligible=performance.now()-concertStartedAt>=12000;
+ concertActive=false;play?.stopConcertMusic();const eligible=performance.now()-concertStartedAt>=12000;
  const gained=eligible?liveFollowerGain:0;
  const popGain=eligible?Math.max(0,Math.min(3,Math.floor((gained/180)+(liveViewers/1300)+(liveLikes/4200)))):0;
  const effort=Math.min(1,livePerformanceSeconds/35);
@@ -497,8 +506,8 @@ engine.runRenderLoop(()=>{
  if(now-performanceCheckAt>7500&&qualityMode!=='high'){
   performanceCheckAt=now;const fps=engine.getFps();
   if(fps<39){slowSamples++;fastSamples=0;}else if(fps>55){fastSamples++;slowSamples=0;}else{slowSamples=0;fastSamples=0;}
-  if(slowSamples>=2){const next=Math.min(2.5,renderScale+.18);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}glow.isEnabled=false;sharpen.edgeAmount=.13;slowSamples=0;}
-  if(fastSamples>=3){const next=Math.max(bestScale,renderScale-.12);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}if(fps>57)glow.isEnabled=true;sharpen.edgeAmount=.18;fastSamples=0;}
+  if(slowSamples>=2){const next=Math.min(qualityMode==='performance'?1.7:1.45,renderScale+.1);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}sharpen.edgeAmount=.06;slowSamples=0;}
+  if(fastSamples>=3){const next=Math.max(bestScale,renderScale-.1);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}sharpen.edgeAmount=.07;fastSamples=0;}
  }
  tickSleep(now);const t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
@@ -577,10 +586,11 @@ engine.runRenderLoop(()=>{
  // Soft eyelids and a short double-blink break up the mechanical 4-second loop.
  const phase=t%6.4;
  const blink=Math.max(0,1-Math.abs(phase-2.7)/.12,1-Math.abs(phase-2.94)/.09,1-Math.abs(phase-5.87)/.12);
- const close=move==='sleep'?1:blink;
+ const close=(sleepPhase==='resting'||(sleepPhase==='walking'&&now-sleepClock>2400)||move==='sleep')?1:blink;
  eyelids.forEach(lid=>{lid.visibility=close>.025?1:0;lid.scaling.y=.025+close*.94;});
- eyeMeshes.forEach(eye=>eye.scaling.y=(giggling?.27:isEating?.74:1.1)*(1-.94*close));
+ eyeMeshes.forEach(eye=>{eye.scaling.y=(giggling?.27:isEating?.74:1.1)*(1-.94*close);eye.visibility=close>.98?0:1;});
  eyeGlints.forEach(glint=>glint.visibility=1-close);
+ sleepingLashes.forEach(lash=>lash.isVisible=close>.98);
  // Lightweight secondary motion, driven by the same rhythm as the idle/dance.
  twinTails.forEach((tail,i)=>{
   const side=i===0?-1:1;
