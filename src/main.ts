@@ -50,28 +50,30 @@ act('🎀','Peinado','Cambiar pelo',['#bfaafb','#9f89ed'],'spin',{happiness:6},0
 act('📸','Selfie','+ 8 monedas',['#ffce91','#ff9cb8'],'wave',{happiness:9},8,12,'¡Una selfie preciosa! 📸')]}};
 const canvas=document.querySelector('#game') as HTMLCanvasElement;
 const engine=new Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:false});
-// Prioritize readable pixels on mobile: 1 means full CSS resolution, not device DPR.
-// Previous DPR/1.6 scaling made high-DPI phones render at almost half resolution.
+// Babylon hardware scaling is INVERSE pixel density: 1 = CSS pixels, 0.5 = 2x retina.
+// Mobile was rendering at 1 CSS pixel despite 2-3 physical pixels per CSS pixel.
 const qualityParam=new URLSearchParams(location.search).get('quality');
 const qualityMode=qualityParam==='high'||qualityParam==='performance'?qualityParam:'auto';
-const bestScale=qualityMode==='high'?.8:qualityMode==='performance'?1.35:1;
+const pixelRatio=Math.max(1,window.devicePixelRatio||1);
+const targetDensity=qualityMode==='high'?Math.min(pixelRatio,2.75):qualityMode==='performance'?Math.min(pixelRatio,1.3):Math.min(pixelRatio,2.1);
+const bestScale=1/targetDensity;
 let renderScale=bestScale;engine.setHardwareScalingLevel(renderScale);
 const scene=new Scene(engine);scene.skipPointerMovePicking=true;scene.clearColor=new Color4(.97,.81,.92,1);
 const camera=new ArcRotateCamera('camera',-Math.PI/2,1.23,9.25,new Vector3(0,1.8,-.35),scene);
 camera.attachControl(canvas,true);camera.lowerRadiusLimit=6.8;camera.upperRadiusLimit=12.5;camera.lowerBetaLimit=.85;camera.upperBetaLimit=1.48;camera.lowerAlphaLimit=-Math.PI/2-.48;camera.upperAlphaLimit=-Math.PI/2+.48;camera.wheelPrecision=48;camera.pinchPrecision=140;
 // Preserve crisp edges with the engine's native antialiasing (avoid FXAA blur).
 const sharpen=new SharpenPostProcess('subtle image clarity',1,camera);
-sharpen.edgeAmount=.07;sharpen.colorAmount=1;
-const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.62;amb.diffuse=new Color3(1,.94,1);
-const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.25;
-const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.4;rim.diffuse=new Color3(1,.55,.8);rim.range=9;
-const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.025;glow.isEnabled=false;
+sharpen.edgeAmount=.035;sharpen.colorAmount=1;
+const amb=new HemisphericLight('ambient',new Vector3(0,1,-.3),scene);amb.intensity=.5;amb.diffuse=new Color3(1,.95,1);
+const sun=new DirectionalLight('sun',new Vector3(-1.5,-4,1.5),scene);sun.intensity=.18;
+const rim=new PointLight('rim',new Vector3(2,4,1),scene);rim.intensity=.19;rim.diffuse=new Color3(1,.65,.85);rim.range=8;
+const glow=new GlowLayer('fairytale glow',scene);glow.intensity=.01;glow.isEnabled=false;
 function setSceneLighting(factor:number){
- const f=Math.max(.55,Math.min(1.12,factor));
- amb.intensity=.62*f;sun.intensity=.25*f;rim.intensity=.4*f;
+ const f=Math.max(.45,Math.min(1.05,factor));
+ amb.intensity=.5*f;sun.intensity=.18*f;rim.intensity=.19*f;
 }
 setSceneLighting((readLayout().lighting??70)/70);
-function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e);return m;}
+function mat(n:string,c:string,e?:string){const m=new StandardMaterial(n,scene);m.diffuseColor=Color3.FromHexString(c);m.specularColor=new Color3(.3,.23,.32);if(e)m.emissiveColor=Color3.FromHexString(e).scale(.1);return m;}
 const skin=mat('peach','#ffe3cb'),blush=mat('blush','#f7a9b8'),dark=mat('eyes','#46305a'),white=mat('white','#fff9ff'),trim=mat('cream','#fff7ee'),gold=mat('gold','#ffd277','#65401c'),pink=mat('shiny pink','#ffc5ed','#603b58');
 const hairColors=['#684a79','#d889a8','#a59acc','#c19c75','#57385c','#b4a7e4','#704b9b','#e0b9a3'].map((s,i)=>mat('hair'+i,s));
 const dressColors=['#f49ccb','#ae91ed','#8fdacc','#ffb38f','#ffdf8b','#7d9bdc','#f4a9ba','#b7a4df'].map((s,i)=>mat('dress'+i,s));
@@ -90,13 +92,13 @@ function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,bas
 const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene)};
 dressRooms(scene,groups);
 const bed=groups.bedroom;
-// Bed faces the camera with its foot nearest us, pillows at the headboard.
+// Pillows belong at the NEAR (low-Z) end; Daniela's head rotates toward -Z.
 box('bed base',2.35,.48,3.35,3,.36,3.48,wood,bed);
 box('mattress',2.22,.32,3.14,3,.71,3.48,white,bed);
-box('blanket',2.18,.12,1.65,3,.92,2.9,lilac,bed);
-for(const x of [2.48,3.52])ball('pillow',.63,x,.98,4.58,white,bed).scaling.set(.95,.37,.8);
-box('headboard',2.55,1.2,.18,3,.91,5.25,pink,bed);
-for(let i=0;i<3;i++)star(2.35+i*.65,2.1+(i%2)*.35,5.34,.27,gold,bed);
+box('blanket',2.18,.12,1.65,3,.92,4.08,lilac,bed);
+for(const x of [2.48,3.52])ball('pillow',.63,x,.98,2.3,white,bed).scaling.set(.95,.37,.8);
+box('headboard',2.55,1.2,.18,3,.91,1.68,pink,bed);
+for(let i=0;i<3;i++)star(2.35+i*.65,2.1+(i%2)*.35,1.56,.27,gold,bed);
 box('vanity',1.65,.19,1.05,-3.7,1.05,3.5,white,bed);for(const x of [-4.3,-3.1])box('vanity leg',.14,.95,.14,x,.52,3.5,lilac,bed);
 box('mirror frame',1.08,1.25,.09,-3.7,2,4.15,wood,bed);box('mirror glass',.88,1.06,.12,-3.7,2,4.03,blue,bed);
 box('poster frame',1.65,1.65,.12,0,3.65,6.07,white,bed);box('poster',1.46,1.45,.14,0,3.65,5.96,lilac,bed);star(0,3.65,5.85,.95,pink,bed);
@@ -310,7 +312,7 @@ function tickSleep(now:number){
  const dt=Math.min(.07,Math.max(0,(now-sleepLast)/1000));sleepLast=now;
  if(sleepPhase==='walking'){
   const walk=smooth((now-sleepClock)/2400),lie=smooth((now-sleepClock-2400)/1400);
-  idol.position.set(3*walk,1.05*lie,-1.33+4.13*walk);idol.rotation.x=Math.PI*.5*lie;
+  idol.position.set(3*walk,1.05*lie,-1.33+5.48*walk);idol.rotation.x=-Math.PI*.5*lie;
   idol.scaling.setAll(1-.4*lie);shadow.visibility=.27*(1-lie);
   camera.target.set(1.6*walk,1.8-.12*lie,-.35+2.15*walk);
   if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
@@ -323,7 +325,7 @@ function tickSleep(now:number){
   }
  }else{
   const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1700),r=1-walk;
-  idol.position.set(3*r,1.05*(1-stand),-1.33+4.13*r);idol.rotation.x=Math.PI*.5*(1-stand);
+  idol.position.set(3*r,1.05*(1-stand),-1.33+5.48*r);idol.rotation.x=-Math.PI*.5*(1-stand);
   idol.scaling.setAll(1-.4*(1-stand));shadow.visibility=.27*stand;
   camera.target.set(1.6*r,1.8-.12*(1-stand),-.35+2.15*r);
   if(walk>=1){stopSleep();$('#scene-desc').textContent=rooms.bedroom.sub;render();}
@@ -505,8 +507,8 @@ engine.runRenderLoop(()=>{
  if(now-performanceCheckAt>7500&&qualityMode!=='high'){
   performanceCheckAt=now;const fps=engine.getFps();
   if(fps<39){slowSamples++;fastSamples=0;}else if(fps>55){fastSamples++;slowSamples=0;}else{slowSamples=0;fastSamples=0;}
-  if(slowSamples>=2){const next=Math.min(qualityMode==='performance'?1.7:1.45,renderScale+.1);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}sharpen.edgeAmount=.06;slowSamples=0;}
-  if(fastSamples>=3){const next=Math.max(bestScale,renderScale-.1);if(next!==renderScale){renderScale=next;engine.setHardwareScalingLevel(renderScale);}sharpen.edgeAmount=.07;fastSamples=0;}
+  if(slowSamples>=2){const next=Math.min(bestScale*1.18,renderScale+.035);if(next>renderScale+.005){renderScale=next;engine.setHardwareScalingLevel(renderScale);}slowSamples=0;}
+  if(fastSamples>=3){const next=Math.max(bestScale,renderScale-.035);if(next<renderScale-.005){renderScale=next;engine.setHardwareScalingLevel(renderScale);}fastSamples=0;}
  }
  tickSleep(now);const t=now/1000,e=(now-started)/1000;
  if(e>duration&&move!=='idle')move='idle';
