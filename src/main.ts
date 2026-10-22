@@ -273,6 +273,7 @@ function refreshNameUI(){
  const care=document.querySelector<HTMLElement>('#care-idol-label');if(care)care.textContent='CUIDA A '+upper;
  const earnings=document.querySelector<HTMLElement>('#idol-earnings-label');if(earnings)earnings.textContent='GANANCIAS DE '+upper;
  const tutorial=document.querySelector<HTMLElement>('#tutorial-idol-copy');if(tutorial)tutorial.textContent='Da toquecitos a '+name+' para hacerla reír. ¡Prueba varias veces!';
+ const liveHandle=document.querySelector<HTMLElement>('#live-idol-handle');if(liveHandle)liveHandle.textContent='@'+name.toLocaleLowerCase('es-ES').replace(/\s+/g,'_');
  const mini=document.querySelector<HTMLElement>('#minigame-title');if(mini&&!mini.closest('.minigame-overlay:not([hidden])'))mini.textContent=name+' City';
  paintArenaSign();
 }
