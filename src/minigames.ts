@@ -2,7 +2,7 @@
 /** Two original, offline-friendly 2D street mini-games. No external assets or libraries. */
 export type MiniKind='snack'|'skate'|'volley';
 type Result={kind:MiniKind;score:number;coins:number;xp:number};
-type Options={onReward:(result:Result)=>void;onClose:()=>void};
+type Options={getName:()=>string;onReward:(result:Result)=>void;onClose:()=>void};
 type Falling={x:number;y:number;vy:number;emoji:string;good:boolean;size:number;spin:number};
 type Obstacle={x:number;kind:'gap'|'cone'|'coin'|'barrier'|'ramp'|'star';size:number;y?:number;collected?:boolean};
 type SnackEat={emoji:string;x:number;y:number;fromX:number;fromY:number;t:number};
@@ -160,7 +160,7 @@ export function createMiniGames(options:Options){
   drawDaniela(center,danielaY,.95,true);
   ctx.globalAlpha=1;
   if(skateShield>0){ctx.strokeStyle='#fff2a6';ctx.lineWidth=4;ctx.beginPath();ctx.arc(center,danielaY-16,52,0,Math.PI*2);ctx.stroke();text('✨',center+44,danielaY-65,16,'#fff');}
-  text('DANIELA CITY SKATE',W/2,42,19,'#fff');
+  text((options.getName()+' CITY SKATE').toUpperCase(),W/2,42,19,'#fff');
   text('×'+Math.max(1,skateCombo)+' COMBO',W-18,78,13,skateCombo>3?'#fff19c':'#fff','right');
   text(Math.round(speed)+' km/h',18,78,12,'#fff','left');
  }
@@ -189,7 +189,7 @@ export function createMiniGames(options:Options){
   round(W/2-5,netTop,10,ground-netTop,4,'#fff8ef');
   for(let y=netTop+14;y<ground-10;y+=21)round(W/2-35,y,70,3,2,'#ffffffc9');
   for(let x=W/2-33;x<W/2+34;x+=13)round(x,netTop,2,ground-netTop,1,'#ffffffa8');
-  text('DANIELA',87,575,15,'#f071b1');text('CPU',334,575,15,'#6d75c9');
+  text(options.getName().toUpperCase(),87,575,15,'#f071b1');text('CPU',334,575,15,'#6d75c9');
   // movement + jumps
   const moveSpeed=205;
   const delta=clamp(volleyTargetX-volleyPlayerX,-moveSpeed*dt,moveSpeed*dt);volleyPlayerX+=delta;
@@ -233,7 +233,7 @@ export function createMiniGames(options:Options){
  }
  function hud(){
   scoreEl.textContent=String(Math.floor(score));
-  livesEl.textContent=kind==='volley'?'🏐 Daniela '+volleyPlayerScore+' · '+volleyCpuScore+' CPU':'💗 '+Math.max(0,lives);
+  livesEl.textContent=kind==='volley'?'🏐 '+options.getName()+' '+volleyPlayerScore+' · '+volleyCpuScore+' CPU':'💗 '+Math.max(0,lives);
   const limit=kind==='volley'?90:60;timeEl.textContent=Math.max(0,Math.ceil(limit-time))+'s';
  }
  function finish(){
@@ -242,11 +242,11 @@ export function createMiniGames(options:Options){
   if(kind==='volley'){
    const won=volleyPlayerScore>volleyCpuScore;
    coins=Math.min(180,(won?95:35)+Math.floor(score/18));xp=Math.min(170,(won?90:40)+Math.floor(score/14));
-   endTitle.textContent=won?'🏆 ¡Daniela gana el partido!':'💜 ¡Casi! La CPU gana esta vez';
-   endText.textContent='Daniela '+volleyPlayerScore+' · '+volleyCpuScore+' CPU · '+Math.floor(score)+' puntos · +'+coins+' ★ · +'+xp+' XP';
+   endTitle.textContent=won?'🏆 ¡'+options.getName()+' gana el partido!':'💜 ¡Casi! La CPU gana esta vez';
+   endText.textContent=options.getName()+' '+volleyPlayerScore+' · '+volleyCpuScore+' CPU · '+Math.floor(score)+' puntos · +'+coins+' ★ · +'+xp+' XP';
   }else{
    coins=Math.min(100,Math.floor(score/15));xp=Math.min(120,Math.floor(score/10));
-   endTitle.textContent=lives<=0?'¡Buen intento, Daniela! 💜':'¡Minijuego completado! 🌟';
+   endTitle.textContent=lives<=0?'¡Buen intento, '+options.getName()+'! 💜':'¡Minijuego completado! 🌟';
    endText.textContent=Math.floor(score)+' puntos · +'+coins+' ★ · +'+xp+' XP';
   }
   options.onReward({kind,score:Math.floor(score),coins,xp});endEl.hidden=false;pauseBtn.textContent='▶';
@@ -265,8 +265,8 @@ export function createMiniGames(options:Options){
  function start(next:MiniKind){
   stop(false);kind=next;active=true;paused=false;finished=false;score=0;lives=kind==='snack'?8:3;time=0;spawn=.8;playerX=210;skateY=0;skateV=0;grounded=true;worldX=0;falling=[];obstacles=[];last=0;
   snackEating=[];snackMouth=0;skateJumps=0;skateCombo=0;skateShield=0;skateFlash=0;volleyPlayerX=105;volleyTargetX=105;volleyCpuX=315;volleyPlayerY=0;volleyCpuY=0;volleyPlayerVY=0;volleyCpuVY=0;volleyPlayerScore=0;volleyCpuScore=0;volleyLastHit=-1;resetVolleyBall('player');
-  titleEl.textContent=kind==='snack'?'🍓 Lluvia de snacks':kind==='skate'?'🛹 Daniela City Skate':'🏐 Daniela Volley vs CPU';
-  hintEl.textContent=kind==='snack'?'Desliza a Daniela: la comida debe entrar en su boca. ¡Evita basura!':kind==='skate'?'Doble salto, rampas, escudos, huecos y velocidad creciente. ¡Haz combo!':'Desliza en tu mitad para moverte y toca para saltar. ¡Primero a 7!';
+  titleEl.textContent=kind==='snack'?'🍓 Lluvia de snacks':kind==='skate'?'🛹 '+options.getName()+' City Skate':'🏐 '+options.getName()+' Volley vs CPU';
+  hintEl.textContent=kind==='snack'?'Desliza a '+options.getName()+': la comida debe entrar en su boca. ¡Evita basura!':kind==='skate'?'Doble salto, rampas, escudos, huecos y velocidad creciente. ¡Haz combo!':'Desliza en tu mitad para moverte y toca para saltar. ¡Primero a 7!';
   endEl.hidden=true;pauseBtn.textContent='⏸';overlay.hidden=false;overlay.setAttribute('aria-hidden','false');document.body.classList.add('minigame-playing');
   hud();resize();raf=requestAnimationFrame(update);
  }

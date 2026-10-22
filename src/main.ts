@@ -9,9 +9,9 @@ import {createStreetVolley3D} from './street-volley';
 type Room='bedroom'|'kitchen'|'bathroom'|'stage'|'closet'|'arena'|'street';
 type Need='hunger'|'happiness'|'energy'|'hygiene';
 type Move='idle'|'wave'|'dance'|'sleep'|'eat'|'drink'|'spin'|'bath'|'jump'|'giggle'|'laugh'|'surprised'|'volley'|'sing'|'dance2'|'dance3'|'dance4'|'dance5';
-type State={hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;shoe:number;makeupLashes:number;makeupMascara:number;makeupLip:number;makeupBlush:number;makeupEyes:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
+type State={idolName:string;hunger:number;happiness:number;energy:number;hygiene:number;coins:number;xp:number;level:number;outfit:number;hair:number;shoe:number;makeupLashes:number;makeupMascara:number;makeupLip:number;makeupBlush:number;makeupEyes:number;lastSaved:number;lastGift:string;followers:number;popularity:number;lastConcertAt:number;concerts:number;arenaTickets:number;arenaMilestones:number;arenaShows:number};
 type Action={emoji:string;title:string;subtitle:string;colors:string[];move:Move;effect:Partial<Record<Need,number>>;coins:number;xp:number;message:string};
-const initial:State={hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,shoe:0,makeupLashes:0,makeupMascara:0,makeupLip:0,makeupBlush:0,makeupEyes:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
+const initial:State={idolName:'Daniela',hunger:82,happiness:90,energy:88,hygiene:96,coins:250,xp:0,level:1,outfit:0,hair:0,shoe:0,makeupLashes:0,makeupMascara:0,makeupLip:0,makeupBlush:0,makeupEyes:0,lastSaved:Date.now(),lastGift:'',followers:0,popularity:0,lastConcertAt:0,concerts:0,arenaTickets:0,arenaMilestones:0,arenaShows:0};
 let state={...initial};
 try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as State|null;if(old&&typeof old.coins==='number'){state={...initial,...old};
  if(old.arenaMilestones===undefined){state.arenaMilestones=Math.floor(state.followers/1000);state.arenaTickets=state.arenaMilestones;}
@@ -19,6 +19,8 @@ try{const old=JSON.parse(localStorage.getItem('danielakpop-v2')||'null') as Stat
  if(state.lastConcertAt>0){const quietHours=Math.max(0,(now-state.lastConcertAt)/3600000-18);if(state.followers>0){const loss=Math.min(.48,quietHours*.003);state.followers=Math.max(0,Math.floor(state.followers*(1-loss)));}state.popularity=Math.round(Math.max(0,Math.min(100,state.popularity-Math.floor(quietHours/5))));}}}catch{}
 const $=(s:string)=>document.querySelector(s) as HTMLElement;
 const num=(n:number)=>Math.round(Math.max(0,Math.min(100,n)));
+const idolName=()=>state.idolName?.trim()||'Daniela';
+const personalize=(text:string)=>text.replace(/DANIELA/g,idolName().toUpperCase()).replace(/Daniela/g,idolName());
 let room:Room='bedroom';let move:Move='idle';let started=performance.now();let duration=2;let toastTimer=0;let needReminderTimer=0;let soundEnabled=true;
 let concertActive=false,liveKind:'tiktok'|'arena'|null=null,liveLikes=0,liveComments=0,liveViewers=0,liveFollowerGain=0,liveMomentum=1,lastLiveTick=0,lastComplaintAt=0,lastComplaintNeed='';let concertStartedAt=0,livePerformanceSeconds=0;let play:ReturnType<typeof createInteractions>|undefined;let editor:ReturnType<typeof setupSceneEditor>|undefined;let streetVolley:ReturnType<typeof createStreetVolley3D>|undefined;let lastTouch=0;let touchStreak=0;let touchStart:{x:number;y:number;time:number}|null=null;let reactionTimer=0;
 function act(emoji:string,title:string,subtitle:string,colors:string[],move:Move,effect:Partial<Record<Need,number>>,coins:number,xp:number,message:string):Action{return{emoji,title,subtitle,colors,move,effect,coins,xp,message};}
@@ -253,14 +255,28 @@ for(let i=0;i<9;i++){
 }
 box('arena LED frame',7.7,2.75,.15,0,3.2,5.34,white,arenaRoot);
 box('arena LED display',7.4,2.5,.17,0,3.2,5.21,stageMat,arenaRoot);
-const arenaSignTexture=new DynamicTexture('Daniela World Tour LED',{width:1024,height:256},scene,false);
+const arenaSignTexture=new DynamicTexture('K-POP IDOL World Tour LED',{width:1024,height:256},scene,false);
 const signCtx=arenaSignTexture.getContext();
-signCtx.fillStyle='#6c4197';signCtx.fillRect(0,0,1024,256);
-const gradient=signCtx.createLinearGradient(0,0,1024,0);gradient.addColorStop(0,'#ffc7e8');gradient.addColorStop(.5,'#fff7d6');gradient.addColorStop(1,'#a8f2ff');
-signCtx.fillStyle=gradient;signCtx.font='bold 100px Arial';const arenaLabel='DANIELA LIVE';signCtx.fillText(arenaLabel,(1024-signCtx.measureText(arenaLabel).width)/2,165);
-arenaSignTexture.update();
+function paintArenaSign(){
+ signCtx.fillStyle='#6c4197';signCtx.fillRect(0,0,1024,256);
+ const gradient=signCtx.createLinearGradient(0,0,1024,0);gradient.addColorStop(0,'#ffc7e8');gradient.addColorStop(.5,'#fff7d6');gradient.addColorStop(1,'#a8f2ff');
+ const arenaLabel=(idolName()+' LIVE').toUpperCase(),fontSize=arenaLabel.length>16?72:arenaLabel.length>12?84:100;
+ signCtx.fillStyle=gradient;signCtx.font='bold '+fontSize+'px Arial';
+ signCtx.fillText(arenaLabel,(1024-signCtx.measureText(arenaLabel).width)/2,165);arenaSignTexture.update();
+}
+paintArenaSign();
 const arenaSignMaterial=new StandardMaterial('arena LED lettering',scene);arenaSignMaterial.diffuseTexture=arenaSignTexture;arenaSignMaterial.emissiveTexture=arenaSignTexture;arenaSignMaterial.emissiveColor=new Color3(.15,.15,.15);arenaSignMaterial.disableLighting=true;arenaSignMaterial.backFaceCulling=false;
-const arenaSign=MeshBuilder.CreatePlane('Daniela LIVE LED sign',{width:6.8,height:1.55},scene);arenaSign.position.set(0,3.25,5.08);arenaSign.parent=arenaRoot;arenaSign.material=arenaSignMaterial;arenaSign.isPickable=false;
+const arenaSign=MeshBuilder.CreatePlane('K-POP IDOL LIVE LED sign',{width:6.8,height:1.55},scene);arenaSign.position.set(0,3.25,5.08);arenaSign.parent=arenaRoot;arenaSign.material=arenaSignMaterial;arenaSign.isPickable=false;
+function refreshNameUI(){
+ const name=idolName(),upper=name.toUpperCase();
+ document.title='K-POP IDOL · '+name;
+ const care=document.querySelector<HTMLElement>('#care-idol-label');if(care)care.textContent='CUIDA A '+upper;
+ const earnings=document.querySelector<HTMLElement>('#idol-earnings-label');if(earnings)earnings.textContent='GANANCIAS DE '+upper;
+ const tutorial=document.querySelector<HTMLElement>('#tutorial-idol-copy');if(tutorial)tutorial.textContent='Da toquecitos a '+name+' para hacerla reír. ¡Prueba varias veces!';
+ const liveHandle=document.querySelector<HTMLElement>('#live-idol-handle');if(liveHandle)liveHandle.textContent='@'+name.toLocaleLowerCase('es-ES').replace(/\s+/g,'_');
+ const mini=document.querySelector<HTMLElement>('#minigame-title');if(mini&&!mini.closest('.minigame-overlay:not([hidden])'))mini.textContent=name+' City';
+ paintArenaSign();
+}
 for(let i=0;i<11;i++)star(-3.3+i*.65,3.3+Math.sin(i*1.9)*.67,5.07,.18,i%2?pink:gold,arenaRoot);
 for(let i=0;i<16;i++){
  const x=-5.3+(i%8)*1.5,z=1.9+Math.floor(i/8)*1.25;
@@ -570,7 +586,7 @@ function startSleep(){
  if(state.energy>=100){toast('¡Daniela ya tiene toda su energía! 💜');return;}
  sleepPhase='walking';sleepClock=performance.now();sleepLast=sleepClock;sleepLastPaint=0;
  animate('idle',3.5);reactionBubble('Voy a mi camita… 💤',false,2700);
- $('#scene-desc').textContent='🌙 Daniela se dirige a su cama';save();
+ $('#scene-desc').textContent='🌙 '+idolName()+' se dirige a su cama';save();
 }
 function tickSleep(now:number){
  if(sleepPhase==='awake')return;
@@ -597,6 +613,10 @@ function tickSleep(now:number){
  }
 }
 function save(){state.lastSaved=Date.now();try{localStorage.setItem('danielakpop-v2',JSON.stringify(state));}catch{}}
+function resetCareer(name:string){
+ state={...initial,idolName:name.trim(),lastSaved:Date.now()};
+ room='bedroom';move='idle';concertActive=false;liveKind=null;liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=1;
+}
 function updateArenaUnlocks(){
  const reached=Math.floor(state.followers/1000);
  if(reached>state.arenaMilestones){
@@ -621,24 +641,26 @@ $('#level').textContent=String(state.level);$('#xp').textContent=String(state.xp
 const weak=(['hunger','happiness','energy','hygiene'] as Need[]).reduce((a,b)=>state[a]<state[b]?a:b);
 const msg:Record<Need,string>={hunger:'Tiene hambre 🍓',happiness:'Quiere mimos 💗',energy:'Necesita dormir 🌙',hygiene:'Hora del baño 🫧'};
 $('#care-status').textContent=state[weak]<40?'¡Necesita cuidados!':state[weak]<65?'Un poquito de atención':'¡Todo genial!';
-$('#mood-message').textContent=state[weak]<55?msg[weak]:move==='dance'?'¡Daniela siente la música! 🎶':move==='sleep'?'Shhh… está descansando 💤':'Daniela está feliz ✨';}
+$('#mood-message').textContent=state[weak]<55?idolName()+': '+msg[weak]:move==='dance'?idolName()+' siente la música 🎶':move==='sleep'?idolName()+': Shhh… estoy descansando 💤':idolName()+' está feliz ✨';}
 function animate(next:Move,length=2.8){move=next;started=performance.now();duration=length;}
 function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetVolley?.isActive()&&next!=='street')streetVolley.stop();if(room==='closet'&&next!=='closet'&&activeMakeupTool)exitMakeupMode(true);const makeupPanel=document.querySelector<HTMLElement>('#makeup-panel');if(makeupPanel)makeupPanel.hidden=next!=='closet';if(room==='bedroom'&&next!=='bedroom')stopSleep();if((room==='stage'||room==='arena')&&next!==room&&concertActive)endConcert(true);room=next;play?.enterRoom(next);void editor?.onRoomChanged(next);for(const [k,g] of Object.entries(groups))g.setEnabled(k===room);fashion();
 const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);orbs.forEach(o=>o.setEnabled(indoors));
 scene.clearColor=room==='street'?new Color4(.69,.9,1,1):room==='arena'?new Color4(.32,.23,.42,1):new Color4(.97,.81,.92,1);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
-const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
+const entry=rooms[room];$('#scene-name').textContent=personalize(entry.title);$('#scene-kicker').textContent=personalize(entry.kicker);$('#scene-desc').textContent=personalize(entry.sub);const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
 $('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
 wall.diffuseColor=Color3.FromHexString(room==='street'?'#b5e9fa':room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
 floorMat.diffuseColor=Color3.FromHexString(room==='street'?'#e9e4ff':room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
-button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
+ const emoji=document.createElement('span');emoji.className='action-emoji';emoji.setAttribute('aria-hidden','true');emoji.textContent=a.emoji;
+ const text=document.createElement('span');text.className='action-text';const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=personalize(a.title);small.textContent=personalize(a.subtitle);text.append(strong,small);button.append(emoji,text);
+ button.setAttribute('aria-label',personalize(a.title+', '+a.subtitle));button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
 renderArenaPass();animate('wave',1.1);}
-function toast(msg:string){$('#toast').textContent=msg;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
+function toast(msg:string){$('#toast').textContent=personalize(msg);$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
 function reward(msg:string){const el=$('#reward');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function reactionBubble(text:string,complaint=false,hold=1700){
- $('#mood-message').textContent=text;const tag=$('#character-tag');tag.classList.toggle('complaint',complaint);
+ $('#mood-message').textContent=idolName()+': '+personalize(text);const tag=$('#character-tag');tag.classList.toggle('complaint',complaint);
  const app=$('#app').getBoundingClientRect(),r=canvas.getBoundingClientRect(),engine=scene.getEngine();
  const anchor=Vector3.Project(head.getAbsolutePosition().add(new Vector3(.78,.48,-.15)),Matrix.Identity(),scene.getTransformMatrix(),camera.viewport.toGlobal(engine.getRenderWidth(),engine.getRenderHeight()));
  const x=r.left-app.left+anchor.x*r.width/engine.getRenderWidth(),y=r.top-app.top+anchor.y*r.height/engine.getRenderHeight();
@@ -733,7 +755,7 @@ function appendLiveComment(){
  const avatar=document.createElement('span');avatar.className='live-avatar';avatar.textContent=liveAvatars[Math.floor(Math.random()*liveAvatars.length)];
  const content=document.createElement('span');content.className='live-comment-content';
  const username=document.createElement('b');username.textContent=liveUsers[Math.floor(Math.random()*liveUsers.length)].trim().replace(':','');
- const words=document.createElement('span');words.textContent=message;
+ const words=document.createElement('span');words.textContent=personalize(message);
  content.append(username,words);
  const badge=document.createElement('span');badge.className='live-comment-heart';badge.textContent=['💗','♥','✨','🔥','🎁','👏','🌹','👑','⭐','🫶','🎤','🎶'][Math.floor(Math.random()*12)];
  const gifts=document.createElement('span');gifts.className='live-comment-icons';
@@ -867,6 +889,7 @@ canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,ti
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||activeMakeupTool||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 const miniGames=createMiniGames({
+ getName:idolName,
  onReward:({score,coins,xp,kind})=>{
   state.coins+=coins;gainXP(xp);
   state.happiness=num(state.happiness+Math.min(9,Math.floor(score/65)));
@@ -875,11 +898,11 @@ const miniGames=createMiniGames({
  onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
 });
 streetVolley=createStreetVolley3D({
- scene,canvas,camera,idol,street:groups.street,animate,toast,
+ scene,canvas,camera,idol,street:groups.street,animate,getName:idolName,toast,
  onFinish:(won,playerScore,cpuScore,rally)=>{
   const coins=won?125:40,xp=won?120:55;state.coins+=coins;gainXP(xp);state.happiness=num(state.happiness+(won?10:4));state.energy=num(state.energy-3);
   render();save();reward(won?'🏆 +'+coins+' ★ · +'+xp+' XP':'🏐 +'+coins+' ★ · +'+xp+' XP');
-  toast((won?'¡Daniela gana ':'Partido terminado ')+playerScore+'-'+cpuScore+' · rally '+rally);
+  toast((won?'¡'+idolName()+' gana ':'Partido terminado ')+playerScore+'-'+cpuScore+' · rally '+rally);
  }
 });
 document.querySelectorAll<HTMLButtonElement>('[data-makeup]').forEach(button=>button.addEventListener('click',()=>{
@@ -904,12 +927,63 @@ $('#close-tutorial').addEventListener('click',()=>{$('#tutorial').classList.add(
 try{if(localStorage.getItem('danielakpop-tutorial'))$('#tutorial').classList.add('hidden');}catch{}
 for(let i=0;i<17;i++){const item=document.createElement('span');item.className='particle';item.textContent=i%5===0?'♥':i%2?'✦':'✧';item.style.setProperty('--x',(i*37+11)%98+'%');item.style.setProperty('--y',(i*19+13)%75+'%');item.style.setProperty('--size',(9+i%4*4)+'px');item.style.setProperty('--time',(5+i%5)+'s');item.style.setProperty('--delay',(i%8*-.8)+'s');item.style.color=i%3?'#ffb7dc':'#fff5ce';$('#sparkles').append(item);}
 play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,arms,isEditing:()=>!!editor?.isEditing(),
- getRoom:()=>room,getHygiene:()=>state.hygiene,
+ getRoom:()=>room,getName:idolName,getHygiene:()=>state.hygiene,
  changeHygiene:(amount)=>{state.hygiene=num(state.hygiene+amount);state.happiness=num(state.happiness+1);render();save();},
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
-showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();updateNeedAlerts();
+
+function hasSavedCareer(){
+ try{const saved=JSON.parse(localStorage.getItem('danielakpop-v2')||'null');return !!saved&&typeof saved.coins==='number';}catch{return false;}
+}
+function showStartupPanel(id:'menu-home'|'menu-name'|'menu-settings-panel'|'menu-exit-panel'){
+ for(const panelId of ['menu-home','menu-name','menu-settings-panel','menu-exit-panel']){
+  const panel=document.querySelector<HTMLElement>('#'+panelId);if(panel)panel.hidden=panelId!==id;
+ }
+}
+function syncStartupMenu(){
+ const load=document.querySelector<HTMLButtonElement>('#menu-load');
+ const sub=document.querySelector<HTMLElement>('#menu-load-sub');
+ const saved=hasSavedCareer();
+ if(load)load.disabled=!saved;
+ if(sub)sub.textContent=saved?'Continuar con '+idolName()+' · Nivel '+state.level:'Todavía no hay una partida guardada';
+ const menuSound=document.querySelector<HTMLElement>('#menu-sound-state');if(menuSound)menuSound.textContent=soundEnabled?'ACTIVADO':'DESACTIVADO';
+}
+function enterCareer(){
+ const startup=document.querySelector<HTMLElement>('#startup-menu');if(startup)startup.hidden=true;
+ document.body.classList.remove('game-menu-open');refreshNameUI();showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();updateNeedAlerts();
+ requestAnimationFrame(()=>engine.resize());
+}
+function cleanIdolName(value:string){
+ return value.normalize('NFKC').replace(/\s+/g,' ').trim().slice(0,12);
+}
+const nameInput=document.querySelector<HTMLInputElement>('#idol-name-input')!;
+const nameCount=document.querySelector<HTMLElement>('#idol-name-count')!;
+const nameConfirm=document.querySelector<HTMLButtonElement>('#name-confirm')!;
+const nameError=document.querySelector<HTMLElement>('#name-error')!;
+function validateName(){
+ const clean=cleanIdolName(nameInput.value);nameCount.textContent=String([...clean].length);nameConfirm.disabled=[...clean].length<2;nameError.textContent='';
+}
+nameInput.addEventListener('input',validateName);
+nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!nameConfirm.disabled){e.preventDefault();nameConfirm.click();}});
+document.querySelectorAll<HTMLButtonElement>('.name-suggestions button').forEach(button=>button.addEventListener('click',()=>{nameInput.value=button.textContent||'';validateName();nameInput.focus();}));
+document.querySelector<HTMLButtonElement>('#menu-new')?.addEventListener('click',()=>{nameInput.value='';validateName();showStartupPanel('menu-name');setTimeout(()=>nameInput.focus(),120);});
+document.querySelector<HTMLButtonElement>('#name-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
+nameConfirm.addEventListener('click',()=>{
+ const name=cleanIdolName(nameInput.value);
+ if([...name].length<2){nameError.textContent='Escribe al menos 2 caracteres para tu nombre artístico.';return;}
+ resetCareer(name);try{localStorage.removeItem('danielakpop-tutorial');}catch{}
+ $('#tutorial').classList.remove('hidden');fashion();applyMakeup();renderMakeupPanel();save();refreshNameUI();syncStartupMenu();enterCareer();
+ reactionBubble('¡Hola! Soy '+idolName()+' 💜 ¡Vamos a convertirnos en una estrella!',false,3000);
+});
+document.querySelector<HTMLButtonElement>('#menu-load')?.addEventListener('click',()=>{if(!hasSavedCareer())return;refreshNameUI();enterCareer();});
+document.querySelector<HTMLButtonElement>('#menu-settings')?.addEventListener('click',()=>{syncStartupMenu();showStartupPanel('menu-settings-panel');});
+document.querySelector<HTMLButtonElement>('#settings-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
+document.querySelector<HTMLButtonElement>('#menu-sound-setting')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';syncStartupMenu();if(soundEnabled)sound([523,659,784]);});
+document.querySelector<HTMLButtonElement>('#menu-exit')?.addEventListener('click',()=>showStartupPanel('menu-exit-panel'));
+document.querySelector<HTMLButtonElement>('#exit-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
+
+showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();refreshNameUI();updateNeedAlerts();syncStartupMenu();showStartupPanel('menu-home');
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
  // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.

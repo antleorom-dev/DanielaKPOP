@@ -3,7 +3,7 @@ import {ArcRotateCamera,Color3,Mesh,MeshBuilder,Scene,StandardMaterial,Transform
 type Options={
  scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;idol:TransformNode;street:TransformNode;
  animate:(move:'volley'|'jump'|'wave'|'giggle',seconds?:number)=>void;
- toast:(message:string)=>void;
+ getName:()=>string;toast:(message:string)=>void;
  onFinish:(won:boolean,player:number,cpu:number,rally:number)=>void;
 };
 const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,n));
@@ -47,7 +47,7 @@ export function createStreetVolley3D(o:Options){
  const stripe2=MeshBuilder.CreateTorus('3D volley stripe 2',{diameter:.44,thickness:.018,tessellation:28},o.scene);stripe2.parent=volleyBall;stripe2.rotation.x=Math.PI/2;stripe2.material=pink;
 
  const ui=document.createElement('div');ui.className='street-volley-ui';ui.hidden=true;ui.innerHTML=
-  '<div class="street-volley-score"><span>💜 DANIELA <b id="sv-player">0</b></span><em>PRIMERO A 7</em><span><b id="sv-cpu">0</b> CPU 🩵</span></div>'+
+  '<div class="street-volley-score"><span>💜 <strong id="sv-name">IDOL</strong> <b id="sv-player">0</b></span><em>PRIMERO A 7</em><span><b id="sv-cpu">0</b> CPU 🩵</span></div>'+
   '<div class="street-volley-tip">Muévete y salta para bloquear o rematar</div>'+
   '<div class="street-volley-controls"><button data-vmove="-1" aria-label="Mover izquierda">◀</button><button id="sv-jump">🏐 SALTAR / REMATAR</button><button data-vmove="1" aria-label="Mover derecha">▶</button></div>'+
   '<button id="sv-exit" class="street-volley-exit">✕ Salir</button>';
@@ -61,12 +61,12 @@ export function createStreetVolley3D(o:Options){
 
  function start(){
   if(active)return;
-  active=true;finished=false;root.setEnabled(true);ui.hidden=false;document.body.classList.add('street-volley-playing');playerScore=0;cpuScore=0;rally=0;bestRally=0;moveDir=0;playerY=0;cpuY=0;playerVY=0;cpuVY=0;
+  active=true;finished=false;root.setEnabled(true);ui.hidden=false;document.body.classList.add('street-volley-playing');ui.querySelector<HTMLElement>('#sv-name')!.textContent=o.getName().toUpperCase();playerScore=0;cpuScore=0;rally=0;bestRally=0;moveDir=0;playerY=0;cpuY=0;playerVY=0;cpuVY=0;
   saved={alpha:o.camera.alpha,beta:o.camera.beta,radius:o.camera.radius,target:o.camera.target.clone(),pos:o.idol.position.clone(),rotation:o.idol.rotation.clone(),scale:o.idol.scaling.clone()};
   o.idol.position.set(-3.0,0,-.25);o.idol.rotation.set(0,0,0);o.idol.scaling.setAll(.82);
   cpu.position.set(3.0,0,-.25);
   o.camera.alpha=-Math.PI/2;o.camera.beta=1.25;o.camera.radius=10.8;o.camera.target.set(0,1.65,.15);
-  resetBall('player');score();last=performance.now();o.animate('wave',1);o.toast('🏐 Daniela vs CPU · ¡primero a 7!');
+  resetBall('player');score();last=performance.now();o.animate('wave',1);o.toast('🏐 '+o.getName()+' vs CPU · ¡primero a 7!');
  }
  function jump(cpuJump=false){
   if(!active||finished)return;
@@ -89,7 +89,7 @@ export function createStreetVolley3D(o:Options){
   if(to==='player')playerScore++;else cpuScore++;score();
   if(playerScore>=7||cpuScore>=7){
    finished=true;const won=playerScore>cpuScore;o.animate(won?'giggle':'wave',1.4);o.onFinish(won,playerScore,cpuScore,bestRally);
-   ui.querySelector<HTMLElement>('.street-volley-tip')!.textContent=won?'🏆 ¡Daniela gana! Pulsa Salir o juega otra vez desde Calle':'💜 Buena partida. ¡La revancha te espera!';
+   ui.querySelector<HTMLElement>('.street-volley-tip')!.textContent=won?'🏆 ¡'+o.getName()+' gana! Pulsa Salir o juega otra vez desde Calle':'💜 Buena partida. ¡La revancha te espera!';
    return;
   }
   resetBall(to==='player'?'player':'cpu');
