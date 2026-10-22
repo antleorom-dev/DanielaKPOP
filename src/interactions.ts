@@ -11,7 +11,7 @@ type Dependencies={
  scene:Scene;canvas:HTMLCanvasElement;camera:ArcRotateCamera;
  idol:TransformNode;body:TransformNode;head:TransformNode;dress:Mesh;groups:Record<Room,TransformNode>;
  skin:StandardMaterial;arms:TransformNode[];isEditing:()=>boolean;
- getRoom:()=>Room;getHygiene:()=>number;changeHygiene:(amount:number)=>void;
+ getRoom:()=>Room;getName:()=>string;getHygiene:()=>number;changeHygiene:(amount:number)=>void;
  onVolleyHit:()=>void;
  perform:(index:number)=>void;animate:(name:Move,duration?:number)=>void;
  toast:(msg:string)=>void;reward:(msg:string)=>void;sound:(notes?:number[])=>void;
@@ -60,7 +60,7 @@ export function createInteractions(c:Dependencies){
   p.parent=stereo;p.position.set(3.1+s*.43,1.04,.61);p.rotation.x=Math.PI/2;p.material=skinPink;return p;
  });
  const studioTracks=[
-  {label:'Daniela Original',src:import.meta.env.BASE_URL+'assets/studio-song.mp3'},
+  {label:'Original',src:import.meta.env.BASE_URL+'assets/studio-song.mp3'},
   {label:'Dai Dai',src:import.meta.env.BASE_URL+'assets/Shakira_Burna_Boy_-_Dai_Dai.mp3'}
  ];
  const audio=new Audio();audio.loop=true;audio.volume=.65;audio.preload='auto';
@@ -138,10 +138,10 @@ export function createInteractions(c:Dependencies){
   washHint.hidden=!isBath;musicButton.hidden=!['stage','arena'].includes(room);ballButton.hidden=room!=='bedroom';
   swimsuitTop.setEnabled(isBath);swimsuitBottom.setEnabled(isBath);
   outfitMeshes.forEach(m=>m.setEnabled(!isBath));
-  musicButton.textContent=musicPlaying?'⏹ '+currentTrack.label:'🎵 Encender música';
+  musicButton.textContent=musicPlaying?'⏹ '+(currentTrack.label==='Original'?c.getName()+' Original':currentTrack.label):'🎵 Encender música';
   musicButton.classList.toggle('music-on',musicPlaying);
   stereoScreen.material=musicPlaying?bright:pink;
-  washHint.textContent=bath.getTool()==='water'?'🚿 Agua elegida: frota para aclarar':bath.getTool()==='soap'?'🧽 Jabón elegido: frota sobre Daniela':'🫧 Elige jabón o agua';
+  washHint.textContent=bath.getTool()==='water'?'🚿 Agua elegida: frota para aclarar':bath.getTool()==='soap'?'🧽 Jabón elegido: frota sobre '+c.getName():'🫧 Elige jabón o agua';
   document.querySelectorAll<HTMLButtonElement>('#actions .action-card').forEach((el,i)=>{
    if(isBath&&i<2)el.classList.toggle('bath-selected',bath.getTool()===(i===0?'soap':'water'));
    else el.classList.remove('bath-selected');
