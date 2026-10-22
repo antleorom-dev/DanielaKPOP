@@ -633,7 +633,7 @@ function tickSleep(now:number){
   if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');setSleepOverlay(true,false);reactionBubble('Zzz… dulces sueños 🌙',false,1800);}
  }else if(sleepPhase==='resting'){
   state.energy=Math.min(100,state.energy+dt*2);
-  if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 '+idolName()+' descansando… energía '+num(state.energy)+'%';setSleepOverlay(true,false);render();}
+  if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 '+idolName()+' descansando… energía '+num(state.energy)+'%';setSleepOverlay(true,sleepFastForward);render();}
   if(state.energy>=100&&now-sleepRestStart>6500&&!sleepFastForward){beginWake(now);reactionBubble('¡Qué bien he dormido! 💗',false,2200);}
  }else{
   const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1600),r=1-walk;
