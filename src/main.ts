@@ -585,7 +585,7 @@ function startSleep(){
  if(state.energy>=100){toast('¡Daniela ya tiene toda su energía! 💜');return;}
  sleepPhase='walking';sleepClock=performance.now();sleepLast=sleepClock;sleepLastPaint=0;
  animate('idle',3.5);reactionBubble('Voy a mi camita… 💤',false,2700);
- $('#scene-desc').textContent='🌙 Daniela se dirige a su cama';save();
+ $('#scene-desc').textContent='🌙 '+idolName()+' se dirige a su cama';save();
 }
 function tickSleep(now:number){
  if(sleepPhase==='awake')return;
@@ -646,13 +646,15 @@ function showRoom(next:Room){if(miniGames.isActive())miniGames.stop();if(streetV
 const indoors=room!=='street';worldBackWall.setEnabled(indoors);worldSideWall.setEnabled(indoors);worldSkirting.setEnabled(indoors);orbs.forEach(o=>o.setEnabled(indoors));
 scene.clearColor=room==='street'?new Color4(.69,.9,1,1):room==='arena'?new Color4(.32,.23,.42,1):new Color4(.97,.81,.92,1);
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-room]')){const active=button.dataset.room===room;button.classList.toggle('selected',active);button.setAttribute('aria-current',active?'page':'false');}
-const entry=rooms[room];$('#scene-name').textContent=entry.title;$('#scene-kicker').textContent=entry.kicker;$('#scene-desc').textContent=entry.sub;const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
+const entry=rooms[room];$('#scene-name').textContent=personalize(entry.title);$('#scene-kicker').textContent=personalize(entry.kicker);$('#scene-desc').textContent=personalize(entry.sub);const title=$('.scene-title');title.classList.remove('enter');void title.offsetWidth;title.classList.add('enter');$('#character-tag').classList.remove('visible','complaint');
 $('#action-label').textContent=room==='street'?'¡Vamos a jugar!':room==='arena'?'¡El público te espera!':room==='stage'?'¡Es hora de brillar!':room==='kitchen'?'¿Qué le apetece comer?':room==='closet'?'¡Cambia tu estilo!':'¿Qué hacemos hoy?';$('.action-hint').textContent=entry.actions.length>3?'DESLIZA PARA VER MÁS →':'ARRASTRA O TOCA ↗';
 wall.diffuseColor=Color3.FromHexString(room==='street'?'#b5e9fa':room==='arena'?'#9476c5':room==='stage'?'#b8a1da':room==='bathroom'?'#dcedf3':room==='kitchen'?'#f9e5db':room==='closet'?'#f5deeb':'#f5dfeb');
 floorMat.diffuseColor=Color3.FromHexString(room==='street'?'#e9e4ff':room==='arena'?'#b995e1':room==='stage'?'#b9b1dc':room==='bathroom'?'#d8eaf0':room==='kitchen'?'#efdfcf':'#eadfeb');rim.diffuse=Color3.FromHexString(entry.accent);
 const row=$('#actions');row.replaceChildren();
 entry.actions.forEach((a,i)=>{const button=document.createElement('button');button.className='action-card';button.style.setProperty('--a',a.colors[0]);button.style.setProperty('--b',a.colors[1]);
-button.innerHTML='<span class="action-emoji" aria-hidden="true">'+a.emoji+'</span><span class="action-text"><strong>'+a.title+'</strong><small>'+a.subtitle+'</small></span>';button.setAttribute('aria-label',a.title+', '+a.subtitle);button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
+ const emoji=document.createElement('span');emoji.className='action-emoji';emoji.setAttribute('aria-hidden','true');emoji.textContent=a.emoji;
+ const text=document.createElement('span');text.className='action-text';const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=personalize(a.title);small.textContent=personalize(a.subtitle);text.append(strong,small);button.append(emoji,text);
+ button.setAttribute('aria-label',personalize(a.title+', '+a.subtitle));button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
 renderArenaPass();animate('wave',1.1);}
 function toast(msg:string){$('#toast').textContent=personalize(msg);$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
 function reward(msg:string){const el=$('#reward');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
@@ -886,6 +888,7 @@ canvas.addEventListener('pointerdown',e=>{touchStart={x:e.clientX,y:e.clientY,ti
 canvas.addEventListener('pointercancel',()=>{touchStart=null;});
 canvas.addEventListener('pointerup',e=>{const start=touchStart;touchStart=null;if(editor?.isEditing()||room==='bathroom'||play?.isPainting()||activeMakeupTool||!start||Math.hypot(e.clientX-start.x,e.clientY-start.y)>15||performance.now()-start.time>550)return;const rect=canvas.getBoundingClientRect();const hit=scene.pick(e.clientX-rect.left,e.clientY-rect.top);if(hit?.hit&&hit.pickedMesh&&hit.pickedMesh.isDescendantOf(body)){const isHead=hit.pickedMesh.name.includes('eye')||hit.pickedMesh.name.includes('hair')||hit.pickedMesh.name.includes('face')||hit.pickedMesh.name.includes('bang')||hit.pickedMesh.name.includes('cheek')||hit.pickedMesh.name.includes('smile')||hit.pickedMesh.name.includes('nose')||hit.pickedMesh.name.includes('bow');touchDaniela(e.clientX,e.clientY,isHead);}});
 const miniGames=createMiniGames({
+ getName:idolName,
  onReward:({score,coins,xp,kind})=>{
   state.coins+=coins;gainXP(xp);
   state.happiness=num(state.happiness+Math.min(9,Math.floor(score/65)));
@@ -894,11 +897,11 @@ const miniGames=createMiniGames({
  onClose:()=>{performanceCheckAt=performance.now();slowSamples=0;fastSamples=0;render();updateNeedAlerts();}
 });
 streetVolley=createStreetVolley3D({
- scene,canvas,camera,idol,street:groups.street,animate,toast,
+ scene,canvas,camera,idol,street:groups.street,animate,getName:idolName,toast,
  onFinish:(won,playerScore,cpuScore,rally)=>{
   const coins=won?125:40,xp=won?120:55;state.coins+=coins;gainXP(xp);state.happiness=num(state.happiness+(won?10:4));state.energy=num(state.energy-3);
   render();save();reward(won?'🏆 +'+coins+' ★ · +'+xp+' XP':'🏐 +'+coins+' ★ · +'+xp+' XP');
-  toast((won?'¡Daniela gana ':'Partido terminado ')+playerScore+'-'+cpuScore+' · rally '+rally);
+  toast((won?'¡'+idolName()+' gana ':'Partido terminado ')+playerScore+'-'+cpuScore+' · rally '+rally);
  }
 });
 document.querySelectorAll<HTMLButtonElement>('[data-makeup]').forEach(button=>button.addEventListener('click',()=>{
@@ -923,7 +926,7 @@ $('#close-tutorial').addEventListener('click',()=>{$('#tutorial').classList.add(
 try{if(localStorage.getItem('danielakpop-tutorial'))$('#tutorial').classList.add('hidden');}catch{}
 for(let i=0;i<17;i++){const item=document.createElement('span');item.className='particle';item.textContent=i%5===0?'♥':i%2?'✦':'✧';item.style.setProperty('--x',(i*37+11)%98+'%');item.style.setProperty('--y',(i*19+13)%75+'%');item.style.setProperty('--size',(9+i%4*4)+'px');item.style.setProperty('--time',(5+i%5)+'s');item.style.setProperty('--delay',(i%8*-.8)+'s');item.style.color=i%3?'#ffb7dc':'#fff5ce';$('#sparkles').append(item);}
 play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,arms,isEditing:()=>!!editor?.isEditing(),
- getRoom:()=>room,getHygiene:()=>state.hygiene,
+ getRoom:()=>room,getName:idolName,getHygiene:()=>state.hygiene,
  changeHygiene:(amount)=>{state.hygiene=num(state.hygiene+amount);state.happiness=num(state.happiness+1);render();save();},
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
