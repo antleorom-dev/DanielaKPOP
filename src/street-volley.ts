@@ -55,17 +55,22 @@ export function createStreetVolley3D(o:Options){
  const playerEl=ui.querySelector<HTMLElement>('#sv-player')!,cpuEl=ui.querySelector<HTMLElement>('#sv-cpu')!;
  let active=false,finished=false,last=0,moveDir=0,playerScore=0,cpuScore=0,rally=0,bestRally=0;
  let playerY=0,playerVY=0,cpuY=0,cpuVY=0,ballVX=2.4,ballVY=-2,serveDelay=0;
- let saved={alpha:0,beta:0,radius:0,target:new Vector3(),pos:new Vector3(),rotation:new Vector3(),scale:new Vector3(1,1,1)};
+ let saved={alpha:0,beta:0,radius:0,fov:.8,target:new Vector3(),pos:new Vector3(),rotation:new Vector3(),scale:new Vector3(1,1,1)},viewportKey='';
  const resetBall=(server:'player'|'cpu')=>{volleyBall.position.set(server==='player'?-2.7:2.7,2.8,-.2);ballVX=server==='player'?2.55:-2.55;ballVY=-1.3;serveDelay=.65;rally=0;};
  const score=()=>{playerEl.textContent=String(playerScore);cpuEl.textContent=String(cpuScore);};
+ const applyVolleyCamera=()=>{
+  const portrait=innerWidth<=680&&innerHeight>innerWidth,landscape=innerHeight<=600&&innerWidth>innerHeight;
+  o.camera.alpha=-Math.PI/2;o.camera.beta=1.25;o.camera.radius=portrait?16.2:landscape?12.5:10.8;o.camera.fov=portrait?.98:landscape?.90:.8;o.camera.target.set(0,1.55,.15);
+  const playerScale=portrait?.72:landscape?.78:.82;o.idol.scaling.setAll(playerScale);cpu.scaling.setAll(portrait?.83:landscape?.91:1);
+ };
 
  function start(){
   if(active)return;
   active=true;finished=false;root.setEnabled(true);ui.hidden=false;document.body.classList.add('street-volley-playing');ui.querySelector<HTMLElement>('#sv-name')!.textContent=o.getName().toUpperCase();playerScore=0;cpuScore=0;rally=0;bestRally=0;moveDir=0;playerY=0;cpuY=0;playerVY=0;cpuVY=0;
-  saved={alpha:o.camera.alpha,beta:o.camera.beta,radius:o.camera.radius,target:o.camera.target.clone(),pos:o.idol.position.clone(),rotation:o.idol.rotation.clone(),scale:o.idol.scaling.clone()};
-  o.idol.position.set(-3.0,0,-.25);o.idol.rotation.set(0,0,0);o.idol.scaling.setAll(.82);
-  cpu.position.set(3.0,0,-.25);
-  o.camera.alpha=-Math.PI/2;o.camera.beta=1.25;o.camera.radius=10.8;o.camera.target.set(0,1.65,.15);
+  saved={alpha:o.camera.alpha,beta:o.camera.beta,radius:o.camera.radius,fov:o.camera.fov,target:o.camera.target.clone(),pos:o.idol.position.clone(),rotation:o.idol.rotation.clone(),scale:o.idol.scaling.clone()};
+  o.idol.position.set(-3.0,0,-.25);o.idol.rotation.set(0,-Math.PI/2,0);
+  cpu.position.set(3.0,0,-.25);cpu.rotation.set(0,Math.PI/2,0);
+  viewportKey=innerWidth+'x'+innerHeight;applyVolleyCamera();
   resetBall('player');score();last=performance.now();o.animate('wave',1);o.toast('🏐 '+o.getName()+' vs CPU · ¡primero a 7!');
  }
  function jump(cpuJump=false){
@@ -96,7 +101,7 @@ export function createStreetVolley3D(o:Options){
  }
  function tick(now:number){
   if(!active||finished)return;
-  const dt=Math.min(.033,Math.max(0,(now-last)/1000));last=now;
+  const dt=Math.min(.033,Math.max(0,(now-last)/1000));last=now;const key=innerWidth+'x'+innerHeight;if(key!==viewportKey){viewportKey=key;applyVolleyCamera();}
   // Player movement and jump physics.
   o.idol.position.x=clamp(o.idol.position.x+moveDir*3.1*dt,-4.45,-.65);
   if(playerY>0||playerVY!==0){playerVY-=12.5*dt;playerY+=playerVY*dt;if(playerY<=0){playerY=0;playerVY=0;}}o.idol.position.y=playerY;
@@ -117,7 +122,7 @@ export function createStreetVolley3D(o:Options){
  function stop(){
   if(!active)return;active=false;finished=false;root.setEnabled(false);ui.hidden=true;document.body.classList.remove('street-volley-playing');moveDir=0;
   o.idol.position.copyFrom(saved.pos);o.idol.rotation.copyFrom(saved.rotation);o.idol.scaling.copyFrom(saved.scale);
-  o.camera.alpha=saved.alpha;o.camera.beta=saved.beta;o.camera.radius=saved.radius;o.camera.target.copyFrom(saved.target);
+  o.camera.alpha=saved.alpha;o.camera.beta=saved.beta;o.camera.radius=saved.radius;o.camera.fov=saved.fov;o.camera.target.copyFrom(saved.target);cpu.scaling.setAll(1);cpu.rotation.set(0,0,0);
  }
  for(const button of ui.querySelectorAll<HTMLButtonElement>('[data-vmove]')){
   const dir=Number(button.dataset.vmove)||0;
