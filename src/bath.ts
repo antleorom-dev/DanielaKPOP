@@ -1,6 +1,6 @@
 import {Color3,Mesh,MeshBuilder,Scene,StandardMaterial,TransformNode,Vector3,ArcRotateCamera,Matrix} from '@babylonjs/core';
 
-export type BathTool='soap'|'water'|null;
+export type BathTool='soap'|'water'|'skincare'|null;
 type Bubble={mesh:Mesh;parent:TransformNode};
 type Dirt={mesh:Mesh;parent:TransformNode;cleaned:boolean};
 type Context={
@@ -25,6 +25,8 @@ export function createBath(c:Context){
  const dirtMat=makeMaterial('dirty little stains','#986e76',.69);
  const waterMat=makeMaterial('moving water sparkle','#8adbf5',.7);
  waterMat.emissiveColor=Color3.FromHexString('#286689');
+ const skincareMat=makeMaterial('skincare pearl','#ffc4df',.78);
+ skincareMat.emissiveColor=Color3.FromHexString('#7b315f').scale(.15);
  let tool:BathTool=null;
  let active=false;
  let painting=false;
@@ -61,7 +63,7 @@ export function createBath(c:Context){
   tool=next;
   painting=false;
   c.canvas.style.cursor=next?'crosshair':'';
-  c.toast(next==='soap'?'🧽 Pasa el dedo por Daniela para formar burbujas':next==='water'?'🚿 Pasa el agua por la espuma para aclararla':'¡Lista para jugar!');
+  c.toast(next==='soap'?'🧽 Pasa el dedo por tu idol para formar burbujas':next==='water'?'🚿 Pasa el agua por la espuma para aclararla':next==='skincare'?'🧴 Arrastra el skincare suavemente por la cara':'¡Lista para jugar!');
   return tool;
  }
  const mark = (parent:TransformNode,local:Vector3,d:number,material:StandardMaterial)=>{
@@ -113,6 +115,17 @@ export function createBath(c:Context){
   const hit=pickModel(screenX,screenY);
   if(!hit)return false;
   lastStroke=now;washStrokes++;
+  if(tool==='skincare'){
+   // Skincare is deliberately a face-only drag tool: visible pearly dots follow the finger.
+   if(hit.parent!==c.head)return false;
+   for(let i=0;i<2;i++){
+    const theta=washStrokes*1.73+i*Math.PI;
+    const local=hit.local.add(new Vector3(Math.cos(theta)*.08,Math.sin(theta)*.07,-.025));
+    const p=makeSphere('skincare applied glow',.09+(i*.025),skincareMat,hit.parent,local.x,local.y,local.z);
+    p.scaling.set(1.15,.62,.28);specks.push({mesh:p,expires:now+720+i*90,vx:Math.cos(theta)*.025,vy:-.01});
+   }
+   c.changeHygiene(1.2);if(washStrokes%4===0)c.sound([720,880,1040]);return true;
+  }
   if(tool==='soap'){
    if(bubbles.length>100){const old=bubbles.shift();old?.mesh.dispose();}
    for(let i=0;i<3;i++){

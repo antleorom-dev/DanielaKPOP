@@ -45,13 +45,17 @@ export function dressRooms(scene:Scene, groups:Groups){
   const panel=cube(room,'poster '+label,w,h,.09,x,y,z,m[bg]);
   const tex=new DynamicTexture('poster texture '+label,{width:512,height:512},scene,false);
   const ctx=tex.getContext() as unknown as CanvasRenderingContext2D;
-  ctx.clearRect(0,0,512,512);ctx.fillStyle=palettes[bg as keyof typeof palettes]??'#ffffff';ctx.fillRect(0,0,512,512);
-  ctx.fillStyle='#ffffff65';ctx.beginPath();ctx.arc(115,120,98,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(390,365,122,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle=palettes[fg as keyof typeof palettes]??'#ffffff';
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 75px sans-serif';
-  const words=label.split('|');words.forEach((word,i)=>ctx.fillText(word,256,256+(i-(words.length-1)/2)*88,470));
-  tex.update();const mat=material('print '+label,palettes.snow);mat.diffuseTexture=tex;mat.emissiveColor=new Color3(.025,.025,.025);
-  panel.material=mat;
+  const draw=(nextLabel:string)=>{
+   ctx.clearRect(0,0,512,512);ctx.fillStyle=palettes[bg as keyof typeof palettes]??'#ffffff';ctx.fillRect(0,0,512,512);
+   ctx.fillStyle='#ffffff65';ctx.beginPath();ctx.arc(115,120,98,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(390,365,122,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle=palettes[fg as keyof typeof palettes]??'#ffffff';
+   ctx.textAlign='center';ctx.textBaseline='middle';
+   const words=nextLabel.split('|'),maxLen=Math.max(...words.map(word=>word.length),1);
+   ctx.font='bold '+(maxLen>11?56:maxLen>8?65:75)+'px sans-serif';
+   words.forEach((word,i)=>ctx.fillText(word,256,256+(i-(words.length-1)/2)*88,470));tex.update();
+  };
+  draw(label);const mat=material('print '+label,palettes.snow);mat.diffuseTexture=tex;mat.emissiveColor=new Color3(.025,.025,.025);
+  panel.material=mat;return draw;
  }
  function garland(room:Room,from:number,to:number,y:number,z:number){
   for(let i=0;i<11;i++){
@@ -151,7 +155,7 @@ export function dressRooms(scene:Scene, groups:Groups){
    lamp.scaling.z=.36;
   }
  }
- poster(stage,'DANIELA|LIVE',-2.4,3.62,5.73,2.05,1.75,'lavender','snow');
+ const refreshIdolPoster=poster(stage,'IDOL|LIVE',-2.4,3.62,5.73,2.05,1.75,'lavender','snow');
  poster(stage,'KPOP|DREAM',2.4,3.62,5.73,2.05,1.75,'rose','snow');
  garland(stage,-5,5,5.56,5.54);
  // Glow is restricted to the active studio instead of coloring the entire world.
@@ -172,5 +176,6 @@ export function dressRooms(scene:Scene, groups:Groups){
   const a=(i/8)*Math.PI*2;
   orb(closet,'mirror beauty bulb',.2,-3.8+Math.cos(a)*1.35,2.18+Math.sin(a)*2,5.53,m.neonGold);
  }
- console.info('DanielaKPOP: enhanced room dressing ready');
+ console.info('K-POP IDOL: enhanced room dressing ready');
+ return {refreshIdentity:(name:string)=>refreshIdolPoster((name.trim()||'IDOL').toUpperCase()+'|LIVE')};
 }
