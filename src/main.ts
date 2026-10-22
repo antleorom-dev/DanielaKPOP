@@ -41,7 +41,7 @@ act('🥞','Pancakes','28 monedas',['#ffd29c','#ee9db8'],'eat',{hunger:32,happin
 bathroom:{title:'Baño burbuja',kicker:'✦ GLOW UP TIME ✦',sub:'Brilla por dentro y por fuera',accent:'#a8e6eb',actions:[
 act('🧽','Esponja','Arrastra hasta Daniela',['#99dcef','#77bdea'],'bath',{},0,2,'¡Espuma! 🫧'),
 act('🚿','Agua','Aclarar las burbujas',['#e4bbff','#b69bee'],'bath',{},0,2,'¡Agüita fresca! 🚿'),
-act('🧴','Skincare','+ higiene',['#a3f1dc','#70c8bb'],'wave',{hygiene:14,happiness:4},0,8,'¡Sonrisa brillante! ✨')]},
+act('🧴','Skincare','Arrastra y aplica',['#a3f1dc','#70c8bb'],'bath',{hygiene:14,happiness:4},0,8,'¡Skincare aplicado! ✨')]},
 stage:{title:'Dance studio',kicker:'✦ DREAMS COME TRUE ✦',sub:'El escenario es todo tuyo',accent:'#c2a1fc',actions:[
 act('🎶','Bailar','Ensayar · +2 ★',['#e7a4ff','#aa82ed'],'dance',{happiness:12,energy:-1,hunger:-3,hygiene:-2},2,18,'¡Dale al ritmo! 🎶'),
 act('🎤','Cantar','Ensayo · +3 ★',['#ff9dc8','#e577ba'],'sing',{energy:-1,hunger:-2,happiness:8},3,23,'¡Qué voz de estrella! 🎤'),
@@ -112,15 +112,15 @@ const orbs:Mesh[]=[];for(let i=0;i<12;i++)orbs.push(ball('lights',.13,-5.8+i*1.0
 const roomMotion:{mesh:Mesh;baseY:number;speed:number;phase:number;amp:number}[]=[];
 function lively(mesh:Mesh,speed=.0018,amp=.08,phase=0){roomMotion.push({mesh,baseY:mesh.position.y,speed,phase,amp});return mesh;}
 const groups:Record<Room,TransformNode>={bedroom:new TransformNode('bedroom',scene),kitchen:new TransformNode('kitchen',scene),bathroom:new TransformNode('bathroom',scene),stage:new TransformNode('stage',scene),closet:new TransformNode('closet',scene),arena:new TransformNode('arena',scene),street:new TransformNode('street',scene)};
-dressRooms(scene,groups);
+const roomDecor=dressRooms(scene,groups);
 const bed=groups.bedroom;
-// Pillows belong at the NEAR (low-Z) end; Daniela's head rotates toward -Z.
+// Face-up sleep layout: pillows and headboard sit at the far end of the mattress.
 box('bed base',2.35,.48,3.35,3,.36,3.48,wood,bed);
 box('mattress',2.22,.32,3.14,3,.71,3.48,white,bed);
-box('blanket',2.18,.12,1.65,3,.92,4.08,lilac,bed);
-for(const x of [2.48,3.52])ball('pillow',.63,x,.98,2.3,white,bed).scaling.set(.95,.37,.8);
-box('headboard',2.55,1.2,.18,3,.91,1.68,pink,bed);
-for(let i=0;i<3;i++)star(2.35+i*.65,2.1+(i%2)*.35,1.56,.27,gold,bed);
+box('blanket',2.18,.12,1.55,3,.92,3.18,lilac,bed);
+for(const x of [2.48,3.52])ball('pillow',.63,x,.98,4.56,white,bed).scaling.set(.95,.37,.8);
+box('headboard',2.55,1.2,.18,3,.91,5.18,pink,bed);
+for(let i=0;i<3;i++)star(2.35+i*.65,2.1+(i%2)*.35,5.3,.27,gold,bed);
 box('vanity',1.65,.19,1.05,-3.7,1.05,3.5,white,bed);for(const x of [-4.3,-3.1])box('vanity leg',.14,.95,.14,x,.52,3.5,lilac,bed);
 box('mirror frame',1.08,1.25,.09,-3.7,2,4.15,wood,bed);box('mirror glass',.88,1.06,.12,-3.7,2,4.03,blue,bed);
 box('poster frame',1.65,1.65,.12,0,3.65,6.07,white,bed);box('poster',1.46,1.45,.14,0,3.65,5.96,lilac,bed);star(0,3.65,5.85,.95,pink,bed);
@@ -275,7 +275,7 @@ function refreshNameUI(){
  const tutorial=document.querySelector<HTMLElement>('#tutorial-idol-copy');if(tutorial)tutorial.textContent='Da toquecitos a '+name+' para hacerla reír. ¡Prueba varias veces!';
  const liveHandle=document.querySelector<HTMLElement>('#live-idol-handle');if(liveHandle)liveHandle.textContent='@'+name.toLocaleLowerCase('es-ES').replace(/\s+/g,'_');
  const mini=document.querySelector<HTMLElement>('#minigame-title');if(mini&&!mini.closest('.minigame-overlay:not([hidden])'))mini.textContent=name+' City';
- paintArenaSign();
+ paintArenaSign();roomDecor.refreshIdentity(name);
 }
 for(let i=0;i<11;i++)star(-3.3+i*.65,3.3+Math.sin(i*1.9)*.67,5.07,.18,i%2?pink:gold,arenaRoot);
 for(let i=0;i<16;i++){
@@ -371,7 +371,13 @@ const shoeVariants:TransformNode[][]=Array.from({length:6},()=>[]);
 for(let style=1;style<6;style++)for(const [index,joint] of legs.entries()){
  const side=index===0?-1:1,root=new TransformNode('shoe style '+style+' side '+side,scene);root.parent=joint;shoeVariants[style].push(root);
  if(style===1){const upper=ball('sport sneaker upper',.47,side*.03,-.68,-.15,white,root);upper.scaling.set(1.22,.48,1.48);box('sport sneaker sole',.54,.09,.68,side*.03,-.84,-.1,lilac,root);box('sport stripe',.06,.08,.42,side*.18,-.67,-.49,pink,root);}
- if(style===2){const boot=ball('ankle boot',.5,side*.02,-.59,-.09,purple,root);boot.scaling.set(1.03,.8,1.25);box('ankle boot sole',.52,.1,.62,side*.02,-.84,-.08,dark,root);}
+ if(style===2){
+ const shaft=cyl('ankle boot shaft',.42,.42,.56,side*.02,-.54,-.02,purple,root);shaft.scaling.set(.9,1,1.04);
+ const toe=ball('ankle boot toe',.45,side*.02,-.75,-.19,purple,root);toe.scaling.set(1.08,.46,1.45);
+ box('ankle boot sole',.50,.09,.66,side*.02,-.88,-.14,dark,root);
+ box('ankle boot heel',.20,.18,.19,side*.02,-.82,.11,dark,root);
+ ring('ankle boot cuff',.48,.035,side*.02,-.32,-.02,gold,root);
+}
  if(style===3){const high=ball('high top sneaker',.49,side*.02,-.56,-.1,mint,root);high.scaling.set(1.05,.95,1.28);box('high top sole',.55,.1,.64,side*.02,-.84,-.08,white,root);for(let j=0;j<3;j++)box('high top lace',.29,.025,.035,side*.02,-.54+j*.09,-.39,white,root);}
  if(style===4){const plat=ball('platform shoe',.48,side*.02,-.69,-.11,pink,root);plat.scaling.set(1.18,.5,1.38);box('platform sole',.56,.18,.68,side*.02,-.86,-.07,white,root);ball('platform heart',.11,side*.12,-.68,-.47,gold,root);}
  if(style===5){const tall=ball('concert boot',.48,side*.02,-.47,-.07,lilac,root);tall.scaling.set(1.05,1.28,1.2);box('concert boot sole',.54,.11,.64,side*.02,-.84,-.05,dark,root);for(let j=0;j<3;j++)ball('boot sparkle',.07,side*.13,-.31-j*.16,-.42,gold,root);}
@@ -571,44 +577,69 @@ function exitMakeupMode(resetCamera=true){
 // A complete sleep cycle: Daniela walks to her bed, lies down, recovers gradually,
 // then gets up. Leaving the bedroom cancels safely without losing earned energy.
 type SleepPhase='awake'|'walking'|'resting'|'waking';
-let sleepPhase:SleepPhase='awake',sleepClock=0,sleepLast=0,sleepRestStart=0,sleepLastPaint=0;
+let sleepPhase:SleepPhase='awake',sleepClock=0,sleepLast=0,sleepRestStart=0,sleepLastPaint=0,sleepFastForward=false;
 const smooth=(n:number)=>{const t=Math.max(0,Math.min(1,n));return t*t*(3-2*t);};
+function preferredCamera(){
+ const portrait=innerWidth<=680&&innerHeight>innerWidth;
+ const compactLandscape=innerHeight<=600&&innerWidth>innerHeight;
+ return portrait?{radius:11.45,fov:.92,target:new Vector3(0,1.72,-.2)}:compactLandscape?{radius:10.65,fov:.86,target:new Vector3(0,1.78,-.28)}:{radius:9.75,fov:.8,target:new Vector3(0,1.82,-.35)};
+}
+function applyResponsiveCamera(force=false){
+ if(!force&&(activeMakeupTool||sleepPhase!=='awake'||streetVolley?.isActive()))return;
+ const preset=preferredCamera();camera.fov=preset.fov;camera.radius=preset.radius;camera.target.copyFrom(preset.target);
+ camera.lowerRadiusLimit=innerWidth<=680?8.2:7.15;camera.upperRadiusLimit=innerWidth<=680?14.2:13;
+}
+function setSleepOverlay(visible:boolean,blackout=false){
+ const overlay=$('#sleep-overlay');overlay.classList.toggle('visible',visible);overlay.classList.toggle('blackout',blackout);overlay.setAttribute('aria-hidden',visible?'false':'true');
+ const title=$('#sleep-overlay-title');title.textContent=idolName()+' está descansando… zzzz';
+ $('#sleep-energy-fill').style.width=num(state.energy)+'%';$('#sleep-overlay-progress').textContent='Recuperando energía · '+num(state.energy)+'%';
+}
 function resetSleepPose(){
- idol.position.set(0,0,-1.33);idol.rotation.x=0;idol.scaling.setAll(1);
- shadow.visibility=.27;camera.target.set(0,1.8,-.35);
+ idol.position.set(0,0,-1.33);idol.rotation.set(0,0,0);idol.scaling.setAll(1);
+ shadow.visibility=.27;setSleepOverlay(false);applyResponsiveCamera(true);
 }
 function stopSleep(){
  if(sleepPhase==='awake')return;
- sleepPhase='awake';resetSleepPose();move='idle';started=performance.now();duration=2;
+ sleepPhase='awake';sleepFastForward=false;resetSleepPose();move='idle';started=performance.now();duration=2;
 }
 function startSleep(){
- if(sleepPhase!=='awake'){toast('Daniela está descansando… 💤');return;}
- if(state.energy>=100){toast('¡Daniela ya tiene toda su energía! 💜');return;}
- sleepPhase='walking';sleepClock=performance.now();sleepLast=sleepClock;sleepLastPaint=0;
+ if(sleepPhase!=='awake'){toast(idolName()+' está descansando… 💤');return;}
+ if(state.energy>=100){toast('¡'+idolName()+' ya tiene toda su energía! 💜');return;}
+ sleepPhase='walking';sleepClock=performance.now();sleepLast=sleepClock;sleepLastPaint=0;sleepFastForward=false;
  animate('idle',3.5);reactionBubble('Voy a mi camita… 💤',false,2700);
  $('#scene-desc').textContent='🌙 '+idolName()+' se dirige a su cama';save();
 }
+function beginWake(now:number){
+ sleepPhase='waking';sleepClock=now;move='idle';started=now;duration=2.5;
+ state.hunger=num(state.hunger-3);gainXP(11);save();toast('¡'+idolName()+' ha recuperado toda su energía! 🌞');
+}
+function skipSleepWait(){
+ if(sleepPhase!=='resting'||sleepFastForward)return;
+ sleepFastForward=true;setSleepOverlay(true,true);
+ window.setTimeout(()=>{state.energy=100;render();$('#sleep-energy-fill').style.width='100%';$('#sleep-overlay-progress').textContent='Energía recuperada · 100%';},520);
+ window.setTimeout(()=>{beginWake(performance.now());setSleepOverlay(true,false);},1050);
+ window.setTimeout(()=>setSleepOverlay(false),1750);
+}
+$('#sleep-skip').addEventListener('click',skipSleepWait);
 function tickSleep(now:number){
  if(sleepPhase==='awake')return;
  const dt=Math.min(.07,Math.max(0,(now-sleepLast)/1000));sleepLast=now;
  if(sleepPhase==='walking'){
-  const walk=smooth((now-sleepClock)/2400),lie=smooth((now-sleepClock-2400)/1400);
-  idol.position.set(3*walk,1.05*lie,-1.33+5.48*walk);idol.rotation.x=-Math.PI*.5*lie;
+  const walk=smooth((now-sleepClock)/2200),lie=smooth((now-sleepClock-2200)/1250);
+  // Walk to the side of the mattress, then rotate face-up. +X rotation puts the face toward the ceiling.
+  idol.position.set(3*walk,1.05*lie,-1.33+4.18*walk);idol.rotation.x=Math.PI*.5*lie;
   idol.scaling.setAll(1-.4*lie);shadow.visibility=.27*(1-lie);
-  camera.target.set(1.6*walk,1.8-.12*lie,-.35+2.15*walk);
-  if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');reactionBubble('Zzz… dulces sueños 🌙',false,2200);}
+  camera.target.set(1.6*walk,1.8-.10*lie,-.35+2.1*walk);
+  if(lie>=1){sleepPhase='resting';sleepRestStart=now;move='sleep';started=now;duration=1e9;sfx('sleep');setSleepOverlay(true,false);reactionBubble('Zzz… dulces sueños 🌙',false,1800);}
  }else if(sleepPhase==='resting'){
   state.energy=Math.min(100,state.energy+dt*2);
-  if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 Descansando… energía '+num(state.energy)+'%';render();}
-  if(state.energy>=100&&now-sleepRestStart>6500){
-   sleepPhase='waking';sleepClock=now;move='idle';started=now;duration=2.5;
-   state.hunger=num(state.hunger-3);gainXP(11);save();toast('¡Daniela ha recuperado toda su energía! 🌞');reactionBubble('¡Qué bien he dormido! 💗',false,2600);
-  }
+  if(now-sleepLastPaint>320){sleepLastPaint=now;$('#scene-desc').textContent='💤 '+idolName()+' descansando… energía '+num(state.energy)+'%';setSleepOverlay(true,false);render();}
+  if(state.energy>=100&&now-sleepRestStart>6500&&!sleepFastForward){beginWake(now);reactionBubble('¡Qué bien he dormido! 💗',false,2200);}
  }else{
-  const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1700),r=1-walk;
-  idol.position.set(3*r,1.05*(1-stand),-1.33+5.48*r);idol.rotation.x=-Math.PI*.5*(1-stand);
+  const stand=smooth((now-sleepClock)/900),walk=smooth((now-sleepClock-900)/1600),r=1-walk;
+  idol.position.set(3*r,1.05*(1-stand),-1.33+4.18*r);idol.rotation.x=Math.PI*.5*(1-stand);
   idol.scaling.setAll(1-.4*(1-stand));shadow.visibility=.27*stand;
-  camera.target.set(1.6*r,1.8-.12*(1-stand),-.35+2.15*r);
+  camera.target.set(1.6*r,1.8-.10*(1-stand),-.35+2.1*r);
   if(walk>=1){stopSleep();$('#scene-desc').textContent=rooms.bedroom.sub;render();}
  }
 }
@@ -656,7 +687,7 @@ entry.actions.forEach((a,i)=>{const button=document.createElement('button');butt
  const emoji=document.createElement('span');emoji.className='action-emoji';emoji.setAttribute('aria-hidden','true');emoji.textContent=a.emoji;
  const text=document.createElement('span');text.className='action-text';const strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=personalize(a.title);small.textContent=personalize(a.subtitle);text.append(strong,small);button.append(emoji,text);
  button.setAttribute('aria-label',personalize(a.title+', '+a.subtitle));button.addEventListener('click',()=>{if(button.dataset.dragged!=='1')perform(i);});row.append(button);});play?.decorateActions(room,row);
-renderArenaPass();animate('wave',1.1);}
+renderArenaPass();if(sleepPhase==='awake'&&!activeMakeupTool&&!streetVolley?.isActive())applyResponsiveCamera(true);animate('wave',1.1);}
 function toast(msg:string){$('#toast').textContent=personalize(msg);$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=window.setTimeout(()=>$('#toast').classList.remove('show'),2400);}
 function reward(msg:string){const el=$('#reward');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function reactionBubble(text:string,complaint=false,hold=1700){
@@ -788,8 +819,22 @@ function socialBoost(kind:'dance'|'sing'|'concert'){
  liveFollowerGain+=Math.max(1,Math.floor((1+Math.random()*3.4)*power));
  liveReactionBurst(power);paintLiveStats();render();
 }
+let concertLightMeshes:Mesh[]|null=null;
+function updateConcertLighting(now:number){
+ concertLightMeshes??=scene.meshes.filter(mesh=>/led stage spot|arena overhead spotlight|arena concert spotlight|garland light/i.test(mesh.name));
+ const active=concertActive&&(room==='stage'||room==='arena');
+ concertLightMeshes.forEach((mesh,i)=>{
+  if(!mesh.isEnabled())return;
+  if(active){
+   const pulse=.5+.5*Math.sin(now*.009+i*1.37),flash=Math.sin(now*.021+i*.71)>.68?1:.35;
+   mesh.visibility=mesh.name.includes('arena concert spotlight')?.10+.34*pulse:.38+.62*Math.max(pulse,flash);
+  }else mesh.visibility=mesh.name.includes('arena concert spotlight')?.27:1;
+ });
+ const accent=scene.getLightByName('pink concert accent') as PointLight|null;
+ if(accent)accent.intensity=active?.14+.32*(.5+.5*Math.sin(now*.0068)):.20;
+}
 function startConcert(kind:'tiktok'|'arena'){
- if(concertActive)return;
+ if(concertActive)return;refreshNameUI();
  concertActive=true;liveKind=kind;
  liveLikes=0;liveComments=0;liveViewers=0;liveFollowerGain=0;liveMomentum=kind==='arena'?1.6:1.2;
  lastLiveTick=performance.now();concertStartedAt=lastLiveTick;livePerformanceSeconds=0;
@@ -858,7 +903,7 @@ function updateNeedAlerts(announce=false){
  if(lastComplaintNeed===need&&now-lastComplaintAt<28000)return;
  lastComplaintNeed=need;lastComplaintAt=now;clearTimeout(needReminderTimer);needReminderTimer=window.setTimeout(()=>reactionBubble(line,true,3200),220);
 }
-function perform(i:number){if(room==='street'){if(i===2){streetVolley?.start();return;}miniGames.start(i===0?'snack':'skate');return;}if(sleepPhase!=='awake'){toast('Shhh… Daniela está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
+function perform(i:number){if(room==='street'){if(i===2){streetVolley?.start();return;}miniGames.start(i===0?'snack':'skate');return;}if(sleepPhase!=='awake'){toast('Shhh… '+idolName()+' está descansando. Cambia de habitación para despertarla 🌙');return;}if(room==='bedroom'&&i===1){startSleep();return;}if(room==='stage'&&i===6&&concertActive){toast('🔴 Ya estás en directo. Sigue cantando o bailando 💜');return;}
 if(room==='arena'){
  if(i===0){
   if(concertActive){toast('🎤 ¡Ya estás dando un gran concierto!');return;}
@@ -871,7 +916,7 @@ if(room==='arena'){
  }
  if(!concertActive){toast('🎟️ Pulsa Empezar concierto antes de actuar');return;}
 }if(play?.beforeAction(room,i))return;if(room==='bedroom'&&i===2){play?.throwBall();sfx('ball');return;}const a=rooms[room].actions[i];if(a.coins<0&&state.coins < -a.coins){toast('¡Necesitas más monedas! Baila para ganar 🎶');sound([350,270]);return;}
-if((room==='stage'||room==='arena')&&state.energy<5){toast('¡Daniela está agotada! Descansa un poquito 💤');return;}
+if((room==='stage'||room==='arena')&&state.energy<5){toast('¡'+idolName()+' está agotada! Descansa un poquito 💤');return;}
 if(room==='closet'&&i===0)state.outfit=(state.outfit+1)%dressColors.length;
 if(room==='closet'&&i===1)state.hair=(state.hair+1)%hairColors.length;
 if(room==='closet'&&i===2)state.shoe=(state.shoe+1)%6;
@@ -983,7 +1028,7 @@ document.querySelector<HTMLButtonElement>('#menu-sound-setting')?.addEventListen
 document.querySelector<HTMLButtonElement>('#menu-exit')?.addEventListener('click',()=>showStartupPanel('menu-exit-panel'));
 document.querySelector<HTMLButtonElement>('#exit-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
 
-showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();refreshNameUI();updateNeedAlerts();syncStartupMenu();showStartupPanel('menu-home');
+showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();refreshNameUI();applyResponsiveCamera(true);updateNeedAlerts();syncStartupMenu();showStartupPanel('menu-home');
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
  // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.
@@ -1005,6 +1050,7 @@ engine.runRenderLoop(()=>{
  const b=sin(a*beat),step=sin(a*beat*.5);
  const popBeat=sin(a*8.4),cuteBeat=sin(a*5.2),hipBeat=sin(a*10.8),discoBeat=sin(a*6.2);
  const popPhrase=Math.floor(a*2.1)%4,cutePhrase=Math.floor(a*1.7)%4,hipPhrase=Math.floor(a*2.7)%4,discoPhrase=Math.floor(a*1.55)%4;
+ const hipCycle=(a*1.35)%4,hipSpin=hipCycle>=2&&hipCycle<3?smooth(hipCycle-2)*Math.PI*2:0;
  const isEating=move==='eat'||move==='drink';const walkingToBed=(sleepPhase==='walking'&&now-sleepClock<2400)||(sleepPhase==='waking'&&now-sleepClock>900);
  const isVolley=move==='volley';
  const singing=move==='sing'&&(room==='stage'||room==='arena');
@@ -1023,7 +1069,7 @@ engine.runRenderLoop(()=>{
   move==='sleep'?-.23:walkingToBed?abs(sin(t*9))*.07:sin(t*1.75)*.035+sin(t*.63)*.012;
  body.rotation.x=dance?move==='dance4'?.14+sin(a*beat)*.13:move==='dance5'?sin(a*3)*.08:sin(a*beat)*.05:
   isVolley?-.16*sin(a*9):0;
- body.rotation.y=move==='spin'?a*6:move==='dance2'?(popPhrase===3?sin(a*7)*.48:sin(a*3.8)*.16):move==='dance3'?sin(a*2.1)*.22:move==='dance4'?(hipPhrase===1?sin(a*8)*.34:sin(a*4.8)*.18):move==='dance5'?sin(a*2.4)*.58:move==='dance'?sin(a*4)*.18:sin(t*.8)*.065;
+ body.rotation.y=move==='spin'?a*6:move==='dance2'?(popPhrase===3?sin(a*7)*.48:sin(a*3.8)*.16):move==='dance3'?sin(a*2.1)*.22:move==='dance4'?hipSpin+sin(a*4.8)*.18:move==='dance5'?sin(a*2.4)*.58:move==='dance'?sin(a*4)*.18:sin(t*.8)*.065;
  body.rotation.z=move==='sleep'?.12:move==='dance4'?sin(a*beat/2)*.16:
   move==='dance3'?sin(a*4)*.11:dance?sin(a*beat)*.075:
   move==='laugh'?sin(a*14)*.09:move==='giggle'?sin(a*9)*.045:sin(t*1.2)*.018;
@@ -1101,11 +1147,11 @@ engine.runRenderLoop(()=>{
  orbs.forEach((o,i)=>o.scaling.setAll(1+sin(t*2+i*.7)*.18));
  if(Math.floor(now/50)!==Math.floor((now-engine.getDeltaTime())/50))roomMotion.forEach((item,i)=>{if(item.mesh.isEnabled()&&!item.mesh.isDisposed()){item.mesh.position.y=item.baseY+sin(now*item.speed+item.phase)*item.amp;item.mesh.rotation.y+=.0015*((i%3)-1);}});
  if(room==='arena'&&Math.floor(now/115)!==Math.floor((now-engine.getDeltaTime())/115))stadiumAudience.forEach((fan,i)=>{fan.head.position.y=fan.originalY+(concertActive?Math.abs(Math.sin(now*.005+fan.phase))*.18:Math.sin(now*.001+fan.phase)*.018);});
- socialTick(now);
+ socialTick(now);updateConcertLighting(now);
  play?.tick(now);
  scene.render();
 });
-addEventListener('resize',()=>engine.resize());
+addEventListener('resize',()=>{engine.resize();window.clearTimeout((window as unknown as {__camResize?:number}).__camResize);(window as unknown as {__camResize?:number}).__camResize=window.setTimeout(()=>applyResponsiveCamera(),120);});
 setInterval(()=>{if(document.hidden)return;state.hunger=Math.max(0,state.hunger-.28);state.energy=Math.max(0,state.energy-.025);state.happiness=Math.max(0,state.happiness-.19);state.hygiene=Math.max(0,state.hygiene-.12);render();updateNeedAlerts(true);save();},60000);
 setInterval(()=>{if(document.hidden||concertActive||!state.lastConcertAt||Date.now()-state.lastConcertAt<18*3600000)return;
  if(state.followers>0)state.followers=Math.max(0,state.followers-Math.max(1,Math.floor(state.followers*.004)));
