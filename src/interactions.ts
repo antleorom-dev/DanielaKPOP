@@ -1,6 +1,6 @@
 import {Scene,Mesh,MeshBuilder,StandardMaterial,Color3,Vector3,TransformNode,ArcRotateCamera,Matrix} from '@babylonjs/core';
 import './interactions.css';
-import {installRoomAssets,installHeldFood} from './assets';
+import {installRoomAssets} from './assets';
 import {createBath} from './bath';
 import {makeVolleyball} from './volleyball';
 // The player's own song is extracted from DanielaKPOP-recursos-v0.4.zip during Pages deployment.
@@ -82,7 +82,7 @@ export function createInteractions(c:Dependencies){
  const volley=makeVolleyball({
   scene:c.scene,canvas:c.canvas,camera:c.camera,ball:volleyball,isHome:()=>c.getRoom()==='bedroom'&&!c.isEditing(),
   animateHit:()=>{c.animate('volley',1.25);c.sound([480,670,940]);},
-  onHit:(combo)=>{c.onVolleyHit();c.reward(combo>1?'🏐 COMBO ×'+combo:'🏐 ¡PUNTAZO!');c.toast(combo>1?'¡'+combo+' toques seguidos! 🏐':'¡Daniela te devuelve la pelota! 🏐');}
+  onHit:(combo)=>{c.onVolleyHit();c.reward(combo>1?'🏐 COMBO ×'+combo:'🏐 ¡PUNTAZO!');c.toast(combo>1?'¡'+combo+' toques seguidos! 🏐':'¡'+c.getName()+' te devuelve la pelota! 🏐');}
  });
  const tools=document.createElement('div');tools.id='activity-tools';tools.setAttribute('aria-live','polite');
  document.querySelector('#app')!.append(tools);
@@ -96,6 +96,7 @@ export function createInteractions(c:Dependencies){
  const ballButton=document.createElement('button');ballButton.type='button';ballButton.className='volley-switch';
  ballButton.textContent='🏐 Tira la pelota';tools.append(ballButton);
  const ghost=document.createElement('div');ghost.id='drag-ghost';document.querySelector('#app')!.append(ghost);
+ const foodVisual=document.createElement('div');foodVisual.id='food-suck-visual';foodVisual.setAttribute('aria-hidden','true');document.querySelector('#app')!.append(foodVisual);
  let currentDrag:{pointer:number;x:number;y:number;at:number;moved:boolean}|null=null;
  ballButton.style.touchAction='none';
  ballButton.addEventListener('pointerdown',e=>{
@@ -116,34 +117,34 @@ export function createInteractions(c:Dependencies){
  });
  ballButton.addEventListener('pointercancel',()=>{currentDrag=null;ghost.classList.remove('dragging','over-target');});
  ballButton.addEventListener('click',e=>{if(ballButton.dataset.ignoreClick==='1')return;if((e as MouseEvent).detail===0)volley.launch();});
- let feeding:{holder:TransformNode;started:number;drink:boolean}|null=null;
+ let feeding:{started:number;drink:boolean;emoji:string}|null=null;
+ const foodEmojis=['🍓','🥤','🧁','🍕','🍜','🍙','🍦','🥞'];
+ function projected(parent:TransformNode,local:Vector3){
+  const engine=c.scene.getEngine(),canvasRect=c.canvas.getBoundingClientRect(),appRect=document.querySelector('#app')!.getBoundingClientRect();
+  const world=Vector3.TransformCoordinates(local,parent.getWorldMatrix());
+  const p=Vector3.Project(world,Matrix.Identity(),c.scene.getTransformMatrix(),c.camera.viewport.toGlobal(engine.getRenderWidth(),engine.getRenderHeight()));
+  return{x:canvasRect.left-appRect.left+p.x*canvasRect.width/engine.getRenderWidth(),y:canvasRect.top-appRect.top+p.y*canvasRect.height/engine.getRenderHeight()};
+ }
  function feed(index:number){
-  if(feeding){feeding.holder.dispose(false,true);feeding=null;}
-  const isDrink=index===1;
-  const holder=new TransformNode('food held in Daniela hand',c.scene);holder.parent=c.arms[1];
-  holder.position.set(.2,-.72,-.33);
-  const dummy=sphere('food while model loads',isDrink?.32:.35,0,0,0,isDrink?bright:toy,holder);
-  dummy.scaling.set(isDrink?.70:1,isDrink?1.40:.82,1);
-  const model=['strawberry','soda-can','cupcake'][index]||'strawberry';
-  void installHeldFood(c.scene,model,holder).then(success=>{
-   if(success&&!holder.isDisposed())dummy.setEnabled(false);
-  });
-  feeding={holder,started:performance.now(),drink:isDrink};
+  feeding=null;
+  const isDrink=index===1,emoji=foodEmojis[index]||'🍓';
+  feeding={started:performance.now(),drink:isDrink,emoji};
+  foodVisual.textContent=emoji;foodVisual.classList.add('visible');
   c.animate(isDrink?'drink':'eat',3.25);
-  c.toast(isDrink?'¡Daniela está bebiendo! 🥤':'¡Daniela ha cogido la comida! 🍓');
+  c.toast(isDrink?'¡'+c.getName()+' está bebiendo! '+emoji:'¡'+c.getName()+' va a comerse '+emoji+'!');
  }
  function sync(){
   const room=c.getRoom(),isBath=room==='bathroom';
   tools.dataset.room=room;
   washHint.hidden=!isBath;musicButton.hidden=!['stage','arena'].includes(room);ballButton.hidden=room!=='bedroom';
-  swimsuitTop.setEnabled(isBath);swimsuitBottom.setEnabled(isBath);
+  swimsuitTop.setEnabled(false);swimsuitBottom.setEnabled(false);
   outfitMeshes.forEach(m=>m.setEnabled(!isBath));
   musicButton.textContent=musicPlaying?'⏹ '+(currentTrack.label==='Original'?c.getName()+' Original':currentTrack.label):'🎵 Encender música';
   musicButton.classList.toggle('music-on',musicPlaying);
   stereoScreen.material=musicPlaying?bright:pink;
-  washHint.textContent=bath.getTool()==='water'?'🚿 Agua elegida: frota para aclarar':bath.getTool()==='soap'?'🧽 Jabón elegido: frota sobre '+c.getName():'🫧 Elige jabón o agua';
+  washHint.textContent=bath.getTool()==='water'?'🚿 Arrastra el agua para aclarar':bath.getTool()==='soap'?'🧽 Arrastra la esponja sobre '+c.getName():bath.getTool()==='skincare'?'🧴 Arrastra el skincare por la cara':'🫧 Arrastra una herramienta para usarla';
   document.querySelectorAll<HTMLButtonElement>('#actions .action-card').forEach((el,i)=>{
-   if(isBath&&i<2)el.classList.toggle('bath-selected',bath.getTool()===(i===0?'soap':'water'));
+   if(isBath&&i<3)el.classList.toggle('bath-selected',bath.getTool()===(i===0?'soap':i===1?'water':'skincare'));
    else el.classList.remove('bath-selected');
   });
  }
@@ -178,11 +179,11 @@ export function createInteractions(c:Dependencies){
   sync();
  }
  function selectBath(index:number){
-  bath.setTool(index===0?'soap':'water');
+  bath.setTool(index===0?'soap':index===1?'water':'skincare');
   sync();
  }
  function beforeAction(room:Room,index:number):boolean{
-  if(room!=='bathroom'||index>1)return false;
+  if(room!=='bathroom'||index>2)return false;
   selectBath(index);
   return true;
  }
@@ -209,14 +210,14 @@ export function createInteractions(c:Dependencies){
   row.classList.toggle('has-five-actions',room==='stage');
   row.querySelectorAll<HTMLButtonElement>('button').forEach((button,i)=>{
    button.dataset.dragged='0';
-   const directDrag=room==='kitchen'||(room==='bathroom'&&i<2);
+   const directDrag=room==='kitchen'||(room==='bathroom'&&i<3);
    button.style.touchAction=directDrag?'none':'pan-x';
    let sourcePointer=-1,startX=0,startY=0,dragging=false,touchedDaniela=false;
    button.addEventListener('pointerdown',e=>{
     sourcePointer=e.pointerId;startX=e.clientX;startY=e.clientY;dragging=false;touchedDaniela=false;
     if(directDrag)button.setPointerCapture(e.pointerId);
     ghost.textContent=button.querySelector('.action-emoji')?.textContent||'💗';
-    if(room==='bathroom'&&i<2)selectBath(i);
+    if(room==='bathroom'&&i<3)selectBath(i);
    });
    button.addEventListener('pointermove',e=>{
     if(sourcePointer!==e.pointerId)return;
@@ -228,7 +229,7 @@ export function createInteractions(c:Dependencies){
     if(dragging){
      ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';
      if(room==='kitchen'&&playerHit(e.clientX,e.clientY)){touchedDaniela=true;ghost.classList.add('over-target');}else ghost.classList.remove('over-target');
-     if(room==='bathroom'&&i<2)bath.paint(e.clientX,e.clientY);
+     if(room==='bathroom'&&i<3)bath.paint(e.clientX,e.clientY);
      e.preventDefault();
     }
    });
@@ -237,7 +238,7 @@ export function createInteractions(c:Dependencies){
     sourcePointer=-1;
     if(!dragging)return;
     dragging=false;ghost.classList.remove('dragging','over-target');
-    if(room==='bathroom'&&i<2){
+    if(room==='bathroom'&&i<3){
      bath.paint(e.clientX,e.clientY,true);bath.finish();
     }else if(playerHit(e.clientX,e.clientY)||touchedDaniela){
      // Successful food drag is tolerant near Daniela and triggers once.
@@ -274,7 +275,7 @@ export function createInteractions(c:Dependencies){
  });
  function enterRoom(room:Room){
   if(!['stage','arena'].includes(room)&&musicPlaying){audio.pause();audio.currentTime=0;musicPlaying=false;concertStartedMusic=false;}
-  if(room!=='kitchen'&&feeding){feeding.holder.dispose(false,true);feeding=null;}
+  if(room!=='kitchen'&&feeding){feeding=null;foodVisual.classList.remove('visible');}
   brushPointer=-1;
   bath.enter(room==='bathroom');
   void installRoomAssets(room,c.scene,c.groups[room]);
@@ -290,11 +291,15 @@ export function createInteractions(c:Dependencies){
   bath.tick(now);volley.tick(now);
   if(feeding){
    const seconds=(now-feeding.started)/1000;
-   const chew=Math.max(0,Math.min(1,(seconds-1)/1.4));
-   const done=Math.max(0,Math.min(1,(seconds-2.55)/.53));
-   feeding.holder.rotation.x=feeding.drink?-.52*chew*(1-done):Math.sin(seconds*14)*.07;
-   feeding.holder.scaling.setAll(Math.max(.045,1-chew*(feeding.drink?.18:.46)-done*.6));
-   if(seconds>3.2){feeding.holder.dispose(false,true);feeding=null;c.reward('¡ÑAM! 💗');}
+   const start=projected(c.arms[1],new Vector3(.2,-.72,-.28)),mouth=projected(c.head,new Vector3(0,-.40,-.84));
+   const raw=Math.max(0,Math.min(1,(seconds-.28)/1.18)),suck=raw*raw*(3-2*raw);
+   const arc=Math.sin(suck*Math.PI)*24;
+   const x=start.x+(mouth.x-start.x)*suck,y=start.y+(mouth.y-start.y)*suck-arc;
+   foodVisual.style.left=x+'px';foodVisual.style.top=y+'px';
+   foodVisual.style.transform='translate(-50%,-50%) scale('+Math.max(.08,1-suck*.78)+') rotate('+(suck*18)+'deg)';
+   foodVisual.style.opacity=String(Math.max(0,1-Math.max(0,suck-.82)/.18));
+   if(seconds>1.55)foodVisual.classList.remove('visible');
+   if(seconds>3.05){feeding=null;foodVisual.classList.remove('visible');foodVisual.style.opacity='1';c.reward('¡ÑAM! 💗');}
   }
  }
  function throwBall(){if(!volley.launch())c.toast('¡Espera que la pelota vuelva! 🏐');}
