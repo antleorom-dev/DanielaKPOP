@@ -616,3 +616,78 @@ body.makeup-active .scene-title{display:none}
  .startup-footer{grid-column:1/-1;margin-top:7px;font-size:6px}.startup-name-card{width:min(640px,94vw);padding-top:38px}.name-idol-preview{display:none}.startup-name-card h2{font-size:19px;margin:3px}.startup-name-card>p{margin-bottom:8px}.idol-name-field input{padding:9px 52px 9px 13px}.name-suggestions{margin-bottom:7px}.name-confirm{min-height:42px}
 }
 @media(prefers-reduced-motion:reduce){.startup-orbit,.startup-stars span,.startup-logo-mark,.exit-heart{animation:none}}
+
+
+/* v1.6 — sleep cinema, food suction and mobile playability */
+#food-suck-visual{
+ position:absolute;z-index:38;display:none;pointer-events:none;
+ font-size:clamp(36px,5vw,58px);line-height:1;
+ filter:drop-shadow(0 6px 7px #68426b42);
+ transform-origin:center;will-change:left,top,transform,opacity;
+}
+#food-suck-visual.visible{display:block}
+
+.sleep-overlay{
+ position:absolute;inset:0;z-index:92;display:grid;place-items:center;pointer-events:none;
+ background:rgba(62,43,83,0);opacity:0;visibility:hidden;
+ transition:background .55s ease,opacity .45s ease,visibility .45s;
+}
+.sleep-overlay.visible{
+ opacity:1;visibility:visible;
+ background:linear-gradient(180deg,rgba(55,39,77,.18),rgba(51,34,72,.34));
+}
+.sleep-overlay.blackout{background:#171221f5}
+.sleep-card{
+ width:min(390px,82vw);padding:20px 22px;border:2px solid #ffffffd9;border-radius:24px;
+ background:linear-gradient(145deg,#322641dd,#58436ddd);color:#fff;text-align:center;
+ box-shadow:0 18px 55px #251b3285;backdrop-filter:blur(12px);
+ transform:translateY(18px) scale(.97);opacity:0;
+ transition:transform .45s cubic-bezier(.2,.9,.25,1.2),opacity .4s ease,background .5s ease;
+}
+.sleep-overlay.visible .sleep-card{transform:none;opacity:1;pointer-events:auto}
+.sleep-overlay.blackout .sleep-card{background:transparent;border-color:transparent;box-shadow:none}
+.sleep-moon{display:block;font-size:39px;margin-bottom:4px;animation:sleep-moon-float 2.2s ease-in-out infinite}
+.sleep-card strong{display:block;font-size:18px;letter-spacing:.2px}
+.sleep-card small{display:block;margin-top:7px;font-size:10px;opacity:.78;font-weight:800}
+.sleep-energy-track{height:8px;margin:13px 0 12px;border:2px solid #ffffff9b;border-radius:999px;overflow:hidden;background:#ffffff1c}
+.sleep-energy-track i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#b8a0f4,#ffadd8,#ffe48a);transition:width .35s ease}
+#sleep-skip{padding:9px 13px;border:2px solid #fff;border-radius:14px;background:#ffffffec;color:#78538f;font-weight:1000;font-size:10px;box-shadow:0 6px 18px #21162d3d}
+#sleep-skip:active{transform:scale(.97)}
+.sleep-overlay.blackout #sleep-skip,.sleep-overlay.blackout .sleep-energy-track{opacity:0;pointer-events:none}
+@keyframes sleep-moon-float{50%{transform:translateY(-5px) rotate(4deg)}}
+
+/* Mobile volleyball: show the complete court before enlarging controls. */
+@media(max-width:680px){
+ body.street-volley-playing .street-volley-ui{background:linear-gradient(180deg,#bceeff20,#ffd8ec16)}
+ .street-volley-score{
+  top:max(5px,env(safe-area-inset-top));width:calc(100vw - 12px);max-width:none;
+  padding:4px 6px;gap:4px;border-radius:11px;font-size:8px;
+ }
+ .street-volley-score span{white-space:nowrap}
+ .street-volley-score b{min-width:23px;height:23px;margin:0 2px;border-radius:7px;font-size:13px}
+ .street-volley-score em{font-size:6px;letter-spacing:.45px}
+ .street-volley-tip{top:42px;max-width:62vw;padding:4px 7px;font-size:6.5px;text-align:center}
+ .street-volley-exit{top:43px;right:5px;padding:5px 7px;font-size:7px}
+ .street-volley-controls{
+  width:calc(100vw - 18px);bottom:max(7px,env(safe-area-inset-bottom));
+  grid-template-columns:54px minmax(0,1fr) 54px;gap:7px;
+ }
+ .street-volley-controls button{height:49px;border-radius:15px;font-size:16px}
+ .street-volley-controls button:nth-child(2){font-size:10px}
+}
+@media(max-width:420px) and (orientation:portrait){
+ .street-volley-score{font-size:7px}
+ .street-volley-tip{top:40px}
+ .street-volley-controls{grid-template-columns:48px minmax(0,1fr) 48px}
+ .street-volley-controls button{height:45px}
+ .sleep-card{width:min(330px,84vw);padding:17px 16px}
+ .sleep-card strong{font-size:15px}
+}
+@media(orientation:landscape) and (max-height:600px){
+ .street-volley-score{width:min(660px,70vw);top:4px}
+ .street-volley-tip{top:42px}
+ .street-volley-controls{width:min(520px,60vw);grid-template-columns:48px 1fr 48px;bottom:5px}
+ .street-volley-controls button{height:38px}
+ .sleep-card{padding:12px 17px}.sleep-moon{font-size:27px}.sleep-card strong{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){.sleep-moon{animation:none}}
