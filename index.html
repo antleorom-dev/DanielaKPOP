@@ -1,4 +1,39 @@
-<!doctype html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><meta name="theme-color" content="#f7bce2"/><meta name="description" content="Cuida a tu propia idol K-pop en un mundo 3D lleno de magia"/><title>DanielaKPOP · Tu idol, tu mundo</title></head><body><main id="app"><canvas id="game" aria-label="Juego 3D interactivo"></canvas><div class="screen-glow"></div><div id="sparkles"></div><div id="touch-effects" aria-hidden="true"></div><div id="studio-live" class="studio-live" aria-hidden="true"><div class="live-badge"><span></span> <strong id="live-kind">TIKTOK LIVE</strong></div><div class="live-stats"><div><b id="live-viewers">0</b><small> viendo</small></div><div class="live-new-followers">+<b id="live-follower-gain">0</b> seguidores</div></div><div id="live-comments" class="live-comments"></div><div id="live-reactions" class="live-reactions"></div><div class="live-actions"><span>♥</span><b id="live-likes">0</b><span>💬</span><b id="live-comment-count">0</b></div><div class="live-tip">Baila y canta para hacer crecer el directo ✨</div></div>
+<!doctype html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><meta name="theme-color" content="#f7bce2"/><meta name="description" content="Cuida a tu propia idol K-pop en un mundo 3D lleno de magia"/><title>K-POP IDOL · Tu idol, tu historia</title></head><body class="game-menu-open"><main id="app"><section id="startup-menu" class="startup-menu" aria-label="Menú principal">
+ <div class="startup-orbit orbit-one"></div><div class="startup-orbit orbit-two"></div>
+ <div class="startup-stars" aria-hidden="true"><span>✦</span><span>♡</span><span>★</span><span>✧</span><span>♫</span><span>✦</span></div>
+ <div class="startup-card" id="menu-home">
+  <div class="startup-logo"><span class="startup-logo-mark">★</span><div><small>YOUR DREAM • YOUR STAGE</small><h1>K-POP <b>IDOL</b></h1><p>Conviértete en la idol que siempre imaginaste</p></div></div>
+  <div class="startup-actions">
+   <button id="menu-new" class="startup-primary"><span>✦</span><strong>NUEVA K-POP IDOL</strong><small>Empieza una nueva historia</small></button>
+   <button id="menu-load" class="startup-button"><span>♡</span><strong>CARGAR PARTIDA</strong><small id="menu-load-sub">Continuar tu carrera</small></button>
+   <button id="menu-settings" class="startup-button"><span>⚙</span><strong>AJUSTES</strong><small>Sonido y experiencia</small></button>
+   <button id="menu-exit" class="startup-button danger"><span>↩</span><strong>SALIR DEL JUEGO</strong><small>Hasta la próxima actuación</small></button>
+  </div>
+  <div class="startup-footer">✦ K-POP IDOL ✦ CREA • CUIDA • BRILLA ✦</div>
+ </div>
+ <div class="startup-card startup-name-card" id="menu-name" hidden>
+  <button class="startup-back" id="name-back" aria-label="Volver">‹</button>
+  <div class="name-idol-preview"><span>♡</span><i>✦</i><b>★</b></div>
+  <small class="startup-kicker">NUEVA HISTORIA</small>
+  <h2>¿Cómo se llama tu K-POP IDOL? <span>♡</span></h2>
+  <p>Este será su nombre artístico en el juego, los directos, comentarios y aventuras.</p>
+  <label class="idol-name-field"><span>NOMBRE ARTÍSTICO</span><input id="idol-name-input" maxlength="12" autocomplete="off" spellcheck="false" placeholder="Escribe su nombre..." /><em><b id="idol-name-count">0</b>/12</em></label>
+  <div class="name-suggestions"><span>Ideas:</span><button type="button">Luna</button><button type="button">Mia</button><button type="button">Nari</button><button type="button">Yuna</button></div>
+  <button id="name-confirm" class="startup-primary name-confirm" disabled><span>★</span><strong>EMPEZAR MI CARRERA</strong><small>¡Que empiece el debut!</small></button>
+  <div id="name-error" class="name-error" role="status"></div>
+ </div>
+ <div class="startup-card startup-settings-card" id="menu-settings-panel" hidden>
+  <button class="startup-back" id="settings-back" aria-label="Volver">‹</button>
+  <small class="startup-kicker">AJUSTES</small><h2>Tu experiencia</h2>
+  <button id="menu-sound-setting" class="settings-row"><span>♫</span><div><strong>SONIDO</strong><small>Música y efectos del juego</small></div><b id="menu-sound-state">ACTIVADO</b></button>
+  <div class="settings-row static"><span>📱</span><div><strong>ORIENTACIÓN</strong><small>Vertical y apaisado compatibles</small></div><b>AUTO</b></div>
+  <div class="settings-row static"><span>✨</span><div><strong>CALIDAD</strong><small>Se adapta automáticamente al dispositivo</small></div><b>AUTO</b></div>
+ </div>
+ <div class="startup-card startup-exit-card" id="menu-exit-panel" hidden>
+  <div class="exit-heart">♡</div><h2>¡Hasta el próximo show!</h2><p>Tu carrera queda guardada en este dispositivo.</p>
+  <button id="exit-back" class="startup-primary"><span>★</span><strong>VOLVER AL MENÚ</strong></button>
+ </div>
+</section><canvas id="game" aria-label="Juego 3D interactivo"></canvas><div class="screen-glow"></div><div id="sparkles"></div><div id="touch-effects" aria-hidden="true"></div><div id="studio-live" class="studio-live" aria-hidden="true"><div class="live-badge"><span></span> <strong id="live-kind">TIKTOK LIVE</strong></div><div class="live-stats"><div><b id="live-viewers">0</b><small> viendo</small></div><div class="live-new-followers">+<b id="live-follower-gain">0</b> seguidores</div></div><div id="live-comments" class="live-comments"></div><div id="live-reactions" class="live-reactions"></div><div class="live-actions"><span>♥</span><b id="live-likes">0</b><span>💬</span><b id="live-comment-count">0</b></div><div class="live-tip">Baila y canta para hacer crecer el directo ✨</div></div>
 <header class="topbar career-topbar" aria-label="Carrera de Daniela"><div class="career-hud">
 <div class="career-card followers-card"><span class="career-icon">💜</span><div class="career-copy"><small>SEGUIDORES TOTALES</small><strong id="followers">0</strong><em id="followers-live"></em></div><div class="career-spark">↗</div></div>
 <div class="career-card popularity-card"><span class="career-icon">🔥</span><div class="career-copy"><small>POPULARIDAD</small><strong><span id="popularity">0</span><sup>%</sup></strong><em id="popularity-label">NUEVA IDOL</em></div><div class="popularity-track"><i id="popularity-bar"></i></div></div>
