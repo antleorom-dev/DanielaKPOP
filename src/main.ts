@@ -931,7 +931,58 @@ play=createInteractions({scene,canvas,camera,idol,body,head,dress,groups,skin,ar
  onVolleyHit:()=>{state.happiness=num(state.happiness+8);state.energy=num(state.energy-2);state.coins+=4;gainXP(9);render();save();},
  perform,animate,toast,reward,sound});
 editor=setupSceneEditor({scene,canvas,camera,groups,getRoom:()=>room,showRoom,notify:toast,setLighting:setSceneLighting});
-showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();updateNeedAlerts();
+
+function hasSavedCareer(){
+ try{const saved=JSON.parse(localStorage.getItem('danielakpop-v2')||'null');return !!saved&&typeof saved.coins==='number';}catch{return false;}
+}
+function showStartupPanel(id:'menu-home'|'menu-name'|'menu-settings-panel'|'menu-exit-panel'){
+ for(const panelId of ['menu-home','menu-name','menu-settings-panel','menu-exit-panel']){
+  const panel=document.querySelector<HTMLElement>('#'+panelId);if(panel)panel.hidden=panelId!==id;
+ }
+}
+function syncStartupMenu(){
+ const load=document.querySelector<HTMLButtonElement>('#menu-load');
+ const sub=document.querySelector<HTMLElement>('#menu-load-sub');
+ const saved=hasSavedCareer();
+ if(load)load.disabled=!saved;
+ if(sub)sub.textContent=saved?'Continuar con '+idolName()+' · Nivel '+state.level:'Todavía no hay una partida guardada';
+ const menuSound=document.querySelector<HTMLElement>('#menu-sound-state');if(menuSound)menuSound.textContent=soundEnabled?'ACTIVADO':'DESACTIVADO';
+}
+function enterCareer(){
+ const startup=document.querySelector<HTMLElement>('#startup-menu');if(startup)startup.hidden=true;
+ document.body.classList.remove('game-menu-open');refreshNameUI();showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();updateNeedAlerts();
+ requestAnimationFrame(()=>engine.resize());
+}
+function cleanIdolName(value:string){
+ return value.normalize('NFKC').replace(/\s+/g,' ').trim().slice(0,12);
+}
+const nameInput=document.querySelector<HTMLInputElement>('#idol-name-input')!;
+const nameCount=document.querySelector<HTMLElement>('#idol-name-count')!;
+const nameConfirm=document.querySelector<HTMLButtonElement>('#name-confirm')!;
+const nameError=document.querySelector<HTMLElement>('#name-error')!;
+function validateName(){
+ const clean=cleanIdolName(nameInput.value);nameCount.textContent=String([...clean].length);nameConfirm.disabled=[...clean].length<2;nameError.textContent='';
+}
+nameInput.addEventListener('input',validateName);
+nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!nameConfirm.disabled){e.preventDefault();nameConfirm.click();}});
+document.querySelectorAll<HTMLButtonElement>('.name-suggestions button').forEach(button=>button.addEventListener('click',()=>{nameInput.value=button.textContent||'';validateName();nameInput.focus();}));
+document.querySelector<HTMLButtonElement>('#menu-new')?.addEventListener('click',()=>{nameInput.value='';validateName();showStartupPanel('menu-name');setTimeout(()=>nameInput.focus(),120);});
+document.querySelector<HTMLButtonElement>('#name-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
+nameConfirm.addEventListener('click',()=>{
+ const name=cleanIdolName(nameInput.value);
+ if([...name].length<2){nameError.textContent='Escribe al menos 2 caracteres para tu nombre artístico.';return;}
+ resetCareer(name);try{localStorage.removeItem('danielakpop-tutorial');}catch{}
+ $('#tutorial').classList.remove('hidden');fashion();applyMakeup();renderMakeupPanel();save();refreshNameUI();syncStartupMenu();enterCareer();
+ reactionBubble('¡Hola! Soy '+idolName()+' 💜 ¡Vamos a convertirnos en una estrella!',false,3000);
+});
+document.querySelector<HTMLButtonElement>('#menu-load')?.addEventListener('click',()=>{if(!hasSavedCareer())return;refreshNameUI();enterCareer();});
+document.querySelector<HTMLButtonElement>('#menu-settings')?.addEventListener('click',()=>{syncStartupMenu();showStartupPanel('menu-settings-panel');});
+document.querySelector<HTMLButtonElement>('#settings-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
+document.querySelector<HTMLButtonElement>('#menu-sound-setting')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;$('#sound-toggle').textContent=soundEnabled?'♫':'♪';syncStartupMenu();if(soundEnabled)sound([523,659,784]);});
+document.querySelector<HTMLButtonElement>('#menu-exit')?.addEventListener('click',()=>showStartupPanel('menu-exit-panel'));
+document.querySelector<HTMLButtonElement>('#exit-back')?.addEventListener('click',()=>showStartupPanel('menu-home'));
+
+showRoom('bedroom');fashion();applyMakeup();renderMakeupPanel();render();refreshNameUI();updateNeedAlerts();syncStartupMenu();showStartupPanel('menu-home');
 let performanceCheckAt=performance.now(),slowSamples=0,fastSamples=0;
 engine.runRenderLoop(()=>{
  // While an arcade game runs, suspend Babylon's expensive 3D render and keep the 2D canvas smooth.
