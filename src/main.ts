@@ -1,4 +1,4 @@
-import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,Matrix,SharpenPostProcess,DynamicTexture} from '@babylonjs/core';
+import {Engine,Scene,ArcRotateCamera,Vector3,HemisphericLight,DirectionalLight,PointLight,MeshBuilder,StandardMaterial,Color3,Color4,TransformNode,GlowLayer,Mesh,AbstractMesh,Matrix,SharpenPostProcess,DynamicTexture} from '@babylonjs/core';
 import './style.css';
 import {createInteractions} from './interactions';
 import {dressRooms} from './decor';
@@ -819,9 +819,10 @@ function socialBoost(kind:'dance'|'sing'|'concert'){
  liveFollowerGain+=Math.max(1,Math.floor((1+Math.random()*3.4)*power));
  liveReactionBurst(power);paintLiveStats();render();
 }
-let concertLightMeshes:Mesh[]|null=null;
+let concertLightMeshes:AbstractMesh[]=[];
+let concertLightsReady=false;
 function updateConcertLighting(now:number){
- concertLightMeshes??=scene.meshes.filter(mesh=>/led stage spot|arena overhead spotlight|arena concert spotlight|garland light/i.test(mesh.name));
+ if(!concertLightsReady){concertLightMeshes=scene.meshes.filter(mesh=>/led stage spot|arena overhead spotlight|arena concert spotlight|garland light/i.test(mesh.name));concertLightsReady=true;}
  const active=concertActive&&(room==='stage'||room==='arena');
  concertLightMeshes.forEach((mesh,i)=>{
   if(!mesh.isEnabled())return;
