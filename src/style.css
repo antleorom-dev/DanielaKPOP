@@ -82,7 +82,7 @@
 /* Studio live: social-feed energy without covering Daniela or the action tray. */
 .studio-live{position:absolute;z-index:6;inset:88px 18px 185px;pointer-events:none;opacity:0;transition:opacity .25s}
 .studio-live.visible{opacity:1}
-.live-badge{position:absolute;right:0;top:0;padding:7px 10px;border-radius:10px;background:#e93465;color:#fff;font:900 11px/1 Nunito,sans-serif;letter-spacing:1px;box-shadow:0 5px 18px #a32d6550}
+.live-badge{position:absolute;right:0;top:0;display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:10px;background:#e93465;color:#fff;font:900 11px/1 Nunito,sans-serif;letter-spacing:1px;box-shadow:0 5px 18px #a32d6550}.live-badge>div{display:flex;flex-direction:column;gap:2px}.live-badge small{font-size:7px;letter-spacing:.3px;opacity:.82;text-transform:none}
 .live-badge span{display:inline-block;width:7px;height:7px;border-radius:50%;background:white;margin-right:5px;animation:livePulse .9s infinite alternate}
 .live-stats{position:absolute;right:0;top:38px;padding:5px 9px;border-radius:9px;background:#2c1e3fa8;color:white;font-size:10px;backdrop-filter:blur(7px)}
 .live-stats b{font-size:12px}.live-stats small{opacity:.75}
