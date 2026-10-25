@@ -1,46 +1,116 @@
-# DanielaKPOP · Juego 3D + laboratorio Blender automático
+# K-POP IDOL · Juego 3D
 
-Juego gratuito con Babylon.js, TypeScript y GitHub Pages.
+Juego 3D gratuito construido con Babylon.js, TypeScript y Vite.
 
 - Juego: https://antleorom-dev.github.io/DanielaKPOP/
 - Laboratorio 3D: https://antleorom-dev.github.io/DanielaKPOP/preview.html
-- Editor de muebles: https://antleorom-dev.github.io/DanielaKPOP/?editor=1
+- Editor: https://antleorom-dev.github.io/DanielaKPOP/?editor=1
 
-## Personaje generado en la nube
+## Publicacion local: flujo principal
 
-Este repositorio incorpora un pipeline de **Blender headless + Python + GitHub Actions**. No requiere instalar Blender en el PC, no usa servicios de IA de pago y no necesita iniciar sesión en Mixamo.
+El flujo normal ya no necesita que GitHub Actions compile el juego.
 
-**Archivos:**
-- scripts/character/generate_daniela.py: crea automáticamente el modelo chibi original, sus materiales, un esqueleto de nueve huesos y 16 clips.
-- scripts/character/validate_glb.py: verifica que el GLB tenga geometría, esqueleto y todos los clips requeridos.
-- .github/workflows/character.yml: genera y valida el personaje al cambiar los scripts, o al ejecutarlo manualmente mediante Run workflow; publica GLB, Blend y JSON como artifact.
-- .github/workflows/pages.yml: en cada push a main instala Blender y NumPy, regenera el personaje, lo valida y publica el juego más la página de laboratorio.
-- src/character-preview.ts + preview.html: visor Babylon.js aislado de las mecánicas del juego estable.
+En Windows, desde una copia local del repositorio, ejecuta:
 
-## Flujo de trabajo
+`PUBLICAR-KPOP-IDOL.bat`
 
-1. Haz cambios en el repositorio.
-2. GitHub Actions descarga las dependencias libres de Blender desde Ubuntu.
-3. Blender crea los modelos 3D y anima huesos (no genera vídeos).
-4. Se exporta un único GLB autónomo con 16 animaciones.
-5. Un validador exige una malla, piel enlazada al armature, huesos y 16 animaciones.
-6. El build Vite crea index.html y preview.html para GitHub Pages.
-7. Si falla cualquier paso, no se publica la versión rota.
+Ese boton hace automaticamente:
 
-El GLB publicado se genera durante el build: no se necesita introducir su contenido binario en el repositorio. El proyecto Blender editable se guarda además como artifact descargable (14 días).
+1. comprueba que no haya cambios locales versionados sin guardar;
+2. descarga el ultimo `main` desde GitHub;
+3. extrae el paquete de recursos;
+4. ejecuta `npm install`;
+5. valida TypeScript;
+6. crea el build Vite con base `/DanielaKPOP/`;
+7. conserva los GLB experimentales del sitio actual si no estan presentes localmente;
+8. añade `.nojekyll`;
+9. crea un commit limpio solo con el contenido de `dist`;
+10. fuerza la rama de publicacion `gh-pages` a ese build terminado.
 
-## Animaciones
+Si el build falla, no se sube una version rota.
+
+### Configuracion unica de GitHub Pages
+
+Despues del primer `PUBLICAR-KPOP-IDOL.bat`, configura una sola vez:
+
+- Settings -> Pages
+- Source: **Deploy from a branch**
+- Branch: **gh-pages**
+- Folder: **/(root)**
+
+El propio script abre esa pantalla la primera vez que crea `gh-pages`.
+
+A partir de entonces, cada publicacion normal es simplemente volver a ejecutar `PUBLICAR-KPOP-IDOL.bat`.
+
+GitHub Pages puede mostrar una ejecucion interna de despliegue, pero el trabajo pesado (npm, TypeScript, Vite y recursos) ya se ha hecho en el PC. El branch publicado incluye `.nojekyll` para servir directamente los archivos estaticos ya compilados.
+
+## Comandos utiles
+
+Desarrollo local:
+
+`npm run dev`
+
+Build normal:
+
+`npm run build`
+
+Build exactamente como GitHub Pages:
+
+`npm run build:pages`
+
+Preview local:
+
+`npm run preview`
+
+## GitHub Actions: solo herramientas opcionales
+
+Los workflows del repositorio ya no se disparan automaticamente con cada push o PR.
+
+- `.github/workflows/preview-check.yml`: validacion TypeScript/Vite manual.
+- `.github/workflows/character.yml`: generacion Blender manual.
+- `.github/workflows/pages.yml`: pipeline antiguo completo, conservado como fallback manual.
+
+Por tanto, quedarse sin minutos/cuota de Actions no impide desarrollar, validar ni crear el build normal del juego.
+
+## Personaje procedural y Blender
+
+La protagonista procedural de `index.html` sigue siendo la version principal y estable.
+
+El personaje Blender riggeado es un experimento A/B separado. Los scripts disponibles son:
+
+- `scripts/character/generate_daniela.py`
+- `scripts/character/validate_glb.py`
+
+El pipeline Blender puede generar:
+
+- `daniela-rigged.glb`
+- `daniela-original-inspired.glb`
+- fuentes `.blend`
+- manifests de validacion
+- previews
+
+El publicador local normal intenta conservar los GLB ya publicados para que el laboratorio A/B no desaparezca aunque no se regenere Blender en cada build.
+
+## Animaciones Blender
 
 Idle, Wave, Giggle, Laugh, DancePop, DanceCute, DanceHipHop, DanceDisco, Sing, Eat, Drink, Volley, Sleep, Bath, Jump, Celebrate.
 
-Son **animaciones procedurales de primera generación**: no equivalen todavía a motion capture profesional. Se pueden mejorar por scripts o importar animaciones FBX descargadas legalmente y retargetearlas al rig en el futuro.
+Son animaciones procedurales de primera generacion y el personaje Blender sigue siendo opt-in.
 
-## Conservar el juego estable
+## Recursos
 
-La Daniela actual sigue siendo la protagonista de index.html. El nuevo personaje riggeado está en preview.html para comprobar estética, iluminación, orientación y movimientos. No lo sustituiremos hasta verificar cómo funciona en móvil y adaptar las mecánicas de cuidado a su nueva malla.
+El paquete `public/assets/DanielaKPOP-recursos-v0.4.zip` se extrae automaticamente antes del build local.
 
-## Costes y licencias
+El publicador comprueba como minimo:
 
-Blender y las librerías 3D utilizadas son gratuitas. GitHub Actions usa runners estándar de un repositorio público y GitHub Pages publica el juego sin servicios adicionales de pago. El personaje experimental es geometría nueva creada por nuestro script. Los assets descargados de Kenney y Quaternius tienen sus licencias de origen.
+- `public/assets/studio-song.mp3`
+- `public/assets/Shakira_Burna_Boy_-_Dai_Dai.mp3`
+- `public/assets/interior/Bed_King.glb`
 
-Los planes y límites de los servicios externos pueden cambiar.
+## Regla de seguridad del deploy
+
+`gh-pages` contiene exclusivamente el resultado compilado.
+
+El codigo fuente sigue viviendo en `main`.
+
+No editar `gh-pages` manualmente: cada publicacion local la reemplaza por completo con un nuevo `dist`.
