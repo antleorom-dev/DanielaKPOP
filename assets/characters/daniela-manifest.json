@@ -1,0 +1,30 @@
+{
+  "generator": "Blender headless / GitHub Actions",
+  "format": "glTF 2.0 (GLB)",
+  "file": "daniela-rigged.glb",
+  "size_bytes": 773756,
+  "skin_count": 1,
+  "joint_count": 9,
+  "mesh_count": 1,
+  "animation_count": 16,
+  "animations": [
+    "Idle",
+    "Wave",
+    "Giggle",
+    "Laugh",
+    "DancePop",
+    "DanceCute",
+    "DanceHipHop",
+    "DanceDisco",
+    "Sing",
+    "Eat",
+    "Drink",
+    "Volley",
+    "Sleep",
+    "Bath",
+    "Jump",
+    "Celebrate"
+  ],
+  "ready_for_preview": true,
+  "note": "Experimental rigged character; existing in-game Daniela remains the default."
+}
