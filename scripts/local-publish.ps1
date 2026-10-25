@@ -131,10 +131,10 @@ try {
     Invoke-Native 'Creando commit de despliegue' { git init }
     Invoke-Native 'Creando rama gh-pages' { git checkout -b gh-pages }
 
-    $gitName = (& git -C $Root config user.name) -join ''
-    $gitEmail = (& git -C $Root config user.email) -join ''
-    if (-not $gitName.Trim()) { $gitName = 'K-POP IDOL Local Deploy' }
-    if (-not $gitEmail.Trim()) { $gitEmail = 'local-deploy@users.noreply.github.com' }
+    $gitName = [string]((& git -C $Root config user.name) -join '')
+    $gitEmail = [string]((& git -C $Root config user.email) -join '')
+    if ([string]::IsNullOrWhiteSpace($gitName)) { $gitName = 'K-POP IDOL Local Deploy' }
+    if ([string]::IsNullOrWhiteSpace($gitEmail)) { $gitEmail = 'local-deploy@users.noreply.github.com' }
 
     git config user.name $gitName.Trim()
     git config user.email $gitEmail.Trim()
