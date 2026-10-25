@@ -1,12 +1,5 @@
 name: Validate Daniela A/B preview
 on:
-  pull_request:
-    paths:
-      - 'src/**'
-      - 'scripts/character/**'
-      - '.github/workflows/**'
-      - 'package.json'
-      - 'vite.config.ts'
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,4 +12,4 @@ jobs:
         with:
           node-version: '22'
       - run: npm install
-      - run: npm run build -- --base=/DanielaKPOP/
+      - run: npm run build:pages
